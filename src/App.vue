@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+    class="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900"
   >
     <!-- Animated background elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
