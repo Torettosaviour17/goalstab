@@ -1,0 +1,81 @@
+/* Tailwind CSS v4 Utilities */
+
+/* Gradient backgrounds */
+.bg-linear-to-br {
+  background: linear-gradient(
+    to bottom right,
+    var(--tw-gradient-from),
+    var(--tw-gradient-to)
+  );
+}
+
+.bg-linear-to-r {
+  background: linear-gradient(
+    to right,
+    var(--tw-gradient-from),
+    var(--tw-gradient-to)
+  );
+}
+
+/* Opacity utilities */
+.bg-white\/8 {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bg-white\/20 {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.bg-primary\/10 {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.bg-secondary\/10 {
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+/* Position utilities */
+.top-0\.5 {
+  top: 2px;
+}
+
+/* Color utilities for gradients */
+.from-blue-500 {
+  --tw-gradient-from: #3b82f6;
+}
+
+.to-cyan-400 {
+  --tw-gradient-to: #22d3ee;
+}
+
+.from-emerald-500 {
+  --tw-gradient-from: #10b981;
+}
+
+.to-teal-400 {
+  --tw-gradient-to: #2dd4bf;
+}
+
+.from-amber-500 {
+  --tw-gradient-from: #f59e0b;
+}
+
+.to-orange-400 {
+  --tw-gradient-to: #fb923c;
+}
+
+.from-primary {
+  --tw-gradient-from: var(--color-primary);
+}
+
+.to-primary-dark {
+  --tw-gradient-to: var(--color-primary-dark);
+}
+
+.to-secondary {
+  --tw-gradient-to: var(--color-secondary);
+}

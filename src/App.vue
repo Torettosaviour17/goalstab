@@ -1,88 +1,129 @@
 <template>
-  <div class="min-h-screen bg-slate-100 text-slate-800">
-    <!-- App Wrapper -->
-    <div class="max-w-6xl mx-auto px-4 py-6">
-      <!-- Header -->
-      <header class="flex items-center justify-between mb-8">
-        <div>
-          <h1 class="text-2xl font-semibold">Goal Dashboard</h1>
-          <p class="text-sm text-slate-500">Track progress. Stay consistent.</p>
-        </div>
-
-        <!-- Profile Button (future user profile lives here) -->
-        <button
-          class="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm hover:bg-slate-800 transition"
-        >
-          Profile
-        </button>
-      </header>
-
-      <!-- Main Card -->
-      <main class="bg-white rounded-2xl shadow-sm p-6">
-        <!-- Tabs Section -->
-        <div class="flex items-center justify-between mb-6">
-          <div class="flex gap-4">
-            <button
-              class="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm"
-            >
-              Today
-            </button>
-            <button
-              class="px-4 py-2 rounded-lg bg-slate-100 text-sm hover:bg-slate-200"
-            >
-              Week
-            </button>
-            <button
-              class="px-4 py-2 rounded-lg bg-slate-100 text-sm hover:bg-slate-200"
-            >
-              Month
-            </button>
-          </div>
-
-          <!-- Add Goal Button -->
-          <button
-            class="px-4 py-2 rounded-lg border border-slate-300 text-sm hover:bg-slate-100"
-          >
-            + Add Goal
-          </button>
-        </div>
-
-        <!-- Content Area -->
-        <div class="space-y-4">
-          <!-- Placeholder Goal Card -->
-          <div class="border rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <h3 class="font-medium">Learn Vue 3</h3>
-              <p class="text-sm text-slate-500">Progress: 40%</p>
-            </div>
-
-            <button
-              class="px-3 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800"
-            >
-              Update
-            </button>
-          </div>
-
-          <div class="border rounded-xl p-4 flex items-center justify-between">
-            <div>
-              <h3 class="font-medium">Build Portfolio</h3>
-              <p class="text-sm text-slate-500">Progress: 65%</p>
-            </div>
-
-            <button
-              class="px-3 py-2 text-sm rounded-lg bg-slate-900 text-white hover:bg-slate-800"
-            >
-              Update
-            </button>
-          </div>
-        </div>
-      </main>
+  <div
+    class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
+  >
+    <!-- Animated background elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+      <div
+        class="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-soft"
+      ></div>
+      <div
+        class="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary/10 rounded-full blur-3xl animate-pulse-soft"
+        style="animation-delay: 1s"
+      ></div>
     </div>
+
+    <!-- Navigation -->
+    <Navigation />
+
+    <!-- Main Content -->
+    <main class="relative z-10 pt-20">
+      <router-view v-slot="{ Component, route }">
+        <transition :name="route.meta?.transition || 'fade'" mode="out-in">
+          <component :is="Component" />
+        </transition>
+      </router-view>
+    </main>
+
+    <!-- Floating Create Button -->
+    <FloatingButton
+      v-if="showCreateButton"
+      @click="handleCreateGoal"
+      class="fixed bottom-8 right-8"
+    />
   </div>
 </template>
 
-<script>
-export default {
-  name: "App",
+<script setup lang="ts">
+import { computed, watch } from "vue";
+import { useRoute } from "vue-router";
+import Navigation from "./components/layout/Navigation.vue";
+import FloatingButton from "./components/shared/FloatingButton.vue";
+import { useGoalsStore } from "./stores/useGoals";
+
+const route = useRoute();
+const goalsStore = useGoalsStore();
+
+const showCreateButton = computed(() => {
+  const hideOnRoutes = ["login", "register", "forgot-password"];
+  return !hideOnRoutes.includes(route.name as string);
+});
+
+const handleCreateGoal = () => {
+  goalsStore.showCreateModal = true;
 };
+
+watch(route, () => {
+  // Navigation side effects
+});
 </script>
+
+<style>
+/* Page Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-left-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.slide-left-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.slide-right-enter-from {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+.slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-down-enter-from {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+</style>
