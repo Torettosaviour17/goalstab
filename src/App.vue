@@ -1,65 +1,60 @@
 <template>
   <div
-    class="min-h-screen bg-linear-to-br from-slate-900 via-slate-800 to-slate-900"
+    class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900"
   >
     <!-- Animated background elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <div
-        class="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse-soft"
+        class="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl animate-pulse-soft"
       ></div>
       <div
-        class="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary/10 rounded-full blur-3xl animate-pulse-soft"
+        class="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary-500/10 rounded-full blur-3xl animate-pulse-soft"
         style="animation-delay: 1s"
       ></div>
     </div>
 
-    <!-- Navigation -->
-    <Navigation />
+    <!-- Header -->
+    <AppHeader />
 
-    <!-- Main Content -->
-    <main class="relative z-10 pt-20">
-      <router-view v-slot="{ Component, route }">
-        <transition :name="route.meta?.transition || 'fade'" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
-    </main>
+    <!-- Main Layout -->
+    <div class="flex pt-16">
+      <!-- Sidebar (desktop) -->
+      <AppSidebar />
 
-    <!-- Floating Create Button -->
-    <FloatingButton
-      v-if="showCreateButton"
+      <!-- Main Content -->
+      <main class="flex-1 min-h-[calc(100vh-4rem)] p-4 md:p-6">
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </main>
+    </div>
+
+    <!-- Floating Button -->
+    <button
       @click="handleCreateGoal"
-      class="fixed bottom-8 right-8"
-    />
+      class="fixed bottom-6 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-2xl z-50 bg-linear-to-br from-primary-500 to-primary-600 hover:shadow-[0_0_40px_rgba(59,130,246,0.4)] active:shadow-inner hover:scale-110 active:scale-95 transition-all duration-300 animate-float"
+    >
+      ＋
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
-import Navigation from "./components/layout/Navigation.vue";
-import FloatingButton from "./components/shared/FloatingButton.vue";
-import { useGoalsStore } from "./stores/useGoals";
+import AppHeader from "./components/layout/AppHeader.vue";
+import AppSidebar from "./components/layout/AppSidebar.vue";
 
 const route = useRoute();
-const goalsStore = useGoalsStore();
-
-const showCreateButton = computed(() => {
-  const hideOnRoutes = ["login", "register", "forgot-password"];
-  return !hideOnRoutes.includes(route.name as string);
-});
 
 const handleCreateGoal = () => {
-  goalsStore.showCreateModal = true;
+  console.log("Create goal clicked");
 };
-
-watch(route, () => {
-  // Navigation side effects
-});
 </script>
 
 <style>
-/* Page Transitions */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -68,62 +63,5 @@ watch(route, () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-.slide-left-enter-active,
-.slide-left-leave-active,
-.slide-right-enter-active,
-.slide-right-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-left-enter-from {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-.slide-left-leave-to {
-  opacity: 0;
-  transform: translateX(-30px);
-}
-
-.slide-right-enter-from {
-  opacity: 0;
-  transform: translateX(-30px);
-}
-
-.slide-right-leave-to {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-up-enter-from {
-  opacity: 0;
-  transform: translateY(30px);
-}
-
-.slide-up-leave-to {
-  opacity: 0;
-  transform: translateY(-30px);
-}
-
-.slide-down-enter-active,
-.slide-down-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-down-enter-from {
-  opacity: 0;
-  transform: translateY(-30px);
-}
-
-.slide-down-leave-to {
-  opacity: 0;
-  transform: translateY(30px);
 }
 </style>

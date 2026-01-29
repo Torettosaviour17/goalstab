@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useRoute } from "vue-router";
-import { useGoalsStore } from "@/stores/useGoals";
+import { useGoalsStore } from "@/stores/goals";
 
 const route = useRoute();
 const goalsStore = useGoalsStore();

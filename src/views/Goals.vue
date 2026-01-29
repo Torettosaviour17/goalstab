@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { useGoalsStore } from "@/stores/useGoals";
+import { useGoalsStore } from "@/stores/goals";
 
 const goalsStore = useGoalsStore();
 const goals = goalsStore.goals;
