@@ -30,7 +30,7 @@
         </div>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden md:flex items-center gap-1">
+        <!-- <nav class="hidden md:flex items-center gap-1">
           <router-link
             to="/"
             class="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2"
@@ -82,7 +82,7 @@
             <span class="text-lg">⚙️</span>
             Settings
           </router-link>
-        </nav>
+        </nav> -->
 
         <!-- Right section -->
         <div class="flex items-center gap-3">
