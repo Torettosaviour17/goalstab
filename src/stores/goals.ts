@@ -1,9 +1,38 @@
-// src/stores/goals.ts (renamed from useGoals.ts)
+// src/stores/goals.ts
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 
+export interface Goal {
+  id: string;
+  title: string;
+  target: number;
+  saved: number;
+  icon: string;
+  color: string;
+  type: "percentage" | "fixed";
+  autoSave: number;
+  frequency: "daily" | "weekly" | "monthly";
+  deadline?: string;
+  locked: boolean;
+  progress: number;
+  lastUpdated: string;
+  createdAt: string;
+  sharedWith: string[];
+}
+
+export interface GoalFormData {
+  title: string;
+  target: number;
+  icon: string;
+  color: string;
+  type: "percentage" | "fixed";
+  autoSave: number;
+  frequency: "daily" | "weekly" | "monthly";
+  deadline?: string;
+}
+
 export const useGoalsStore = defineStore("goals", () => {
-  const goals = ref([
+  const goals = ref<Goal[]>([
     {
       id: "goal-1",
       title: "MacBook Pro M3",
@@ -11,14 +40,15 @@ export const useGoalsStore = defineStore("goals", () => {
       saved: 1200000,
       icon: "💻",
       color: "from-blue-500 to-cyan-400",
-      type: "percentage" as const,
+      type: "percentage",
       autoSave: 10,
-      frequency: "weekly" as const,
+      frequency: "weekly",
       deadline: "2024-06-30",
       locked: true,
       progress: 48,
-      lastUpdated: "2024-01-20",
-      createdAt: "2024-01-15",
+      lastUpdated: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      sharedWith: [],
     },
     {
       id: "goal-2",
@@ -27,59 +57,109 @@ export const useGoalsStore = defineStore("goals", () => {
       saved: 450000,
       icon: "🏝️",
       color: "from-emerald-500 to-teal-400",
-      type: "fixed" as const,
+      type: "fixed",
       autoSave: 50000,
-      frequency: "monthly" as const,
+      frequency: "monthly",
       deadline: "2024-12-15",
       locked: true,
       progress: 30,
-      lastUpdated: "2024-01-15",
-      createdAt: "2024-01-01",
+      lastUpdated: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+      sharedWith: [],
     },
   ]);
+
+  /* =========================
+     COMPUTED
+  ========================== */
 
   const totalSaved = computed(() =>
     goals.value.reduce((sum, goal) => sum + goal.saved, 0),
   );
 
-  const overallProgress = computed(() =>
-    Math.round(
-      (totalSaved.value /
-        goals.value.reduce((sum, goal) => sum + goal.target, 0)) *
-        100,
-    ),
+  const totalTarget = computed(() =>
+    goals.value.reduce((sum, goal) => sum + goal.target, 0),
   );
 
+  const overallProgress = computed(() => {
+    if (totalTarget.value === 0) return 0;
+    return Math.round((totalSaved.value / totalTarget.value) * 100);
+  });
+
   const activeGoals = computed(() =>
-    goals.value.filter((goal) => goal.progress < 100),
+    goals.value.filter((g) => g.progress < 100),
   );
+
+  const activeGoalsCount = computed(() => activeGoals.value.length);
+
+  /* =========================
+     INTERNAL HELPERS
+  ========================== */
+
+  const recalculateProgress = (goal: Goal) => {
+    goal.progress = Math.min(100, Math.round((goal.saved / goal.target) * 100));
+  };
+
+  /* =========================
+     ACTIONS
+  ========================== */
 
   const addToGoal = (id: string, amount: number) => {
     const goal = goals.value.find((g) => g.id === id);
-    if (goal) {
-      goal.saved += amount;
-      goal.progress = Math.min(
-        100,
-        Math.round((goal.saved / goal.target) * 100),
-      );
-    }
+    if (!goal) return;
+
+    goal.saved += amount;
+    goal.lastUpdated = new Date().toISOString();
+
+    recalculateProgress(goal);
+  };
+
+  // ✅ Added to match dashboard usage
+  const addFunds = (id: string, amount: number) => {
+    addToGoal(id, amount);
+  };
+
+  const addGoal = (goalData: GoalFormData) => {
+    const now = new Date().toISOString();
+
+    const newGoal: Goal = {
+      id: `goal-${Date.now()}`,
+      saved: 0,
+      progress: 0,
+      locked: true,
+      lastUpdated: now,
+      createdAt: now,
+      sharedWith: [],
+      ...goalData,
+    };
+
+    goals.value.unshift(newGoal);
+    return newGoal;
   };
 
   const requestWithdrawal = (id: string) => {
     const goal = goals.value.find((g) => g.id === id);
-    if (goal && goal.progress >= 100) {
+    if (!goal) return false;
+
+    if (goal.progress >= 100) {
       goal.locked = false;
+      goal.lastUpdated = new Date().toISOString();
       return true;
     }
+
     return false;
   };
 
   return {
     goals,
     totalSaved,
+    totalTarget,
     overallProgress,
     activeGoals,
+    activeGoalsCount,
     addToGoal,
+    addFunds, // ✅ now exposed
+    addGoal,
     requestWithdrawal,
   };
 });
