@@ -1,42 +1,42 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import { useUIStore } from "./ui";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
   isPremium: boolean;
-  connectedAccounts: any[];
-  preferences: {
-    theme: "dark" | "light" | "auto";
-    currency: string;
-    notifications: {
-      email: boolean;
-      push: boolean;
-      goalCompleted: boolean;
-      depositReceived: boolean;
-      withdrawalRequested: boolean;
-      weeklyReport: boolean;
-    };
-    autoSaveEnabled: boolean;
-    twoFactorEnabled: boolean;
-  };
-  createdAt: string;
-  lastLogin: string;
+  avatar?: string;
+  preferences: any;
 }
 
 export const useAuthStore = defineStore("auth", () => {
+  const uiStore = useUIStore();
   const user = ref<User | null>(null);
   const token = ref<string | null>(localStorage.getItem("token"));
 
   const isAuthenticated = computed(() => !!user.value && !!token.value);
-  const isPremium = computed(() => user.value?.isPremium || false);
 
-  const login = (userData: User, authToken?: string) => {
-    user.value = userData;
-    if (authToken) {
-      token.value = authToken;
-      localStorage.setItem("token", authToken);
+  const login = async (email: string, password: string) => {
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    if (email === "demo@example.com" && password === "password123") {
+      const userData: User = {
+        id: "1",
+        email: "demo@example.com",
+        name: "Demo User",
+        isPremium: true,
+        preferences: {},
+      };
+      user.value = userData;
+      token.value = "fake-jwt-token";
+      localStorage.setItem("token", "fake-jwt-token");
+      uiStore.addToast({ type: "success", message: "Login successful!" });
+    } else {
+      uiStore.addToast({ type: "error", message: "Invalid credentials" });
+      throw new Error("Invalid credentials");
     }
   };
 
@@ -44,11 +44,19 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
     token.value = null;
     localStorage.removeItem("token");
+    uiStore.addToast({ type: "info", message: "Logged out" });
   };
 
-  const updateUser = (updates: Partial<User>) => {
-    if (user.value) {
-      user.value = { ...user.value, ...updates };
+  const checkAuth = () => {
+    if (token.value) {
+      // In a real app, validate token with backend
+      user.value = {
+        id: "1",
+        email: "demo@example.com",
+        name: "Demo User",
+        isPremium: true,
+        preferences: {},
+      };
     }
   };
 
@@ -56,9 +64,8 @@ export const useAuthStore = defineStore("auth", () => {
     user,
     token,
     isAuthenticated,
-    isPremium,
     login,
     logout,
-    updateUser,
+    checkAuth,
   };
 });

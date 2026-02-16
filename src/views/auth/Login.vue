@@ -1,60 +1,50 @@
 <template>
   <div class="min-h-screen flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-md">
-      <!-- Logo -->
       <div class="text-center mb-8">
         <div
-          class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center animate-float"
+          class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-linear-to-br from-primary-500 to-secondary-500 flex items-center justify-center animate-float"
         >
-          <span class="text-3xl font-bold">GT</span>
+          <span class="text-3xl font-bold text-white">GT</span>
         </div>
-        <h1
-          class="text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent"
-        >
-          Welcome Back
-        </h1>
+        <h1 class="text-3xl font-bold text-white">Welcome Back</h1>
         <p class="text-gray-400 mt-2">Sign in to continue to GoalTabs</p>
       </div>
 
-      <!-- Login Form -->
       <div class="glass-card p-8">
         <form @submit.prevent="handleLogin" class="space-y-6">
           <!-- Email -->
           <div>
-            <label
-              for="email"
-              class="block text-sm font-medium text-gray-300 mb-2"
+            <label class="block text-sm font-medium text-gray-300 mb-2"
+              >Email Address</label
             >
-              Email Address
-            </label>
             <input
-              id="email"
               v-model="form.email"
               type="email"
               required
               placeholder="you@example.com"
-              class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+              class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
             />
           </div>
 
           <!-- Password -->
           <div>
-            <div class="flex justify-between items-center mb-2">
-              <label
-                for="password"
-                class="block text-sm font-medium text-gray-300"
+            <div class="flex justify-between mb-2">
+              <label class="text-sm font-medium text-gray-300">Password</label>
+              <router-link
+                to="/forgot-password"
+                class="text-sm text-primary-400 hover:text-primary-300"
               >
-                Password
-              </label>
+                Forgot?
+              </router-link>
             </div>
             <div class="relative">
               <input
-                id="password"
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
                 placeholder="••••••••"
-                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition pr-12"
+                class="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 pr-12"
               />
               <button
                 type="button"
@@ -70,47 +60,35 @@
           <div class="flex items-center">
             <input
               id="remember"
-              v-model="form.rememberMe"
+              v-model="form.remember"
               type="checkbox"
-              class="w-4 h-4 rounded bg-white/5 border-white/10 text-primary focus:ring-primary focus:ring-2"
+              class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-primary-500 focus:ring-primary-500"
             />
-            <label for="remember" class="ml-2 text-sm text-gray-300">
-              Remember me
-            </label>
+            <label for="remember" class="ml-2 text-sm text-gray-300"
+              >Remember me</label
+            >
           </div>
 
-          <!-- Submit Button -->
-          <button
-            type="submit"
-            :disabled="loading"
-            class="w-full btn-primary py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span v-if="loading" class="flex items-center justify-center gap-2">
-              <span class="animate-spin">⟳</span>
-              Signing in...
-            </span>
-            <span v-else>Sign In</span>
-          </button>
+          <BaseButton type="submit" :loading="loading" fullWidth>
+            Sign In
+          </BaseButton>
         </form>
 
-        <!-- Demo Credentials -->
-        <div class="mt-8 p-4 bg-primary/10 rounded-xl">
+        <!-- Demo credentials -->
+        <div class="mt-6 p-4 bg-primary-500/10 rounded-xl">
           <p class="text-sm text-center text-gray-300">
-            Demo Credentials:<br />
-            Email: <span class="font-mono">demo@example.com</span><br />
-            Password: <span class="font-mono">password123</span>
+            Demo: demo@example.com / password123
           </p>
         </div>
 
-        <!-- Sign Up Link -->
-        <p class="mt-8 text-center text-gray-400">
+        <p class="mt-6 text-center text-gray-400">
           Don't have an account?
-          <button
-            @click="handleDemoLogin"
-            class="text-primary hover:text-primary/80 font-medium transition ml-2"
+          <router-link
+            to="/register"
+            class="text-primary-400 hover:text-primary-300 font-medium"
           >
-            Try Demo
-          </button>
+            Sign up
+          </router-link>
         </p>
       </div>
     </div>
@@ -121,6 +99,7 @@
 import { ref, reactive } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import BaseButton from "@/components/shared/BaseButton.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -132,53 +111,19 @@ const showPassword = ref(false);
 const form = reactive({
   email: "",
   password: "",
-  rememberMe: false,
+  remember: false,
 });
 
 const handleLogin = async () => {
   loading.value = true;
-
   try {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // Demo login
-    authStore.login({
-      id: "user-123",
-      email: form.email || "demo@example.com",
-      name: "Demo User",
-      isPremium: true,
-      connectedAccounts: [],
-      preferences: {
-        theme: "dark",
-        currency: "NGN",
-        notifications: {
-          email: true,
-          push: true,
-          goalCompleted: true,
-          depositReceived: true,
-          withdrawalRequested: true,
-          weeklyReport: true,
-        },
-        autoSaveEnabled: true,
-        twoFactorEnabled: false,
-      },
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-    });
-
-    const redirect = route.query.redirect as string;
-    router.push(redirect || { name: "dashboard" });
+    await authStore.login(form.email, form.password);
+    const redirect = (route.query.redirect as string) || "/";
+    router.push(redirect);
   } catch (error) {
-    console.error("Login failed:", error);
+    // Error is handled in store (toast)
   } finally {
     loading.value = false;
   }
-};
-
-const handleDemoLogin = () => {
-  form.email = "demo@example.com";
-  form.password = "password123";
-  handleLogin();
 };
 </script>

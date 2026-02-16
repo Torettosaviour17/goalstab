@@ -86,38 +86,33 @@
 
     <!-- Charts Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Savings Trend -->
       <div class="glass-card p-6">
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-xl font-bold text-white">Savings Trend</h2>
           <span class="text-sm text-gray-400">Last 30 days</span>
         </div>
 
-        <div class="h-64 flex items-end gap-2 overflow-x-auto pb-4 px-2">
+        <!-- Scrollable chart -->
+        <div class="h-64 overflow-x-auto flex items-end gap-2">
           <div
             v-for="(value, i) in trendData"
             :key="i"
-            class="flex-1 min-w-[14px] flex flex-col items-center gap-2 group"
+            class="flex-none w-6 flex flex-col items-center gap-2 group"
           >
-            <div class="relative w-full h-full flex items-end">
+            <div class="relative w-full">
               <div
-                class="w-full bg-primary-500/80 hover:bg-primary-500 rounded-t-sm transition-all duration-500 group-hover:shadow-lg group-hover:shadow-primary-500/40"
-                :style="{
-                  height:
-                    value > 0
-                      ? (value / Math.max(...trendData, 1)) * 100 + '%'
-                      : '2px',
-                }"
+                class="bg-primary-500/80 hover:bg-primary-500 rounded-t-lg transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary-500/20"
+                :style="{ height: (value / maxTrendValue) * 256 + 'px' }"
               ></div>
-
               <div
                 v-if="value > 0"
-                class="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap shadow-xl border border-white/10"
+                class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition whitespace-nowrap"
               >
                 ₦{{ formatNumber(value * 1000) }}
               </div>
             </div>
-
-            <span class="text-[9px] text-gray-500 font-medium uppercase mt-1">
+            <span class="text-xs text-gray-400">
               {{ ["M", "T", "W", "T", "F", "S", "S"][i % 7] }}{{ i + 1 }}
             </span>
           </div>
@@ -202,11 +197,14 @@ const periods = [
   { label: "Year", value: "year" },
 ];
 
-// Mock data for charts (replace with real data later)
+// Mock data for charts
 const trendData = ref([
   45, 52, 38, 65, 48, 53, 40, 42, 38, 47, 52, 58, 62, 55, 48, 42, 38, 45, 50,
-  48,
+  48, 55, 60, 58, 62, 65, 68, 72, 70, 68, 65,
 ]);
+
+// Calculate max value for scaling
+const maxTrendValue = Math.max(...trendData.value);
 
 const categories = ref([
   { name: "Electronics", percentage: 48, color: "bg-primary-500" },
