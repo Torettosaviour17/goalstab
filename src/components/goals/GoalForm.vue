@@ -180,7 +180,7 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
 import BaseButton from "@/components/shared/BaseButton.vue";
-import type { GoalFormData } from "@/types/goat";
+import type { GoalFormData } from "@/types/goal";
 
 interface Props {
   initialData?: Partial<GoalFormData>;

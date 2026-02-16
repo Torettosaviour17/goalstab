@@ -92,6 +92,13 @@ export const useGoalsStore = defineStore("goals", () => {
 
   const activeGoalsCount = computed(() => activeGoals.value.length);
 
+  // ✅ New: completed goals
+  const completedGoals = computed(() =>
+    goals.value.filter((g) => g.progress >= 100),
+  );
+
+  const completedGoalsCount = computed(() => completedGoals.value.length);
+
   /* =========================
      INTERNAL HELPERS
   ========================== */
@@ -114,7 +121,7 @@ export const useGoalsStore = defineStore("goals", () => {
     recalculateProgress(goal);
   };
 
-  // ✅ Added to match dashboard usage
+  // ✅ New: addFunds alias for clarity
   const addFunds = (id: string, amount: number) => {
     addToGoal(id, amount);
   };
@@ -157,8 +164,10 @@ export const useGoalsStore = defineStore("goals", () => {
     overallProgress,
     activeGoals,
     activeGoalsCount,
+    completedGoals,
+    completedGoalsCount,
     addToGoal,
-    addFunds, // ✅ now exposed
+    addFunds,
     addGoal,
     requestWithdrawal,
   };

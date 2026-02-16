@@ -11,23 +11,27 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
-    "vue": "^3.5.24",
-    "vue-router": "^4.6.4",
-    "pinia": "^3.0.4",
     "@vueuse/core": "^10.6.0",
-    "@vueuse/motion": "^3.0.3"
+    "@vueuse/motion": "^3.0.3",
+    "apexcharts": "^5.5.0",
+    "chart.js": "^4.5.1",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.24",
+    "vue-chartjs": "^5.3.3",
+    "vue-router": "^4.6.4",
+    "vue3-apexcharts": "^1.10.0"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^24.10.1",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/eslint-config-typescript": "^13.0.0",
     "@vue/tsconfig": "^0.8.1",
     "eslint": "^9.0.0",
     "eslint-plugin-vue": "^9.0.0",
+    "tailwindcss": "^4.0.0-alpha.6",
     "typescript": "~5.9.3",
     "vite": "^7.2.4",
-    "vue-tsc": "^3.1.4",
-    "@tailwindcss/vite": "^4.0.0",
-    "tailwindcss": "^4.0.0-alpha.6"
+    "vue-tsc": "^3.1.4"
   }
 }
