@@ -121,7 +121,7 @@ const handleLogin = async () => {
     const redirect = (route.query.redirect as string) || "/";
     router.push(redirect);
   } catch (error) {
-    // Error is handled in store (toast)
+    // handled
   } finally {
     loading.value = false;
   }

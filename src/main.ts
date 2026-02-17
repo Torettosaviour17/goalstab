@@ -3,6 +3,7 @@ import { createPinia } from "pinia";
 import { MotionPlugin } from "@vueuse/motion";
 import App from "./App.vue";
 import router from "./router";
+import { useAuthStore } from "./stores/auth";
 import "./style.css";
 import VueApexCharts from "vue3-apexcharts";
 
@@ -11,9 +12,13 @@ const app = createApp(App);
 
 // Initialize Pinia
 const pinia = createPinia();
+app.use(pinia);
+
+// Initialize auth state before mounting
+const authStore = useAuthStore(pinia);
+authStore.checkAuth();
 
 // Register plugins
-app.use(pinia);
 app.use(router);
 app.use(MotionPlugin);
 app.use(VueApexCharts);
@@ -30,7 +35,6 @@ app.directive("click-outside", {
         binding.value(event);
       }
     };
-
     (el as any).__clickOutside__ = handler;
     document.addEventListener("click", handler);
   },
@@ -42,7 +46,6 @@ app.directive("click-outside", {
 /* ================================
    GLOBAL ERROR HANDLER
 ================================ */
-
 app.config.errorHandler = (err, instance, info) => {
   console.error("Vue Error:", err);
   console.error("Component:", instance);
@@ -52,7 +55,9 @@ app.config.errorHandler = (err, instance, info) => {
 // Mount app
 app.mount("#app");
 
-// Dev logs
+/* ================================
+   DEV LOGS
+================================ */
 if (import.meta.env.DEV) {
   console.log(`GoalTabs v${import.meta.env.PACKAGE_VERSION || "1.0.0"}`);
   console.log("Environment:", import.meta.env.MODE);

@@ -45,27 +45,29 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    // If savedPosition exists (like back button), restore it
+    if (savedPosition) return savedPosition;
+
+    // Otherwise, scroll to top smoothly
+    return { top: 0, behavior: "smooth" };
+  },
 });
 
-// --- THE GUARD ---
+// --- AUTH GUARD ---
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
 
-  // Check if the route requires authentication
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
-  // Check if the route is for guests only (like Login)
   const isGuestOnly = to.matched.some((record) => record.meta.guestOnly);
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    // If not logged in, redirect to login
     next({ name: "login" });
   } else if (isGuestOnly && authStore.isAuthenticated) {
-    // If already logged in, skip login page and go to dashboard
     next({ name: "dashboard" });
   } else {
-    // Proceed as normal
     next();
   }
 });
