@@ -3,6 +3,7 @@
     class="glass-card p-5 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
     @click="$emit('click')"
   >
+    <!-- Header -->
     <div class="flex items-start justify-between mb-4">
       <div class="flex items-center gap-3">
         <div
@@ -12,17 +13,35 @@
           {{ goal.icon }}
         </div>
         <div>
-          <h3 class="font-bold text-white">{{ goal.title }}</h3>
-          <p class="text-sm text-gray-400">{{ goal.category || "General" }}</p>
+          <h3 class="font-bold text-white flex items-center gap-2">
+            {{ goal.title }}
+
+            <!-- 👥 Shared indicator -->
+            <span
+              v-if="goal.sharedWith?.length"
+              class="text-xs bg-primary-500/20 text-primary-400 px-2 py-0.5 rounded-full flex items-center gap-1"
+              title="Shared goal"
+            >
+              👥 {{ goal.sharedWith.length }}
+            </span>
+          </h3>
+
+          <p class="text-sm text-gray-400">
+            {{ goal.category || "General" }}
+          </p>
         </div>
       </div>
+
+      <!-- Locked badge -->
       <span class="text-xs px-2 py-1 rounded-full" :class="lockedClass">
         {{ goal.locked ? "Locked" : "Unlocked" }}
       </span>
     </div>
 
+    <!-- Progress -->
     <GoalProgress :value="goal.progress" :color="progressColor" class="mb-4" />
 
+    <!-- Amounts -->
     <div class="flex justify-between items-center mb-4">
       <div>
         <p class="text-2xl font-bold text-white">
@@ -30,6 +49,7 @@
         </p>
         <p class="text-sm text-gray-400">of ₦{{ formatNumber(goal.target) }}</p>
       </div>
+
       <div class="text-right">
         <p class="text-xs text-gray-400">Auto-save</p>
         <p class="font-semibold text-white">
@@ -38,11 +58,12 @@
               ? `${goal.autoSave}%`
               : `₦${formatNumber(goal.autoSave)}`
           }}
-          <span class="text-xs text-gray-400">/{{ goal.frequency }}</span>
+          <span class="text-xs text-gray-400"> /{{ goal.frequency }} </span>
         </p>
       </div>
     </div>
 
+    <!-- Actions -->
     <div class="flex gap-2">
       <BaseButton
         variant="secondary"
@@ -53,6 +74,7 @@
         <template #icon>💰</template>
         Add
       </BaseButton>
+
       <BaseButton
         :variant="goal.locked ? 'ghost' : 'primary'"
         size="sm"

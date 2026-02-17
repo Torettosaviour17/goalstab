@@ -38,7 +38,7 @@ import AppHeader from "@/components/layout/AppHeader.vue";
 import AppSidebar from "@/components/layout/AppSidebar.vue";
 import FloatingButton from "@/components/shared/FloatingButton.vue";
 import ToastNotification from "@/components/shared/ToastNotification.vue";
-// import PageTransition from "@/components/shared/PageTransition.vue";
+import PageTransition from "@/components/shared/PageTransition.vue";
 import { useUIStore } from "@/stores/ui";
 
 const uiStore = useUIStore();

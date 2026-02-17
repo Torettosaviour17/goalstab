@@ -17,7 +17,14 @@ export interface Goal {
   progress: number;
   lastUpdated: string;
   createdAt: string;
-  sharedWith: string[];
+  sharedWith: SharedUser[];
+}
+
+export interface SharedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
 }
 
 export interface GoalFormData {
@@ -70,9 +77,8 @@ export const useGoalsStore = defineStore("goals", () => {
   ]);
 
   /* =========================
-     COMPUTED
+       COMPUTED
   ========================== */
-
   const totalSaved = computed(() =>
     goals.value.reduce((sum, goal) => sum + goal.saved, 0),
   );
@@ -92,7 +98,6 @@ export const useGoalsStore = defineStore("goals", () => {
 
   const activeGoalsCount = computed(() => activeGoals.value.length);
 
-  // ✅ New: completed goals
   const completedGoals = computed(() =>
     goals.value.filter((g) => g.progress >= 100),
   );
@@ -100,17 +105,15 @@ export const useGoalsStore = defineStore("goals", () => {
   const completedGoalsCount = computed(() => completedGoals.value.length);
 
   /* =========================
-     INTERNAL HELPERS
+       INTERNAL HELPERS
   ========================== */
-
   const recalculateProgress = (goal: Goal) => {
     goal.progress = Math.min(100, Math.round((goal.saved / goal.target) * 100));
   };
 
   /* =========================
-     ACTIONS
+       ACTIONS
   ========================== */
-
   const addToGoal = (id: string, amount: number) => {
     const goal = goals.value.find((g) => g.id === id);
     if (!goal) return;
@@ -121,7 +124,6 @@ export const useGoalsStore = defineStore("goals", () => {
     recalculateProgress(goal);
   };
 
-  // ✅ New: addFunds alias for clarity
   const addFunds = (id: string, amount: number) => {
     addToGoal(id, amount);
   };
@@ -137,6 +139,7 @@ export const useGoalsStore = defineStore("goals", () => {
       lastUpdated: now,
       createdAt: now,
       sharedWith: [],
+      deadline: goalData.deadline || "",
       ...goalData,
     };
 
@@ -157,6 +160,29 @@ export const useGoalsStore = defineStore("goals", () => {
     return false;
   };
 
+  /* =========================
+       SHARE GOALS
+  ========================== */
+  const shareGoal = (goalId: string, user: { email: string; role: string }) => {
+    const goal = goals.value.find((g) => g.id === goalId);
+    if (goal) {
+      const newSharedUser: SharedUser = {
+        id: `shared-${Date.now()}`,
+        name: ((user.email ?? "") as string).split("@")[0],
+        email: user.email ?? "",
+        role: user.role,
+      };
+      goal.sharedWith = [...(goal.sharedWith || []), newSharedUser];
+    }
+  };
+
+  const unshareGoal = (goalId: string, userId: string) => {
+    const goal = goals.value.find((g) => g.id === goalId);
+    if (goal && goal.sharedWith) {
+      goal.sharedWith = goal.sharedWith.filter((u) => u.id !== userId);
+    }
+  };
+
   return {
     goals,
     totalSaved,
@@ -170,5 +196,7 @@ export const useGoalsStore = defineStore("goals", () => {
     addFunds,
     addGoal,
     requestWithdrawal,
+    shareGoal,
+    unshareGoal,
   };
 });

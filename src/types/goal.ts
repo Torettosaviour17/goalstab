@@ -13,7 +13,8 @@ export interface Goal {
   progress: number;
   lastUpdated: string;
   category?: string;
-  sharedWith?: string[];
+  // sharedWith?: string[];
+  sharedWith?: SharedUser[];
   createdAt: string;
 }
 
@@ -45,4 +46,12 @@ export interface GoalActivity {
   amount: number;
   timestamp: string;
   description: string;
+}
+
+export interface SharedUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "owner" | "contributor" | "viewer";
+  avatar?: string;
 }

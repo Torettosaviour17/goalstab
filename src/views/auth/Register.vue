@@ -237,33 +237,12 @@ const handleRegister = async () => {
   loading.value = true;
 
   try {
-    // Simulate API call
+    // Simulate API registration delay
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // Login user after registration
-    authStore.login({
-      id: "user-123",
-      email: form.email,
-      name: form.name,
-      isPremium: false,
-      connectedAccounts: [],
-      preferences: {
-        theme: "dark",
-        currency: "NGN",
-        notifications: {
-          email: true,
-          push: true,
-          goalCompleted: true,
-          depositReceived: true,
-          withdrawalRequested: true,
-          weeklyReport: true,
-        },
-        autoSaveEnabled: true,
-        twoFactorEnabled: false,
-      },
-      createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString(),
-    });
+    // After successful registration,
+    // log the user in using existing auth logic
+    await authStore.login(form.email, form.password);
 
     router.push({ name: "dashboard" });
   } catch (error) {

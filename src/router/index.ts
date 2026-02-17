@@ -32,6 +32,16 @@ const routes = [
     component: () => import("@/views/auth/Login.vue"),
     meta: { guestOnly: true },
   },
+  {
+    path: "/register",
+    name: "register",
+    component: () => import("@/views/auth/Register.vue"),
+  },
+  {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("@/views/auth/ForgotPassword.vue"),
+  },
 ];
 
 const router = createRouter({
