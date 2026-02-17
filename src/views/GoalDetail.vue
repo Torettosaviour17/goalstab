@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useGoalsStore } from "@/stores/goals";
@@ -52,21 +52,22 @@ const formatDate = (dateStr: string) =>
     year: "numeric",
   });
 
+// Open Add Funds Modal
 const openAddFundsModal = () => {
   addAmount.value = null;
   showAddFundsModal.value = true;
 };
 
+// Handle adding funds using the new store method
 const handleAddFunds = async () => {
   if (!goal.value) return;
-
   if (!addAmount.value || addAmount.value <= 0) return;
 
-  goalsStore.addToGoal(goal.value.id, addAmount.value);
-
+  goalsStore.addFunds(goal.value.id, addAmount.value);
   showAddFundsModal.value = false;
 };
 
+// Handle withdrawal using the new store method
 const handleWithdraw = () => {
   if (!goal.value) return;
 
@@ -75,9 +76,7 @@ const handleWithdraw = () => {
     return;
   }
 
-  goalsStore.requestWithdrawal(goal.value.id);
+  // Withdraw the full saved amount
+  goalsStore.withdrawFunds(goal.value.id, goal.value.saved);
 };
-
-// Remove this block.
-// Instead, define addFunds as an action in your Pinia store (see below).
 </script>
