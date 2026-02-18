@@ -67,4 +67,16 @@ export const routes: RouteRecordRaw[] = [
       title: "Page Not Found",
     },
   },
+  {
+    path: "/accounts",
+    name: "accounts",
+    component: () => import("@/views/Accounts.vue"),
+    meta: {
+      requiresAuth: true,
+      title: "Accounts",
+      icon: "🏦",
+      showInNav: true,
+      transition: "slide-left",
+    },
+  },
 ];

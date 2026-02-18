@@ -21,68 +21,13 @@
               </p>
             </div>
           </router-link>
-
           <span
             class="px-2 py-1 rounded-full bg-primary-500/20 text-primary-300 text-xs font-medium hidden md:block"
+            >Beta</span
           >
-            Beta
-          </span>
         </div>
 
         <!-- Desktop Navigation -->
-        <!-- <nav class="hidden md:flex items-center gap-1">
-          <router-link
-            to="/"
-            class="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2"
-            :class="{
-              'bg-white/10 text-white': $route.path === '/',
-              'text-gray-400 hover:text-white hover:bg-white/5':
-                $route.path !== '/',
-            }"
-          >
-            <span class="text-lg">📊</span>
-            Dashboard
-          </router-link>
-
-          <router-link
-            to="/goals"
-            class="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2"
-            :class="{
-              'bg-white/10 text-white': $route.path === '/goals',
-              'text-gray-400 hover:text-white hover:bg-white/5':
-                $route.path !== '/goals',
-            }"
-          >
-            <span class="text-lg">🎯</span>
-            Goals
-          </router-link>
-
-          <router-link
-            to="/analytics"
-            class="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2"
-            :class="{
-              'bg-white/10 text-white': $route.path === '/analytics',
-              'text-gray-400 hover:text-white hover:bg-white/5':
-                $route.path !== '/analytics',
-            }"
-          >
-            <span class="text-lg">📈</span>
-            Analytics
-          </router-link>
-
-          <router-link
-            to="/settings"
-            class="px-6 py-3 rounded-xl font-medium transition-all duration-300 flex items-center gap-2"
-            :class="{
-              'bg-white/10 text-white': $route.path === '/settings',
-              'text-gray-400 hover:text-white hover:bg-white/5':
-                $route.path !== '/settings',
-            }"
-          >
-            <span class="text-lg">⚙️</span>
-            Settings
-          </router-link>
-        </nav> -->
 
         <!-- Right section -->
         <div class="flex items-center gap-3">
@@ -91,7 +36,7 @@
             <input
               type="search"
               placeholder="Search goals..."
-              class="w-48 lg:w-64 pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+              class="w-48 lg:w-64 pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition"
             />
             <div
               class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -149,7 +94,7 @@
               </svg>
             </button>
 
-            <!-- Dropdown menu -->
+            <!-- Dropdown menu with high z-index -->
             <div
               v-if="showUserMenu"
               v-click-outside="closeUserMenu"
@@ -159,7 +104,6 @@
                 <p class="text-sm font-medium text-white">Signed in as</p>
                 <p class="text-sm text-gray-300 truncate">user@example.com</p>
               </div>
-
               <router-link
                 to="/settings"
                 @click="closeUserMenu"
@@ -167,7 +111,6 @@
               >
                 <span>⚙️</span> Settings
               </router-link>
-
               <div class="border-t border-gray-700/50 mt-2 pt-2">
                 <button
                   @click="handleLogout"
@@ -208,10 +151,8 @@
                 $route.path !== '/',
             }"
           >
-            <span class="text-lg">📊</span>
-            Dashboard
+            <span class="text-lg">📊</span> Dashboard
           </router-link>
-
           <router-link
             to="/goals"
             @click="closeMobileMenu"
@@ -222,10 +163,8 @@
                 $route.path !== '/goals',
             }"
           >
-            <span class="text-lg">🎯</span>
-            Goals
+            <span class="text-lg">🎯</span> Goals
           </router-link>
-
           <router-link
             to="/analytics"
             @click="closeMobileMenu"
@@ -236,10 +175,8 @@
                 $route.path !== '/analytics',
             }"
           >
-            <span class="text-lg">📈</span>
-            Analytics
+            <span class="text-lg">📈</span> Analytics
           </router-link>
-
           <router-link
             to="/settings"
             @click="closeMobileMenu"
@@ -263,7 +200,6 @@ import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-
 const showUserMenu = ref(false);
 const mobileMenuOpen = ref(false);
 const hasUnreadNotifications = ref(true);
@@ -294,7 +230,6 @@ const handleLogout = async () => {
   router.push("/login");
 };
 
-// Close menus on escape key
 const handleEscapeKey = (event: KeyboardEvent) => {
   if (event.key === "Escape") {
     if (showUserMenu.value) closeUserMenu();

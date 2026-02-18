@@ -1,186 +1,213 @@
 <template>
-  <form @submit.prevent="handleSubmit" class="space-y-4">
-    <!-- Title -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-1"
-        >Goal Title</label
-      >
-      <input
-        v-model="form.title"
-        type="text"
-        required
-        placeholder="e.g., New MacBook"
-        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-      />
-    </div>
-
-    <!-- Target Amount -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-1"
-        >Target Amount (₦)</label
-      >
-      <input
-        v-model.number="form.target"
-        type="number"
-        required
-        min="1000"
-        step="1000"
-        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-      />
-    </div>
-
-    <!-- Icon Selection -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-2">Icon</label>
-      <div class="flex flex-wrap gap-2">
-        <button
-          v-for="icon in icons"
-          :key="icon"
-          type="button"
-          @click="form.icon = icon"
-          :class="[
-            'w-10 h-10 rounded-lg flex items-center justify-center text-xl transition',
-            form.icon === icon
-              ? 'bg-primary-500'
-              : 'bg-gray-700 hover:bg-gray-600',
-          ]"
+  <div class="min-h-screen flex items-center pt-60 justify-center px-4">
+    <form
+      @submit.prevent="handleSubmit"
+      class="space-y-4 bg-gray-800 p-6 rounded-xl border border-gray-700"
+    >
+      <!-- Title -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1"
+          >Goal Title</label
         >
-          {{ icon }}
-        </button>
+        <input
+          v-model="form.title"
+          type="text"
+          required
+          placeholder="e.g., New MacBook"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
       </div>
-    </div>
 
-    <!-- Color Selection -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-2"
-        >Color Theme</label
-      >
-      <div class="flex gap-2">
-        <button
-          v-for="color in colors"
-          :key="color.value"
-          type="button"
-          @click="form.color = color.value"
-          :class="[
-            'flex-1 py-2 rounded-lg font-medium transition',
-            form.color === color.value
-              ? 'ring-2 ring-white'
-              : 'opacity-70 hover:opacity-100',
-          ]"
-          :style="{ background: color.bg }"
+      <!-- Target Amount -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1"
+          >Target Amount (₦)</label
         >
-          {{ color.label }}
-        </button>
+        <input
+          v-model.number="form.target"
+          type="number"
+          required
+          min="1000"
+          step="1000"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
       </div>
-    </div>
 
-    <!-- Auto-save Type -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-2"
-        >Auto-save Type</label
-      >
-      <div class="flex gap-2">
-        <button
-          type="button"
-          @click="form.type = 'percentage'"
-          :class="[
-            'flex-1 py-2 rounded-lg transition',
-            form.type === 'percentage'
-              ? 'bg-primary-500'
-              : 'bg-gray-700 hover:bg-gray-600',
-          ]"
-        >
-          Percentage
-        </button>
-        <button
-          type="button"
-          @click="form.type = 'fixed'"
-          :class="[
-            'flex-1 py-2 rounded-lg transition',
-            form.type === 'fixed'
-              ? 'bg-primary-500'
-              : 'bg-gray-700 hover:bg-gray-600',
-          ]"
-        >
-          Fixed Amount
-        </button>
+      <!-- Icon Selection -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Icon</label>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="icon in icons"
+            :key="icon"
+            type="button"
+            @click.stop="form.icon = icon"
+            :class="[
+              'w-10 h-10 rounded-lg flex items-center justify-center text-xl transition',
+              form.icon === icon
+                ? 'bg-primary-500'
+                : 'bg-gray-700 hover:bg-gray-600',
+            ]"
+          >
+            {{ icon }}
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- Auto-save Value -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-1">
-        {{ form.type === "percentage" ? "Percentage (%)" : "Amount (₦)" }}
-      </label>
-      <input
-        v-model.number="form.autoSave"
-        type="number"
-        required
-        :min="form.type === 'percentage' ? 1 : 1000"
-        :max="form.type === 'percentage' ? 100 : undefined"
-        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-      />
-    </div>
+      <!-- Color Theme Selection -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2"
+          >Color Theme</label
+        >
+        <div class="flex gap-2 flex-wrap">
+          <button
+            v-for="color in colors"
+            :key="color.value"
+            type="button"
+            @click.stop="form.color = color.value"
+            :class="[
+              'flex-1 py-2 rounded-lg font-medium transition min-w-[80px]',
+              form.color === color.value
+                ? 'ring-2 ring-white'
+                : 'opacity-70 hover:opacity-100',
+            ]"
+            :style="{ background: color.bg }"
+          >
+            {{ color.label }}
+          </button>
+        </div>
+      </div>
 
-    <!-- Frequency -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-2"
-        >Frequency</label
-      >
-      <select
-        v-model="form.frequency"
-        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-      >
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-        <option value="monthly">Monthly</option>
-      </select>
-    </div>
+      <!-- Auto-save Type -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2"
+          >Auto-save Type</label
+        >
+        <div class="flex gap-2 flex-wrap">
+          <button
+            type="button"
+            @click="form.type = 'percentage'"
+            :class="[
+              'flex-1 py-2 rounded-lg transition min-w-[120px]',
+              form.type === 'percentage'
+                ? 'bg-primary-500'
+                : 'bg-gray-700 hover:bg-gray-600',
+            ]"
+          >
+            Percentage
+          </button>
+          <button
+            type="button"
+            @click="form.type = 'fixed'"
+            :class="[
+              'flex-1 py-2 rounded-lg transition min-w-[120px]',
+              form.type === 'fixed'
+                ? 'bg-primary-500'
+                : 'bg-gray-700 hover:bg-gray-600',
+            ]"
+          >
+            Fixed Amount
+          </button>
+        </div>
+      </div>
 
-    <!-- Deadline (optional) -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-1"
-        >Deadline (optional)</label
-      >
-      <input
-        v-model="form.deadline"
-        type="date"
-        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-      />
-    </div>
+      <!-- Auto-save Value -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">
+          {{ form.type === "percentage" ? "Percentage (%)" : "Amount (₦)" }}
+        </label>
+        <input
+          v-model.number="form.autoSave"
+          type="number"
+          required
+          :min="form.type === 'percentage' ? 1 : 1000"
+          :max="form.type === 'percentage' ? 100 : undefined"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
 
-    <!-- Category (optional) -->
-    <div>
-      <label class="block text-sm font-medium text-gray-300 mb-1"
-        >Category</label
-      >
-      <select
-        v-model="form.category"
-        class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-      >
-        <option value="">Select category</option>
-        <option value="Electronics">Electronics</option>
-        <option value="Travel">Travel</option>
-        <option value="Savings">Savings</option>
-        <option value="Education">Education</option>
-        <option value="Health">Health</option>
-        <option value="Other">Other</option>
-      </select>
-    </div>
+      <!-- Frequency -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2"
+          >Frequency</label
+        >
+        <select
+          v-model="form.frequency"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
 
-    <!-- Submit Button -->
-    <div class="pt-4">
-      <BaseButton type="submit" fullWidth :loading="loading">
-        {{ submitLabel }}
-      </BaseButton>
-    </div>
-  </form>
+      <!-- Deadline (optional) -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1"
+          >Deadline (optional)</label
+        >
+        <input
+          v-model="form.deadline"
+          type="date"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+
+      <!-- Category (optional) -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1"
+          >Category</label
+        >
+        <select
+          v-model="form.category"
+          class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">Select category</option>
+          <option value="Electronics">Electronics</option>
+          <option value="Travel">Travel</option>
+          <option value="Savings">Savings</option>
+          <option value="Education">Education</option>
+          <option value="Health">Health</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <!-- Account Selector -->
+      <div>
+        <AccountSelector
+          v-model="form.accountId"
+          label="Linked Account"
+          required
+        />
+      </div>
+
+      <!-- Submit Button -->
+      <div class="pt-4">
+        <BaseButton type="submit" fullWidth :loading="loading">
+          {{ submitLabel }}
+        </BaseButton>
+      </div>
+    </form>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref } from "vue";
 import BaseButton from "@/components/shared/BaseButton.vue";
-import type { GoalFormData } from "@/types/goal";
+import AccountSelector from "@/components/accounts/AccountSelector.vue";
+
+interface GoalFormData {
+  title: string;
+  target: number;
+  icon: string;
+  color: string;
+  type: "percentage" | "fixed";
+  autoSave: number;
+  frequency: "daily" | "weekly" | "monthly";
+  deadline?: string;
+  category?: string;
+  accountId: string;
+}
 
 interface Props {
   initialData?: Partial<GoalFormData>;
@@ -233,11 +260,11 @@ const form = reactive<GoalFormData>({
   frequency: props.initialData.frequency || "weekly",
   deadline: props.initialData.deadline || "",
   category: props.initialData.category || "",
+  accountId: props.initialData.accountId ?? "",
 });
 
 const handleSubmit = async () => {
   loading.value = true;
-  // Simulate API call
   await new Promise((resolve) => setTimeout(resolve, 1000));
   emit("submit", { ...form });
   loading.value = false;

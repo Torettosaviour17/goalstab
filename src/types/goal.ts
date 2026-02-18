@@ -10,6 +10,8 @@ export interface Goal {
   frequency: "daily" | "weekly" | "monthly";
   deadline?: string;
   locked: boolean;
+  accountId?: string;
+
   progress: number;
   lastUpdated: string;
   category?: string;

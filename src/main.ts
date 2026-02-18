@@ -6,9 +6,11 @@ import router from "./router";
 import { useAuthStore } from "./stores/auth";
 import "./style.css";
 import VueApexCharts from "vue3-apexcharts";
+import clickOutside from "./directives/clickOutside";
 
 // Create app instance
 const app = createApp(App);
+app.directive("click-outside", clickOutside);
 
 // Initialize Pinia
 const pinia = createPinia();
