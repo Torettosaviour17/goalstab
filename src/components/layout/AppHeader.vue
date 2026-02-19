@@ -197,8 +197,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
 const router = useRouter();
+const authStore = useAuthStore();
 const showUserMenu = ref(false);
 const mobileMenuOpen = ref(false);
 const hasUnreadNotifications = ref(true);
@@ -225,7 +227,7 @@ const toggleNotifications = () => {
 
 const handleLogout = async () => {
   closeUserMenu();
-  localStorage.removeItem("token");
+  authStore.logout();
   router.push("/login");
 };
 
