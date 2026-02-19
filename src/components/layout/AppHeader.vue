@@ -1,6 +1,6 @@
 <template>
   <header
-    class="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800/50"
+    class="sticky z-60 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800/50"
   >
     <div class="container mx-auto px-4 md:px-6">
       <div class="flex items-center justify-between h-16">
@@ -97,7 +97,6 @@
             <!-- Dropdown menu with high z-index -->
             <div
               v-if="showUserMenu"
-              v-click-outside="closeUserMenu"
               class="absolute right-0 mt-2 w-48 bg-gray-800/90 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl py-2 z-50"
             >
               <div class="px-4 py-3 border-b border-gray-700/50">

@@ -1,5 +1,5 @@
 <template>
-  <div class="md:hidden">
+  <div class="md:hidden relative">
     <!-- Mobile Menu Button -->
     <button
       @click="isOpen = !isOpen"
@@ -20,8 +20,8 @@
     >
       <div
         v-if="isOpen"
-        class="absolute top-16 left-4 right-4 glass-card rounded-2xl p-4 shadow-2xl z-50"
         v-click-outside="closeMenu"
+        class="absolute top-16 left-4 right-4 glass-card rounded-2xl p-4 shadow-2xl z-50"
       >
         <div class="space-y-2">
           <router-link
@@ -54,6 +54,7 @@
               </p>
             </div>
           </div>
+
           <router-link
             to="/settings"
             @click="closeMenu"
@@ -61,6 +62,7 @@
           >
             <span>⚙️</span> Settings
           </router-link>
+
           <button
             @click="handleLogout"
             class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-red-400 transition"

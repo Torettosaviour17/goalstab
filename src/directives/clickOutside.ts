@@ -1,23 +1,26 @@
-import type { Directive } from "vue";
+import type { DirectiveBinding } from "vue";
 
-interface ClickOutsideElement extends HTMLElement {
-  _clickOutside?: (event: Event) => void;
+interface ClickOutsideHTMLElement extends HTMLElement {
+  __clickOutsideHandler__?: (event: MouseEvent) => void;
 }
 
-const clickOutside: Directive = {
-  mounted(el: ClickOutsideElement, binding) {
-    el._clickOutside = (event: Event) => {
+export default {
+  beforeMount(el: ClickOutsideHTMLElement, binding: DirectiveBinding) {
+    el.__clickOutsideHandler__ = (event: MouseEvent) => {
       if (!(el === event.target || el.contains(event.target as Node))) {
         binding.value(event);
       }
     };
-    document.addEventListener("click", el._clickOutside);
+
+    // Delay listener to prevent immediate close on open
+    setTimeout(() => {
+      document.addEventListener("click", el.__clickOutsideHandler__!);
+    }, 0);
   },
-  unmounted(el: ClickOutsideElement) {
-    if (el._clickOutside) {
-      document.removeEventListener("click", el._clickOutside);
+
+  unmounted(el: ClickOutsideHTMLElement) {
+    if (el.__clickOutsideHandler__) {
+      document.removeEventListener("click", el.__clickOutsideHandler__);
     }
   },
 };
-
-export default clickOutside;

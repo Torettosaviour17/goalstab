@@ -16,7 +16,7 @@
     <!-- Header always visible -->
     <AppHeader />
 
-    <div class="flex pt-16">
+    <div class="flex">
       <!-- Sidebar only if authenticated and not on auth pages -->
       <AppSidebar v-if="showSidebar" />
 
