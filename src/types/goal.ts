@@ -11,11 +11,9 @@ export interface Goal {
   deadline?: string;
   locked: boolean;
   accountId?: string;
-
   progress: number;
   lastUpdated: string;
   category?: string;
-  // sharedWith?: string[];
   sharedWith?: SharedUser[];
   createdAt: string;
 }

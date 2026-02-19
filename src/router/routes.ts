@@ -79,4 +79,23 @@ export const routes: RouteRecordRaw[] = [
       transition: "slide-left",
     },
   },
+  {
+    path: "/goals/:id",
+    name: "goal-detail",
+    component: () => import("@/views/GoalDetail.vue"),
+    meta: {
+      requiresAuth: true,
+      title: "Goal Details",
+    },
+  },
+  {
+    path: "/goals/:id",
+    name: "goal-detail",
+    component: () => import("@/views/GoalDetail.vue"),
+    meta: {
+      requiresAuth: true,
+      title: "Goal Details",
+      transition: "slide-left",
+    },
+  },
 ];

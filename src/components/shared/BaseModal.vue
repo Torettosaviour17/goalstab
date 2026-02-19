@@ -13,7 +13,7 @@
 
       <!-- Modal panel -->
       <div
-        class="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-gray-800 border border-gray-700 mb-4 shadow-2xl transition-all animate-fade-in"
+        class="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-gray-800 border border-gray-700 mb-4 shadow-2xl transition-all animate-fade-in p-2"
         @click.stop
       >
         <!-- Header -->

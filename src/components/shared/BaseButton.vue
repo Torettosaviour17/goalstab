@@ -1,15 +1,14 @@
 <template>
   <button
     :class="[
-      'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed',
+      'inline-flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed',
       sizeClasses,
       variantClasses,
-      fullWidth ? 'w-full' : '',
+      fullWidth && 'w-full',
     ]"
     :disabled="loading || disabled"
-    @click="$emit('click')"
+    @click="$emit('click', $event)"
   >
-    <!-- Loading spinner -->
     <svg
       v-if="loading"
       class="animate-spin h-4 w-4"
@@ -31,13 +30,9 @@
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
       />
     </svg>
-
-    <!-- Icon slot -->
-    <span v-if="$slots.icon" class="flex items-center">
-      <slot name="icon" />
-    </span>
-
-    <!-- Default slot -->
+    <span v-if="$slots.icon" class="flex items-center"
+      ><slot name="icon"
+    /></span>
     <slot />
   </button>
 </template>
@@ -45,24 +40,25 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-interface Props {
-  variant?: "primary" | "secondary" | "danger" | "ghost" | "outline";
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  loading?: boolean;
-  disabled?: boolean;
-  fullWidth?: boolean;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  variant: "primary",
-  size: "md",
-  loading: false,
-  disabled: false,
-  fullWidth: false,
-});
+const props = withDefaults(
+  defineProps<{
+    variant?: "primary" | "secondary" | "danger" | "ghost" | "outline";
+    size?: "xs" | "sm" | "md" | "lg" | "xl";
+    loading?: boolean;
+    disabled?: boolean;
+    fullWidth?: boolean;
+  }>(),
+  {
+    variant: "primary",
+    size: "md",
+    loading: false,
+    disabled: false,
+    fullWidth: false,
+  },
+);
 
 defineEmits<{
-  (e: "click"): void;
+  (e: "click", event: MouseEvent): void;
 }>();
 
 const sizeClasses = computed(

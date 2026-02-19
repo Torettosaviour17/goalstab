@@ -1,9 +1,5 @@
 <template>
-  <div
-    class="glass-card p-5 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
-    @click="$emit('click')"
-  >
-    <!-- Header -->
+  <div @click="$emit('click', goal)">
     <div class="flex items-start justify-between mb-4">
       <div class="flex items-center gap-3">
         <div
@@ -15,8 +11,6 @@
         <div>
           <h3 class="font-bold text-white flex items-center gap-2">
             {{ goal.title }}
-
-            <!-- 👥 Shared indicator -->
             <span
               v-if="goal.sharedWith?.length"
               class="text-xs bg-primary-500/20 text-primary-400 px-2 py-0.5 rounded-full flex items-center gap-1"
@@ -25,23 +19,17 @@
               👥 {{ goal.sharedWith.length }}
             </span>
           </h3>
-
-          <p class="text-sm text-gray-400">
-            {{ goal.category || "General" }}
-          </p>
+          <p class="text-sm text-gray-400">{{ goal.category || "General" }}</p>
         </div>
       </div>
 
-      <!-- Locked badge -->
       <span class="text-xs px-2 py-1 rounded-full" :class="lockedClass">
         {{ goal.locked ? "Locked" : "Unlocked" }}
       </span>
     </div>
 
-    <!-- Progress -->
     <GoalProgress :value="goal.progress" :color="progressColor" class="mb-4" />
 
-    <!-- Amounts -->
     <div class="flex justify-between items-center mb-4">
       <div>
         <p class="text-2xl font-bold text-white">
@@ -58,18 +46,17 @@
               ? `${goal.autoSave}%`
               : `₦${formatNumber(goal.autoSave)}`
           }}
-          <span class="text-xs text-gray-400"> /{{ goal.frequency }} </span>
+          <span class="text-xs text-gray-400"> / {{ goal.frequency }} </span>
         </p>
       </div>
     </div>
 
-    <!-- Actions -->
     <div class="flex gap-2">
       <BaseButton
         variant="secondary"
         size="sm"
         class="flex-1"
-        @click.stop="$emit('add-funds')"
+        @click.stop="$emit('add-funds', goal)"
       >
         <template #icon>💰</template>
         Add
@@ -80,7 +67,7 @@
         size="sm"
         class="flex-1"
         :disabled="goal.locked"
-        @click.stop="$emit('withdraw')"
+        @click.stop="$emit('withdraw', goal)"
       >
         <template #icon>💸</template>
         {{ goal.locked ? "Locked" : "Withdraw" }}
@@ -95,25 +82,21 @@ import BaseButton from "@/components/shared/BaseButton.vue";
 import GoalProgress from "./GoalProgress.vue";
 import type { Goal } from "@/types/goal";
 
-interface Props {
-  goal: Goal;
-}
+const props = defineProps<{ goal: Goal }>();
 
-const props = defineProps<Props>();
-
-defineEmits<{
-  (e: "click"): void;
-  (e: "add-funds"): void;
-  (e: "withdraw"): void;
+const emit = defineEmits<{
+  (e: "click", goal: Goal): void;
+  (e: "add-funds", goal: Goal): void;
+  (e: "withdraw", goal: Goal): void;
 }>();
 
 const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
 
-const lockedClass = computed(() => {
-  return props.goal.locked
+const lockedClass = computed(() =>
+  props.goal.locked
     ? "bg-gray-700 text-gray-300"
-    : "bg-success/20 text-success";
-});
+    : "bg-success/20 text-success",
+);
 
 const progressColor = computed(() => {
   if (props.goal.progress >= 100) return "success";
