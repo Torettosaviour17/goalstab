@@ -98,4 +98,16 @@ export const routes: RouteRecordRaw[] = [
       transition: "slide-left",
     },
   },
+  {
+    path: "/analytics",
+    name: "analytics",
+    component: () => import("@/views/Analytics.vue"),
+    meta: {
+      requiresAuth: true,
+      title: "Analytics",
+      icon: "📈",
+      showInNav: true,
+      transition: "slide-up",
+    },
+  },
 ];

@@ -2,13 +2,27 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { useUIStore } from "./ui";
 
+export interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  goalCompleted: boolean;
+  depositReceived: boolean;
+  weeklyReport: boolean;
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
+  phone?: string;
   isPremium: boolean;
   avatar?: string;
-  preferences: any;
+  preferences: {
+    currency: string;
+    theme: string;
+    autoSaveDefault: boolean;
+    notifications: NotificationSettings;
+  };
 }
 
 export const useAuthStore = defineStore("auth", () => {
@@ -24,7 +38,6 @@ export const useAuthStore = defineStore("auth", () => {
   ================================ */
   const checkAuth = () => {
     if (token.value) {
-      // Try to restore user from localStorage
       const storedUser = localStorage.getItem("user");
       if (storedUser) {
         user.value = JSON.parse(storedUser);
@@ -34,8 +47,20 @@ export const useAuthStore = defineStore("auth", () => {
           id: "1",
           email: "demo@example.com",
           name: "Demo User",
+          phone: "+234 800 000 0000",
           isPremium: true,
-          preferences: {},
+          preferences: {
+            currency: "NGN",
+            theme: "dark",
+            autoSaveDefault: true,
+            notifications: {
+              email: true,
+              push: true,
+              goalCompleted: true,
+              depositReceived: true,
+              weeklyReport: false,
+            },
+          },
         };
       }
     }
@@ -53,8 +78,20 @@ export const useAuthStore = defineStore("auth", () => {
         id: "1",
         email,
         name: "Demo User",
+        phone: "+234 800 000 0000",
         isPremium: true,
-        preferences: {},
+        preferences: {
+          currency: "NGN",
+          theme: "dark",
+          autoSaveDefault: true,
+          notifications: {
+            email: true,
+            push: true,
+            goalCompleted: true,
+            depositReceived: true,
+            weeklyReport: false,
+          },
+        },
       };
       token.value = "fake-jwt-token";
 
@@ -71,12 +108,33 @@ export const useAuthStore = defineStore("auth", () => {
   const logout = () => {
     user.value = null;
     token.value = null;
-
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
     uiStore.addToast({ type: "info", message: "Logged out" });
   };
 
-  return { user, token, isAuthenticated, login, logout, checkAuth };
+  const updateUser = (userData: Partial<User>) => {
+    if (user.value) {
+      user.value = { ...user.value, ...userData };
+      localStorage.setItem("user", JSON.stringify(user.value));
+    }
+  };
+
+  const updatePreferences = (prefs: Partial<User["preferences"]>) => {
+    if (user.value) {
+      user.value.preferences = { ...user.value.preferences, ...prefs };
+      localStorage.setItem("user", JSON.stringify(user.value));
+    }
+  };
+
+  return {
+    user,
+    token,
+    isAuthenticated,
+    login,
+    logout,
+    checkAuth,
+    updateUser,
+    updatePreferences,
+  };
 });

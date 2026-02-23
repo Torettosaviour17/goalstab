@@ -4,34 +4,59 @@
       <!-- Current shared users -->
       <div v-if="sharedUsers.length" class="space-y-2">
         <p class="text-sm font-medium text-gray-300">People with access</p>
-        <SharedUserBadge
+        <div
           v-for="user in sharedUsers"
           :key="user.id"
-          :user="user"
-          :can-remove="user.role !== 'owner'"
-          @remove="removeUser(user.id)"
-        />
+          class="flex items-center justify-between p-3 rounded-lg bg-gray-800/50"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-8 h-8 rounded-full bg-primary-500/20 flex items-center justify-center"
+            >
+              <span class="text-sm">{{ user.name.charAt(0) }}</span>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-white">{{ user.name }}</p>
+              <p class="text-xs text-gray-400">{{ user.email }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              class="text-xs px-2 py-1 rounded-full"
+              :class="roleClass(user.role)"
+            >
+              {{ user.role }}
+            </span>
+            <button
+              v-if="user.role !== 'owner'"
+              @click="removeUser(user.id)"
+              class="p-1 hover:bg-gray-700 rounded transition"
+            >
+              <span class="text-sm text-gray-400 hover:text-danger">✕</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Add new user -->
       <div class="space-y-3">
         <p class="text-sm font-medium text-gray-300">Add person</p>
-        <div class="flex gap-2">
+        <div class="flex flex-col sm:flex-row gap-2">
           <input
-            v-model="newUser.email"
+            v-model="newEmail"
             type="email"
             placeholder="Email address"
             class="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           <select
-            v-model="newUser.role"
+            v-model="newRole"
             class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="contributor">Contributor</option>
             <option value="viewer">Viewer</option>
           </select>
         </div>
-        <BaseButton @click="addUser" :disabled="!newUser.email">
+        <BaseButton @click="addUser" :disabled="!newEmail">
           Add Person
         </BaseButton>
       </div>
@@ -56,7 +81,6 @@
 import { ref, computed } from "vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import BaseButton from "@/components/shared/BaseButton.vue";
-import SharedUserBadge from "./SharedUserBadge.vue";
 import type { SharedUser } from "@/types/goal";
 
 const props = defineProps<{
@@ -67,7 +91,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: boolean): void;
-  (e: "share", user: { email: string; role: string }): void;
+  (e: "share", user: { email: string; role: "contributor" | "viewer" }): void;
   (e: "unshare", userId: string): void;
 }>();
 
@@ -76,20 +100,26 @@ const show = computed({
   set: (val) => emit("update:modelValue", val),
 });
 
-const newUser = ref({
-  email: "",
-  role: "contributor" as const,
-});
+const newEmail = ref("");
+const newRole = ref<"contributor" | "viewer">("contributor");
 
 const shareableLink = computed(() => {
   return `${window.location.origin}/shared-goal/${props.goalId}`;
 });
 
+const roleClass = (role: string) => {
+  const classes = {
+    owner: "bg-primary-500/20 text-primary-300",
+    contributor: "bg-success/20 text-success",
+    viewer: "bg-gray-700 text-gray-300",
+  };
+  return classes[role as keyof typeof classes] || classes.viewer;
+};
+
 const addUser = () => {
-  if (newUser.value.email) {
-    emit("share", { ...newUser.value });
-    newUser.value.email = "";
-  }
+  if (!newEmail.value) return;
+  emit("share", { email: newEmail.value, role: newRole.value });
+  newEmail.value = "";
 };
 
 const removeUser = (userId: string) => {
@@ -98,6 +128,6 @@ const removeUser = (userId: string) => {
 
 const copyLink = async () => {
   await navigator.clipboard.writeText(shareableLink.value);
-  // Show toast (optional)
+  // You can trigger a toast here if you want
 };
 </script>

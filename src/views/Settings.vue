@@ -3,7 +3,7 @@
     <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
     <p class="text-gray-400 mb-8">Manage your account preferences</p>
 
-    <!-- Mobile: Horizontal scrollable tabs -->
+    <!-- Mobile-friendly tabs -->
     <div class="relative mb-6">
       <div class="flex overflow-x-auto scrollbar-hide gap-2 pb-2">
         <button
@@ -20,16 +20,8 @@
           {{ tab.name }}
         </button>
       </div>
-      <!-- Optional gradient fade on edges (decorative) -->
-      <div
-        class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none"
-      ></div>
-      <div
-        class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none"
-      ></div>
     </div>
 
-    <!-- Content Sections -->
     <transition name="fade" mode="out-in">
       <!-- Profile -->
       <div v-if="activeTab === 'profile'" class="space-y-6">
@@ -66,7 +58,9 @@
                 class="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
-            <BaseButton @click="saveProfile">Save Changes</BaseButton>
+            <BaseButton @click="saveProfile" :loading="saving"
+              >Save Changes</BaseButton
+            >
           </div>
         </div>
 
@@ -78,7 +72,10 @@
             >
               {{ profile.name?.charAt(0) || "U" }}
             </div>
-            <BaseButton variant="secondary" class="w-full sm:w-auto"
+            <BaseButton
+              variant="secondary"
+              class="w-full sm:w-auto"
+              @click="changeAvatar"
               >Change Avatar</BaseButton
             >
           </div>
@@ -105,10 +102,14 @@
             >
               <input
                 type="checkbox"
-                v-model="notifications[item.key as keyof typeof notifications]"
+                :checked="notifications[item.key as keyof typeof notifications]"
+                @change="
+                  notifications[item.key as keyof typeof notifications] = (
+                    $event.target as HTMLInputElement
+                  ).checked
+                "
                 class="sr-only peer"
               />
-
               <div
                 class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-500"
               ></div>
@@ -116,7 +117,9 @@
           </div>
         </div>
         <div class="mt-6">
-          <BaseButton @click="saveNotifications">Save Preferences</BaseButton>
+          <BaseButton @click="saveNotifications" :loading="saving"
+            >Save Preferences</BaseButton
+          >
         </div>
       </div>
 
@@ -155,7 +158,9 @@
                 class="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-xl"
               />
             </div>
-            <BaseButton @click="changePassword">Update Password</BaseButton>
+            <BaseButton @click="changePassword" :loading="saving"
+              >Update Password</BaseButton
+            >
           </div>
         </div>
 
@@ -165,7 +170,9 @@
             Once you delete your account, there is no going back. Please be
             certain.
           </p>
-          <BaseButton variant="danger">Delete Account</BaseButton>
+          <BaseButton variant="danger" @click="confirmDelete"
+            >Delete Account</BaseButton
+          >
         </div>
       </div>
 
@@ -230,7 +237,9 @@
           </div>
         </div>
         <div class="mt-6">
-          <BaseButton @click="savePreferences">Save Preferences</BaseButton>
+          <BaseButton @click="savePreferences" :loading="saving"
+            >Save Preferences</BaseButton
+          >
         </div>
       </div>
     </transition>
@@ -238,15 +247,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 
+interface NotificationSettings {
+  email: boolean;
+  push: boolean;
+  goalCompleted: boolean;
+  depositReceived: boolean;
+  weeklyReport: boolean;
+}
+
+const router = useRouter();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
 
 const activeTab = ref("profile");
+const saving = ref(false);
 
 const tabs = [
   { id: "profile", name: "Profile" },
@@ -257,9 +277,9 @@ const tabs = [
 
 // Profile
 const profile = reactive({
-  name: authStore.user?.name || "Demo User",
-  email: authStore.user?.email || "demo@example.com",
-  phone: "+234 800 000 0000",
+  name: "",
+  email: "",
+  phone: "",
 });
 
 // Notifications
@@ -289,9 +309,9 @@ const notificationItems = [
     label: "Weekly Report",
     description: "Receive weekly summary",
   },
-];
+] as const;
 
-const notifications = reactive({
+const notifications = reactive<NotificationSettings>({
   email: true,
   push: true,
   goalCompleted: true,
@@ -313,25 +333,70 @@ const preferences = reactive({
   autoSaveDefault: true,
 });
 
-const saveProfile = () => {
+// Load user data on mount
+onMounted(() => {
+  if (authStore.user) {
+    profile.name = authStore.user.name || "";
+    profile.email = authStore.user.email || "";
+    profile.phone = (authStore.user as any).phone || "";
+
+    if (authStore.user.preferences) {
+      const prefs = authStore.user.preferences;
+      if (prefs.notifications) {
+        Object.assign(notifications, prefs.notifications);
+      }
+      preferences.currency = prefs.currency || "NGN";
+      preferences.theme = prefs.theme || "dark";
+      preferences.autoSaveDefault = prefs.autoSaveDefault ?? true;
+    }
+  }
+});
+
+const saveProfile = async () => {
+  saving.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API
+  authStore.updateUser({
+    name: profile.name,
+    email: profile.email,
+    phone: profile.phone,
+  });
   uiStore.addToast({
     type: "success",
     message: "Profile updated successfully",
   });
+  saving.value = false;
 };
 
-const saveNotifications = () => {
+const changeAvatar = () => {
+  uiStore.addToast({ type: "info", message: "Avatar change coming soon" });
+};
+
+const saveNotifications = async () => {
+  saving.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  authStore.updatePreferences({ notifications: { ...notifications } });
   uiStore.addToast({
     type: "success",
     message: "Notification preferences saved",
   });
+  saving.value = false;
 };
 
-const changePassword = () => {
+const changePassword = async () => {
   if (password.new !== password.confirm) {
-    uiStore.addToast({ type: "error", message: "Passwords do not match" });
+    uiStore.addToast({ type: "error", message: "New passwords do not match" });
     return;
   }
+  if (password.new.length < 6) {
+    uiStore.addToast({
+      type: "error",
+      message: "Password must be at least 6 characters",
+    });
+    return;
+  }
+  saving.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  // In a real app, call API to change password
   uiStore.addToast({
     type: "success",
     message: "Password changed successfully",
@@ -339,10 +404,37 @@ const changePassword = () => {
   password.current = "";
   password.new = "";
   password.confirm = "";
+  saving.value = false;
 };
 
-const savePreferences = () => {
+const savePreferences = async () => {
+  saving.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  authStore.updatePreferences({
+    currency: preferences.currency,
+    theme: preferences.theme,
+    autoSaveDefault: preferences.autoSaveDefault,
+  });
+  // Optionally apply theme immediately
+  if (preferences.theme === "light") {
+    document.documentElement.classList.remove("dark");
+  } else {
+    document.documentElement.classList.add("dark");
+  }
   uiStore.addToast({ type: "success", message: "Preferences saved" });
+  saving.value = false;
+};
+
+const confirmDelete = () => {
+  if (
+    confirm(
+      "Are you sure you want to delete your account? This action cannot be undone.",
+    )
+  ) {
+    authStore.logout();
+    router.push("/");
+    uiStore.addToast({ type: "info", message: "Account deleted" });
+  }
 };
 </script>
 
