@@ -167,6 +167,11 @@ const userInitials = computed(() => {
     .slice(0, 2)
 })
 
+const toggleNotifications = () => {
+  // Placeholder – will be implemented later
+  console.log('Notifications toggled')
+}
+
 // UI Actions
 const toggleUserMenu = () => (showUserMenu.value = !showUserMenu.value)
 const closeUserMenu = () => (showUserMenu.value = false)

@@ -1,20 +1,7 @@
 <template>
   <div class="container mx-auto px-4 py-6 md:px-8 md:py-10">
-    <!-- Welcome -->
-    <div class="mb-10">
-      <h1 class="text-3xl md:text-4xl font-bold text-white mb-3 leading-tight">
-        Welcome back,
-        <span
-          class="bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent"
-        >
-          {{ userName }}
-        </span>
-        👋
-      </h1>
-      <p class="text-gray-400 text-lg">
-        Track your savings and reach your financial goals
-      </p>
-    </div>
+    <!-- Welcome Banner (auto-dismiss after 5 seconds) -->
+    <WelcomeBanner :user-name="userName" />
 
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
@@ -153,6 +140,7 @@ import Confetti from "@/components/shared/Confetti.vue";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import EmptyState from "@/components/dashboard/EmptyState.vue";
+import WelcomeBanner from "@/components/dashboard/WelcomeBanner.vue";
 
 const router = useRouter();
 const goalsStore = useGoalsStore();
