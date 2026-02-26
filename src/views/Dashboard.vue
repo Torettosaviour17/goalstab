@@ -1,37 +1,46 @@
 <template>
-  <div class="container mx-auto px-4 py-6 md:px-6 md:py-8">
+  <div class="container mx-auto px-4 py-6 md:px-8 md:py-10">
     <!-- Welcome -->
-    <div class="mb-8">
-      <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">
+    <div class="mb-10">
+      <h1 class="text-3xl md:text-4xl font-bold text-white mb-3 leading-tight">
         Welcome back,
-        <span class="text-primary-400">{{ userName }}</span> 👋
+        <span
+          class="bg-gradient-to-r from-primary-400 to-secondary-400 bg-clip-text text-transparent"
+        >
+          {{ userName }}
+        </span>
+        👋
       </h1>
-      <p class="text-gray-400">
+      <p class="text-gray-400 text-lg">
         Track your savings and reach your financial goals
       </p>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
       <StatsCard
+        class="hover:scale-[1.02] transition-all duration-300"
         title="Total Saved"
         :value="formatCurrency(totalSaved)"
         icon="💰"
         trend="+12.5%"
       />
       <StatsCard
+        class="hover:scale-[1.02] transition-all duration-300"
         title="Active Goals"
         :value="activeGoalsCount"
         icon="🎯"
         trend="+2"
       />
       <StatsCard
+        class="hover:scale-[1.02] transition-all duration-300"
         title="Progress"
         :value="`${overallProgress}%`"
         icon="📈"
         trend="+8%"
       />
       <StatsCard
+        class="hover:scale-[1.02] transition-all duration-300"
         title="Monthly Growth"
         :value="formatCurrency(monthlyGrowth)"
         icon="🚀"
@@ -40,40 +49,60 @@
     </div>
 
     <!-- Goals Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Goals -->
       <div class="lg:col-span-2">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-bold text-white">Your Goals</h2>
-          <BaseButton @click="uiStore.openCreateGoalModal()" size="sm">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-2xl font-semibold text-white">Your Goals</h2>
+
+          <BaseButton
+            @click="uiStore.openCreateGoalModal()"
+            size="sm"
+            class="shadow-lg hover:shadow-primary-500/30 transition-all"
+          >
             <template #icon>＋</template>
             New Goal
           </BaseButton>
         </div>
 
-        <div v-if="goals.length" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div v-if="goals.length" class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <GoalCard
             v-for="goal in goals"
             :key="goal.id"
             :goal="goal"
+            class="hover:-translate-y-1 transition-all duration-300"
             @click="viewGoal(goal.id)"
             @add-funds="openAddFunds(goal.id)"
             @withdraw="handleWithdraw(goal.id)"
           />
         </div>
 
-        <EmptyState
+        <div
           v-else
-          title="No goals yet"
-          description="Create your first savings goal to get started"
-          icon="🎯"
-          @action="uiStore.openCreateGoalModal"
-        />
+          class="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8"
+        >
+          <EmptyState
+            title="No goals yet"
+            description="Create your first savings goal to get started"
+            icon="🎯"
+            @action="uiStore.openCreateGoalModal"
+          />
+        </div>
       </div>
 
       <!-- Sidebar -->
-      <div class="space-y-6">
-        <QuickActions />
-        <RecentActivity />
+      <div class="space-y-8">
+        <div
+          class="bg-gray-900/40 backdrop-blur-xl border border-gray-800 rounded-2xl p-4"
+        >
+          <QuickActions />
+        </div>
+
+        <div
+          class="bg-gray-900/40 backdrop-blur-xl border border-gray-800 rounded-2xl p-4"
+        >
+          <RecentActivity />
+        </div>
       </div>
     </div>
 
@@ -82,21 +111,21 @@
       <GoalForm @submit="handleCreateGoal" />
     </BaseModal>
 
-    <!-- ✅ FIXED Add Funds Modal -->
+    <!-- Add Funds Modal -->
     <AddFundsModal
       v-model="showAddFundsModal"
       :goal="selectedGoal"
       @add="handleAddFunds"
     />
 
-    <!-- 🎉 Confetti -->
+    <!-- Confetti -->
     <Confetti
       v-if="showConfetti"
       :duration="3000"
       @done="showConfetti = false"
     />
 
-    <!-- 🏆 Goal Completed Modal -->
+    <!-- Goal Completed Modal -->
     <GoalCompletedModal
       v-model="showCompletedModal"
       :goal="completedGoal"
@@ -203,7 +232,6 @@ const handleCreateGoal = (formData: any) => {
   });
 };
 
-/* 🎉 Completion Watcher */
 watch(recentlyCompletedGoal, (newGoal) => {
   if (newGoal) {
     completedGoal.value = newGoal;
@@ -215,14 +243,12 @@ watch(recentlyCompletedGoal, (newGoal) => {
   }
 });
 
-/* 🧹 Clear completion */
 watch(showCompletedModal, (isOpen) => {
   if (!isOpen) {
     goalsStore.clearCompleted();
   }
 });
 
-/* 📤 Share */
 const handleShare = () => {
   if (!completedGoal.value) return;
 

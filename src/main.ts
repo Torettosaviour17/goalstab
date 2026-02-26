@@ -9,19 +9,13 @@ import VueApexCharts from "vue3-apexcharts";
 import clickOutside from "./directives/clickOutside";
 
 const app = createApp(App);
+const pinia = createPinia();
 
-// Register directive ONCE
+// Register global directive (ONLY once)
 app.directive("click-outside", clickOutside);
 
-// Pinia
-const pinia = createPinia();
+// Use plugins
 app.use(pinia);
-
-// Init auth
-const authStore = useAuthStore(pinia);
-authStore.checkAuth();
-
-// Plugins
 app.use(router);
 app.use(MotionPlugin);
 app.use(VueApexCharts);
@@ -33,9 +27,14 @@ app.config.errorHandler = (err, instance, info) => {
   console.error("Info:", info);
 };
 
-app.mount("#app");
+// Initialize auth BEFORE mounting app
+const authStore = useAuthStore(pinia);
 
-if (import.meta.env.DEV) {
-  console.log(`GoalTabs v${import.meta.env.PACKAGE_VERSION || "1.0.0"}`);
-  console.log("Environment:", import.meta.env.MODE);
-}
+authStore.checkAuth().finally(() => {
+  app.mount("#app");
+
+  if (import.meta.env.DEV) {
+    console.log(`GoalTabs v${import.meta.env.PACKAGE_VERSION || "1.0.0"}`);
+    console.log("Environment:", import.meta.env.MODE);
+  }
+});

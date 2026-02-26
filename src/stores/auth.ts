@@ -1,6 +1,11 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import api from "@/services/api";
 import { useUIStore } from "./ui";
+
+/* ===============================
+   TYPES
+================================ */
 
 export interface NotificationSettings {
   email: boolean;
@@ -25,6 +30,10 @@ export interface User {
   };
 }
 
+/* ===============================
+   STORE
+================================ */
+
 export const useAuthStore = defineStore("auth", () => {
   const uiStore = useUIStore();
 
@@ -34,96 +43,159 @@ export const useAuthStore = defineStore("auth", () => {
   const isAuthenticated = computed(() => !!user.value && !!token.value);
 
   /* ===============================
-       AUTH INITIALIZATION
+     AUTH INITIALIZATION
   ================================ */
-  const checkAuth = () => {
-    if (token.value) {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        user.value = JSON.parse(storedUser);
-      } else {
-        // Fallback demo user
-        user.value = {
-          id: "1",
-          email: "demo@example.com",
-          name: "Demo User",
-          phone: "+234 800 000 0000",
-          isPremium: true,
-          preferences: {
-            currency: "NGN",
-            theme: "dark",
-            autoSaveDefault: true,
-            notifications: {
-              email: true,
-              push: true,
-              goalCompleted: true,
-              depositReceived: true,
-              weeklyReport: false,
-            },
-          },
-        };
-      }
+
+  const checkAuth = async () => {
+    if (!token.value) return;
+
+    // 1️⃣ Try localStorage first (fast load)
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      user.value = JSON.parse(storedUser);
+    }
+
+    // 2️⃣ Then verify token with backend
+    try {
+      const response = await api.get("/auth/me");
+      user.value = response.data;
+      localStorage.setItem("user", JSON.stringify(user.value));
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      logout();
     }
   };
 
   /* ===============================
-       LOGIN / LOGOUT
+     LOGIN
   ================================ */
+
   const login = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await api.post("/auth/login", { email, password });
+      const { token: newToken, user: userData } = response.data;
 
-    if (email === "demo@example.com" && password === "password123") {
-      user.value = {
-        id: "1",
-        email,
-        name: "Demo User",
-        phone: "+234 800 000 0000",
-        isPremium: true,
-        preferences: {
-          currency: "NGN",
-          theme: "dark",
-          autoSaveDefault: true,
-          notifications: {
-            email: true,
-            push: true,
-            goalCompleted: true,
-            depositReceived: true,
-            weeklyReport: false,
-          },
-        },
-      };
-      token.value = "fake-jwt-token";
+      token.value = newToken;
+      user.value = userData;
 
-      localStorage.setItem("token", token.value);
-      localStorage.setItem("user", JSON.stringify(user.value));
+      localStorage.setItem("token", newToken);
+      localStorage.setItem("user", JSON.stringify(userData));
 
-      uiStore.addToast({ type: "success", message: "Login successful!" });
-    } else {
-      uiStore.addToast({ type: "error", message: "Invalid credentials" });
-      throw new Error("Invalid credentials");
+      uiStore.addToast({
+        type: "success",
+        message: "Login successful!",
+      });
+    } catch (error: any) {
+      const message = error.response?.data?.msg || "Login failed";
+
+      uiStore.addToast({
+        type: "error",
+        message,
+      });
+
+      throw error;
     }
   };
+
+  /* ===============================
+     REGISTER
+  ================================ */
+
+  const register = async (name: string, email: string, password: string) => {
+    try {
+      const response = await api.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
+
+      const { token: newToken, user: userData } = response.data;
+
+      token.value = newToken;
+      user.value = userData;
+
+      localStorage.setItem("token", newToken);
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      uiStore.addToast({
+        type: "success",
+        message: "Registration successful!",
+      });
+    } catch (error: any) {
+      const message = error.response?.data?.msg || "Registration failed";
+
+      uiStore.addToast({
+        type: "error",
+        message,
+      });
+
+      throw error;
+    }
+  };
+
+  /* ===============================
+     LOGOUT
+  ================================ */
 
   const logout = () => {
     user.value = null;
     token.value = null;
+
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    uiStore.addToast({ type: "info", message: "Logged out" });
+
+    uiStore.addToast({
+      type: "info",
+      message: "Logged out",
+    });
   };
 
-  const updateUser = (userData: Partial<User>) => {
-    if (user.value) {
-      user.value = { ...user.value, ...userData };
-      localStorage.setItem("user", JSON.stringify(user.value));
+  /* ===============================
+     UPDATE USER
+  ================================ */
+
+  const updateUser = async (userData: Partial<User>) => {
+    try {
+      const response = await api.put("/auth/me", userData);
+      user.value = response.data;
+
+      localStorage.setItem("user", JSON.stringify(response.data));
+
+      uiStore.addToast({
+        type: "success",
+        message: "Profile updated",
+      });
+    } catch (error: any) {
+      uiStore.addToast({
+        type: "error",
+        message: error.response?.data?.msg || "Update failed",
+      });
     }
   };
 
-  const updatePreferences = (prefs: Partial<User["preferences"]>) => {
-    if (user.value) {
-      user.value.preferences = { ...user.value.preferences, ...prefs };
+  /* ===============================
+     UPDATE PREFERENCES
+  ================================ */
+
+  const updatePreferences = async (prefs: Partial<User["preferences"]>) => {
+    if (!user.value) return;
+
+    try {
+      const response = await api.put("/auth/preferences", prefs);
+
+      user.value.preferences = response.data.preferences;
+
       localStorage.setItem("user", JSON.stringify(user.value));
+
+      uiStore.addToast({
+        type: "success",
+        message: "Preferences saved",
+      });
+    } catch (error: any) {
+      uiStore.addToast({
+        type: "error",
+        message: error.response?.data?.msg || "Update failed",
+      });
     }
   };
 
@@ -132,6 +204,7 @@ export const useAuthStore = defineStore("auth", () => {
     token,
     isAuthenticated,
     login,
+    register,
     logout,
     checkAuth,
     updateUser,

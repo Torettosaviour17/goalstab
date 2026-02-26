@@ -43,6 +43,10 @@ export interface GoalFormData {
 }
 
 export const useGoalsStore = defineStore("goals", () => {
+  /* =========================
+     STATE
+  ========================== */
+
   const goals = ref<Goal[]>([
     {
       id: "goal-1",
@@ -61,64 +65,17 @@ export const useGoalsStore = defineStore("goals", () => {
       createdAt: new Date().toISOString(),
       category: "Electronics",
       accountId: "acc-1",
-      sharedWith: [
-        {
-          id: "user-1",
-          name: "Alice",
-          email: "alice@example.com",
-          role: "viewer",
-        },
-        {
-          id: "user-2",
-          name: "Bob",
-          email: "bob@example.com",
-          role: "contributor",
-        },
-      ],
-    },
-    {
-      id: "goal-2",
-      title: "Bali Vacation",
-      target: 1500000,
-      saved: 450000,
-      icon: "🏝️",
-      color: "from-emerald-500 to-teal-400",
-      type: "fixed",
-      autoSave: 50000,
-      frequency: "monthly",
-      deadline: "2024-12-15",
-      locked: true,
-      progress: 30,
-      lastUpdated: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      category: "Travel",
-      accountId: "acc-2",
-      sharedWith: [],
-    },
-    {
-      id: "goal-3",
-      title: "Emergency Fund",
-      target: 1000000,
-      saved: 350000,
-      icon: "🛡️",
-      color: "from-amber-500 to-orange-400",
-      type: "percentage",
-      autoSave: 15,
-      frequency: "monthly",
-      locked: true,
-      progress: 35,
-      lastUpdated: "2024-01-18",
-      createdAt: "2024-01-01",
-      category: "Savings",
-      accountId: "acc-1",
       sharedWith: [],
     },
   ]);
 
-  // Recently completed goal (for modal trigger)
   const recentlyCompletedGoal = ref<Goal | null>(null);
 
   const generateId = () => crypto.randomUUID();
+
+  /* =========================
+     HELPERS
+  ========================== */
 
   const recalculateProgress = (goal: Goal) => {
     if (goal.target <= 0) {
@@ -130,7 +87,6 @@ export const useGoalsStore = defineStore("goals", () => {
 
     goal.progress = Math.min(100, Math.round((goal.saved / goal.target) * 100));
 
-    // Trigger completion only once when crossing 100%
     if (previousProgress < 100 && goal.progress >= 100) {
       goal.locked = false;
       recentlyCompletedGoal.value = goal;
@@ -140,8 +96,9 @@ export const useGoalsStore = defineStore("goals", () => {
   const recalculateAll = () => goals.value.forEach(recalculateProgress);
 
   /* =========================
-       COMPUTED
+     COMPUTED
   ========================== */
+
   const totalSaved = computed(() =>
     goals.value.reduce((sum, g) => sum + g.saved, 0),
   );
@@ -168,7 +125,7 @@ export const useGoalsStore = defineStore("goals", () => {
   const completedGoalsCount = computed(() => completedGoals.value.length);
 
   /* =========================
-       ACTIONS
+     ACTIONS
   ========================== */
 
   const addGoal = (goalData: GoalFormData) => {
@@ -258,6 +215,30 @@ export const useGoalsStore = defineStore("goals", () => {
     goal.sharedWith = goal.sharedWith.filter((u) => u.id !== userId);
   };
 
+  /* 🔥 Auto Save Processor */
+  const processAutoSave = () => {
+    let totalAdded = 0;
+
+    goals.value.forEach((goal) => {
+      if (goal.progress >= 100) return;
+
+      let amountToAdd = 0;
+
+      if (goal.type === "percentage") {
+        amountToAdd = (goal.target * goal.autoSave) / 100;
+      } else {
+        amountToAdd = goal.autoSave;
+      }
+
+      goal.saved = Math.min(goal.saved + amountToAdd, goal.target);
+      totalAdded += amountToAdd;
+
+      recalculateProgress(goal);
+    });
+
+    return totalAdded;
+  };
+
   const clearCompleted = () => {
     recentlyCompletedGoal.value = null;
   };
@@ -280,6 +261,7 @@ export const useGoalsStore = defineStore("goals", () => {
     deleteGoal,
     shareGoal,
     unshareGoal,
+    processAutoSave,
     recalculateAll,
   };
 });
