@@ -1,7 +1,6 @@
 <template>
   <div class="min-h-screen flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-md">
-      <!-- Logo -->
       <div class="text-center mb-8">
         <div
           class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-linear-to-br from-primary to-secondary flex items-center justify-center animate-float"
@@ -16,10 +15,8 @@
         <p class="text-gray-400 mt-2">Join GoalTabs and start saving</p>
       </div>
 
-      <!-- Register Form -->
       <div class="glass-card p-8">
         <form @submit.prevent="handleRegister" class="space-y-6">
-          <!-- Name -->
           <div>
             <label
               for="name"
@@ -41,7 +38,6 @@
             </p>
           </div>
 
-          <!-- Email -->
           <div>
             <label
               for="email"
@@ -63,7 +59,6 @@
             </p>
           </div>
 
-          <!-- Password -->
           <div>
             <label
               for="password"
@@ -94,7 +89,6 @@
             </p>
           </div>
 
-          <!-- Confirm Password -->
           <div>
             <label
               for="confirmPassword"
@@ -116,7 +110,6 @@
             </p>
           </div>
 
-          <!-- Terms -->
           <div class="flex items-center">
             <input
               id="terms"
@@ -134,10 +127,9 @@
             </label>
           </div>
 
-          <!-- Submit Button -->
           <button
             type="submit"
-            :disabled="loading"
+            :disabled="loading || !form.agreeTerms"
             class="w-full btn-primary py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <span v-if="loading" class="flex items-center justify-center gap-2">
@@ -148,7 +140,6 @@
           </button>
         </form>
 
-        <!-- Sign In Link -->
         <p class="mt-8 text-center text-gray-400">
           Already have an account?
           <router-link
@@ -198,13 +189,11 @@ const validateForm = (): boolean => {
   errors.password = "";
   errors.confirmPassword = "";
 
-  // Name validation
   if (!form.name) {
     errors.name = "Name is required";
     valid = false;
   }
 
-  // Email validation
   if (!form.email) {
     errors.email = "Email is required";
     valid = false;
@@ -213,7 +202,6 @@ const validateForm = (): boolean => {
     valid = false;
   }
 
-  // Password validation
   if (!form.password) {
     errors.password = "Password is required";
     valid = false;
@@ -222,7 +210,6 @@ const validateForm = (): boolean => {
     valid = false;
   }
 
-  // Confirm password validation
   if (form.password !== form.confirmPassword) {
     errors.confirmPassword = "Passwords do not match";
     valid = false;
@@ -237,16 +224,15 @@ const handleRegister = async () => {
   loading.value = true;
 
   try {
-    // Simulate API registration delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // After successful registration,
-    // log the user in using existing auth logic
-    await authStore.login(form.email, form.password);
-
+    // Correct method: calls register in authStore
+    await authStore.register(form.name, form.email, form.password);
+    
+    // Redirect to dashboard on success
     router.push({ name: "dashboard" });
   } catch (error) {
     console.error("Registration failed:", error);
+    // Note: Most UI errors (like 'Email already exists') 
+    // should be handled inside authStore.register via your toast/ui system.
   } finally {
     loading.value = false;
   }

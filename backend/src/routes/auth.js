@@ -9,25 +9,35 @@ const auth = require('../middleware/auth');
 // @desc    Register user
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
+
+  // Basic validation
+  if (!name || !email || !password) {
+    return res.status(400).json({ msg: 'Please provide all fields' });
+  }
+
   try {
+    // Check if user exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: 'User already exists' });
     }
 
+    // Create new user
     user = new User({ name, email, password });
     await user.save();
 
-    const payload = {
-      user: { id: user.id }
-    };
+    // Create JWT payload
+    const payload = { user: { id: user.id } };
 
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
       { expiresIn: '7d' },
       (err, token) => {
-        if (err) throw err;
+        if (err) {
+          console.error('JWT Sign Error:', err);
+          return res.status(500).json({ msg: 'Token generation failed' });
+        }
         res.json({
           token,
           user: {
@@ -40,8 +50,8 @@ router.post('/register', async (req, res) => {
       }
     );
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    console.error('Registration error:', err);
+    res.status(500).json({ msg: 'Server error during registration' });
   }
 });
 
@@ -49,6 +59,11 @@ router.post('/register', async (req, res) => {
 // @desc    Authenticate user
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ msg: 'Please provide email and password' });
+  }
+
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -60,16 +75,17 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
-    const payload = {
-      user: { id: user.id }
-    };
+    const payload = { user: { id: user.id } };
 
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
       { expiresIn: '7d' },
       (err, token) => {
-        if (err) throw err;
+        if (err) {
+          console.error('JWT Sign Error:', err);
+          return res.status(500).json({ msg: 'Token generation failed' });
+        }
         res.json({
           token,
           user: {
@@ -82,8 +98,8 @@ router.post('/login', async (req, res) => {
       }
     );
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    console.error('Login error:', err);
+    res.status(500).json({ msg: 'Server error during login' });
   }
 });
 
@@ -92,10 +108,13 @@ router.post('/login', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
     res.json(user);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error');
+    console.error('Get user error:', err);
+    res.status(500).json({ msg: 'Server error' });
   }
 });
 

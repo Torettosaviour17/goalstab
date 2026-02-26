@@ -110,4 +110,10 @@ export const routes: RouteRecordRaw[] = [
       transition: "slide-up",
     },
   },
+  {
+  path: '/terms',
+  name: 'terms',
+  component: () => import('@/views/Terms.vue'),
+  meta: { title: 'Terms of Service' }
+}
 ];
