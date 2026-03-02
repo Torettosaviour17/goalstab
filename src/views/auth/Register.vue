@@ -1,153 +1,225 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center px-4 py-12">
-    <div class="w-full max-w-md">
-      <div class="text-center mb-8">
-        <div
-          class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-linear-to-br from-primary to-secondary flex items-center justify-center animate-float"
-        >
-          <span class="text-3xl font-bold">GT</span>
-        </div>
-        <h1
-          class="text-3xl font-bold bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent"
-        >
-          Create Account
-        </h1>
-        <p class="text-gray-400 mt-2">Join GoalTabs and start saving</p>
+  <div
+    class="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden"
+  >
+    <!-- Animated background elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+      <div
+        class="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl animate-pulse-soft"
+      ></div>
+      <div
+        class="absolute -bottom-40 -left-40 w-80 h-80 bg-secondary-500/10 rounded-full blur-3xl animate-pulse-soft"
+        style="animation-delay: 1s"
+      ></div>
+      <div
+        class="absolute top-1/4 left-1/4 w-40 h-40 bg-success/5 rounded-full blur-2xl animate-pulse-soft"
+        style="animation-delay: 0.5s"
+      ></div>
+    </div>
+
+    <div class="w-full max-w-md relative z-10">
+      <!-- Logo and welcome -->
+      <div class="text-center mb-8 animate-fade-in">
+        <img
+          src="@/assets/goaltab-logo.png"
+          alt="GoalTabs"
+          class="w-50 h-50 mx-auto shadow-2xl object-contain"
+        />
+        <h1 class="text-3xl font-bold text-white mb-2">Join GoalTabs</h1>
+        <p class="text-gray-400">Start your savings journey today</p>
       </div>
 
-      <div class="glass-card p-8">
-        <form @submit.prevent="handleRegister" class="space-y-6">
+      <!-- Register form -->
+      <div class="glass-card p-8 animate-slide-up">
+        <form @submit.prevent="handleRegister" class="space-y-5">
+          <!-- Name -->
           <div>
-            <label
-              for="name"
-              class="block text-sm font-medium text-gray-300 mb-2"
+            <label class="block text-sm font-medium text-gray-300 mb-2"
+              >Full Name</label
             >
-              Full Name
-            </label>
-            <input
-              id="name"
-              v-model="form.name"
-              type="text"
-              required
-              placeholder="John Doe"
-              class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
-              :class="{ 'border-red-500': errors.name }"
-            />
-            <p v-if="errors.name" class="mt-1 text-sm text-red-400">
-              {{ errors.name }}
-            </p>
-          </div>
-
-          <div>
-            <label
-              for="email"
-              class="block text-sm font-medium text-gray-300 mb-2"
-            >
-              Email Address
-            </label>
-            <input
-              id="email"
-              v-model="form.email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
-              :class="{ 'border-red-500': errors.email }"
-            />
-            <p v-if="errors.email" class="mt-1 text-sm text-red-400">
-              {{ errors.email }}
-            </p>
-          </div>
-
-          <div>
-            <label
-              for="password"
-              class="block text-sm font-medium text-gray-300 mb-2"
-            >
-              Password
-            </label>
             <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <span class="text-gray-500 text-lg">👤</span>
+              </div>
               <input
-                id="password"
+                v-model="form.name"
+                type="text"
+                required
+                placeholder="John Doe"
+                class="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+              />
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2"
+              >Email Address</label
+            >
+            <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <span class="text-gray-500 text-lg">📧</span>
+              </div>
+              <input
+                v-model="form.email"
+                type="email"
+                required
+                placeholder="you@example.com"
+                class="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+              />
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2"
+              >Password</label
+            >
+            <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <span class="text-gray-500 text-lg">🔒</span>
+              </div>
+              <input
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
                 placeholder="••••••••"
-                class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition pr-12"
-                :class="{ 'border-red-500': errors.password }"
+                class="w-full pl-10 pr-12 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition"
               >
                 {{ showPassword ? "👁️" : "👁️‍🗨️" }}
               </button>
             </div>
-            <p v-if="errors.password" class="mt-1 text-sm text-red-400">
-              {{ errors.password }}
-            </p>
           </div>
 
+          <!-- Confirm Password -->
           <div>
-            <label
-              for="confirmPassword"
-              class="block text-sm font-medium text-gray-300 mb-2"
+            <label class="block text-sm font-medium text-gray-300 mb-2"
+              >Confirm Password</label
             >
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              v-model="form.confirmPassword"
-              :type="showPassword ? 'text' : 'password'"
-              required
-              placeholder="••••••••"
-              class="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
-              :class="{ 'border-red-500': errors.confirmPassword }"
-            />
-            <p v-if="errors.confirmPassword" class="mt-1 text-sm text-red-400">
-              {{ errors.confirmPassword }}
+            <div class="relative">
+              <div
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <span class="text-gray-500 text-lg">🔒</span>
+              </div>
+              <input
+                v-model="form.confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                required
+                placeholder="••••••••"
+                class="w-full pl-10 pr-12 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                :class="{ 'border-danger': passwordError }"
+              />
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition"
+              >
+                {{ showConfirmPassword ? "👁️" : "👁️‍🗨️" }}
+              </button>
+            </div>
+            <p v-if="passwordError" class="mt-1 text-xs text-danger">
+              {{ passwordError }}
             </p>
           </div>
 
-          <div class="flex items-center">
-            <input
-              id="terms"
-              v-model="form.agreeTerms"
-              type="checkbox"
-              class="w-4 h-4 rounded bg-white/5 border-white/10 text-primary focus:ring-primary focus:ring-2"
-            />
-            <label for="terms" class="ml-2 text-sm text-gray-300">
-              I agree to the
-              <router-link
-                to="/terms"
-                class="text-primary hover:text-primary/80"
-                >Terms of Service</router-link
-              >
-            </label>
-          </div>
-
+          <!-- Submit button -->
           <button
             type="submit"
-            :disabled="loading || !form.agreeTerms"
-            class="w-full btn-primary py-3 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="loading || !passwordsMatch"
+            class="w-full py-3 px-4 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
           >
             <span v-if="loading" class="flex items-center justify-center gap-2">
-              <span class="animate-spin">⟳</span>
+              <svg
+                class="animate-spin h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
               Creating account...
             </span>
-            <span v-else>Sign Up</span>
+            <span v-else>Create Account</span>
           </button>
         </form>
 
+        <!-- Divider -->
+        <div class="relative my-8">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-700"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-gray-800 text-gray-400 rounded-full"
+              >Or continue with</span
+            >
+          </div>
+        </div>
+
+        <!-- Social buttons (placeholders) -->
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            class="flex items-center justify-center gap-2 px-4 py-3 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 rounded-xl transition text-gray-300 hover:text-white"
+          >
+            <span class="text-lg">G</span>
+            Google
+          </button>
+          <button
+            class="flex items-center justify-center gap-2 px-4 py-3 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 rounded-xl transition text-gray-300 hover:text-white"
+          >
+            <span class="text-lg">🐙</span>
+            GitHub
+          </button>
+        </div>
+
+        <!-- Login link -->
         <p class="mt-8 text-center text-gray-400">
           Already have an account?
           <router-link
             to="/login"
-            class="text-primary hover:text-primary/80 font-medium transition"
+            class="text-primary-400 hover:text-primary-300 font-medium transition"
           >
             Sign in
           </router-link>
+        </p>
+
+        <!-- Terms -->
+        <p class="mt-4 text-center text-xs text-gray-500">
+          By joining, you agree to our
+          <router-link
+            to="/terms"
+            class="text-primary-400 hover:text-primary-300"
+            >Terms</router-link
+          >
+          and
+          <router-link
+            to="/privacy"
+            class="text-primary-400 hover:text-primary-300"
+            >Privacy Policy</router-link
+          >
         </p>
       </div>
     </div>
@@ -155,86 +227,87 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useUIStore } from "@/stores/ui";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const uiStore = useUIStore();
 
 const loading = ref(false);
 const showPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 const form = reactive({
   name: "",
   email: "",
   password: "",
   confirmPassword: "",
-  agreeTerms: false,
 });
 
-const errors = reactive({
-  name: "",
-  email: "",
-  password: "",
-  confirmPassword: "",
+const passwordsMatch = computed(() => form.password === form.confirmPassword);
+const passwordError = computed(() => {
+  if (form.confirmPassword && !passwordsMatch.value) {
+    return "Passwords do not match";
+  }
+  return "";
 });
-
-const validateForm = (): boolean => {
-  let valid = true;
-
-  // Clear previous errors
-  errors.name = "";
-  errors.email = "";
-  errors.password = "";
-  errors.confirmPassword = "";
-
-  if (!form.name) {
-    errors.name = "Name is required";
-    valid = false;
-  }
-
-  if (!form.email) {
-    errors.email = "Email is required";
-    valid = false;
-  } else if (!/\S+@\S+\.\S+/.test(form.email)) {
-    errors.email = "Email is invalid";
-    valid = false;
-  }
-
-  if (!form.password) {
-    errors.password = "Password is required";
-    valid = false;
-  } else if (form.password.length < 6) {
-    errors.password = "Password must be at least 6 characters";
-    valid = false;
-  }
-
-  if (form.password !== form.confirmPassword) {
-    errors.confirmPassword = "Passwords do not match";
-    valid = false;
-  }
-
-  return valid;
-};
 
 const handleRegister = async () => {
-  if (!validateForm()) return;
+  if (!passwordsMatch.value) {
+    uiStore.addToast({ type: "error", message: "Passwords do not match" });
+    return;
+  }
 
   loading.value = true;
-
   try {
-    // Correct method: calls register in authStore
     await authStore.register(form.name, form.email, form.password);
-    
-    // Redirect to dashboard on success
-    router.push({ name: "dashboard" });
+    router.push("/dashboard");
   } catch (error) {
-    console.error("Registration failed:", error);
-    // Note: Most UI errors (like 'Email already exists') 
-    // should be handled inside authStore.register via your toast/ui system.
+    // Error already handled in store
   } finally {
     loading.value = false;
   }
 };
 </script>
+
+<style scoped>
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+</style>
