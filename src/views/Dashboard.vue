@@ -58,7 +58,6 @@
             :key="goal.id"
             :goal="goal"
             class="hover:-translate-y-1 transition-all duration-300"
-            @click="viewGoal(goal.id)"
             @add-funds="openAddFunds(goal.id)"
             @withdraw="handleWithdraw(goal.id)"
           />
@@ -170,9 +169,8 @@ const completedGoal = ref<any>(null);
 const formatCurrency = (value: number) =>
   `₦${new Intl.NumberFormat().format(value)}`;
 
-const viewGoal = (id: string) => {
-  router.push(`/goals/${id}`);
-};
+// Optional: If you still want to navigate to goal details elsewhere, you can keep a button or separate link.
+// For now, we remove the click handler from the card.
 
 const openAddFunds = (id: string) => {
   selectedGoalId.value = id;

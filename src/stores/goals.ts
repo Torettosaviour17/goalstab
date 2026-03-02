@@ -51,8 +51,8 @@ export const useGoalsStore = defineStore("goals", () => {
     {
       id: "goal-1",
       title: "MacBook Pro M3",
-      target: 2500000,
-      saved: 1200000,
+      target: 250000,
+      saved: 120000,
       icon: "💻",
       color: "from-blue-500 to-cyan-400",
       type: "percentage",
