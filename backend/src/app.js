@@ -13,13 +13,32 @@ const app = express();
 // Connect Database
 connectDB();
 
-// Middleware
+// Allowed origins – add your production frontend URL here
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://goalstab.vercel.app", // <-- your Vercel frontend
+];
+
+// CORS middleware
 app.use(
   cors({
-    origin: ["https://your-frontend.vercel.app", "http://localhost:5173"],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg =
+          "The CORS policy for this site does not allow access from the specified Origin.";
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
     credentials: true,
+    optionsSuccessStatus: 200,
   }),
 );
+
+// Body parser
 app.use(express.json());
 
 // Routes
