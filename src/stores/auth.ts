@@ -3,23 +3,12 @@ import { ref, computed } from "vue";
 import api from "@/services/api";
 import { useUIStore } from "./ui";
 
-/* ===============================
-    TYPES
-================================ */
-
 export interface NotificationSettings {
   email: boolean;
   push: boolean;
   goalCompleted: boolean;
   depositReceived: boolean;
   weeklyReport: boolean;
-}
-
-export interface UserPreferences {
-  currency: string;
-  theme: string;
-  autoSaveDefault: boolean;
-  notifications: NotificationSettings;
 }
 
 export interface User {
@@ -29,144 +18,115 @@ export interface User {
   phone?: string;
   isPremium: boolean;
   avatar?: string;
-  preferences: UserPreferences;
+  preferences: {
+    currency: string;
+    theme: string;
+    autoSaveDefault: boolean;
+    notifications: NotificationSettings;
+  };
 }
 
-/* ===============================
-    STORE
-================================ */
-
-export const useAuthStore = defineStore("auth", () => {
-  const uiStore = useUIStore();
-
-  const user = ref<User | null>(null);
-  const token = ref<string | null>(localStorage.getItem("token"));
-
-  const isAuthenticated = computed(() => !!user.value && !!token.value);
-
-  /* ===============================
-      AUTH INITIALIZATION
-  ================================ */
-
-  const checkAuth = async () => {
-    if (!token.value) return;
-
-    // 1️⃣ Try localStorage first for an instant UI load
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
+export const useAuthStore = defineStore("auth", {
+  state: () => ({
+    user: null as User | null,
+    token: null as string | null,
+  }),
+  persist: true, // 👈 automatically persists to localStorage
+  getters: {
+    isAuthenticated: (state) => !!state.user && !!state.token,
+  },
+  actions: {
+    async checkAuth() {
+      if (!this.token) return;
       try {
-        user.value = JSON.parse(storedUser);
-      } catch (e) {
-        localStorage.removeItem("user");
+        const response = await api.get("/auth/me");
+        this.user = response.data;
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          this.logout();
+        } else {
+          // Keep existing user, but show warning
+          const uiStore = useUIStore();
+          uiStore.addToast({
+            type: "warning",
+            message: "Offline mode: using cached user data",
+          });
+        }
       }
-    }
-
-    // 2️⃣ Verify/Refresh data with backend
-    try {
-      const response = await api.get("/auth/me");
-      user.value = response.data;
-      localStorage.setItem("user", JSON.stringify(user.value));
-    } catch (error) {
-      console.error("Session expired or invalid token");
-      logout();
-    }
-  };
-
-  /* ===============================
-      LOGIN / REGISTER
-  ================================ */
-
-  const login = async (email: string, password: string) => {
-    try {
-      const response = await api.post("/auth/login", { email, password });
-      handleAuthSuccess(response.data);
-      uiStore.addToast({ type: "success", message: "Welcome back!" });
-    } catch (error: any) {
-      handleAuthError(error, "Login failed");
-    }
-  };
-
-  const register = async (name: string, email: string, password: string) => {
-    try {
-      const response = await api.post("/auth/register", { name, email, password });
-      handleAuthSuccess(response.data);
-      uiStore.addToast({ type: "success", message: "Account created successfully!" });
-    } catch (error: any) {
-      handleAuthError(error, "Registration failed");
-    }
-  };
-
-  /* ===============================
-      LOGOUT
-  ================================ */
-
-  const logout = () => {
-    user.value = null;
-    token.value = null;
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    uiStore.addToast({ type: "info", message: "Logged out" });
-  };
-
-  /* ===============================
-      PROFILE UPDATES
-  ================================ */
-
-  const updateUser = async (userData: Partial<User>) => {
-    try {
-      const response = await api.put("/auth/me", userData);
-      user.value = response.data;
-      localStorage.setItem("user", JSON.stringify(user.value));
-      uiStore.addToast({ type: "success", message: "Profile updated" });
-    } catch (error: any) {
-      uiStore.addToast({ 
-        type: "error", 
-        message: error.response?.data?.msg || "Update failed" 
-      });
-    }
-  };
-
-  const updatePreferences = async (prefs: Partial<UserPreferences>) => {
-    if (!user.value) return;
-    try {
-      const response = await api.put("/auth/preferences", prefs);
-      user.value.preferences = response.data.preferences;
-      localStorage.setItem("user", JSON.stringify(user.value));
-      uiStore.addToast({ type: "success", message: "Preferences saved" });
-    } catch (error: any) {
-      uiStore.addToast({ 
-        type: "error", 
-        message: error.response?.data?.msg || "Failed to save preferences" 
-      });
-    }
-  };
-
-  /* ===============================
-      PRIVATE HELPERS
-  ================================ */
-
-  const handleAuthSuccess = (data: { token: string; user: User }) => {
-    token.value = data.token;
-    user.value = data.user;
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-  };
-
-  const handleAuthError = (error: any, defaultMsg: string) => {
-    const message = error.response?.data?.msg || defaultMsg;
-    uiStore.addToast({ type: "error", message });
-    throw error;
-  };
-
-  return {
-    user,
-    token,
-    isAuthenticated,
-    login,
-    register,
-    logout,
-    checkAuth,
-    updateUser,
-    updatePreferences,
-  };
+    },
+    async login(email: string, password: string, rememberMe: boolean = false) {
+      try {
+        const response = await api.post("/auth/login", { email, password });
+        const { token, user } = response.data;
+        this.token = token;
+        this.user = user;
+        useUIStore().addToast({
+          type: "success",
+          message: "Login successful!",
+        });
+      } catch (error: any) {
+        const message = error.response?.data?.msg || "Login failed";
+        useUIStore().addToast({ type: "error", message });
+        throw error;
+      }
+    },
+    async register(
+      name: string,
+      email: string,
+      password: string,
+      rememberMe: boolean = false,
+    ) {
+      try {
+        const response = await api.post("/auth/register", {
+          name,
+          email,
+          password,
+        });
+        const { token, user } = response.data;
+        this.token = token;
+        this.user = user;
+        useUIStore().addToast({
+          type: "success",
+          message: "Registration successful!",
+        });
+      } catch (error: any) {
+        const message = error.response?.data?.msg || "Registration failed";
+        useUIStore().addToast({ type: "error", message });
+        throw error;
+      }
+    },
+    logout() {
+      this.user = null;
+      this.token = null;
+      useUIStore().addToast({ type: "info", message: "Logged out" });
+    },
+    async updateUser(userData: Partial<User>) {
+      try {
+        const response = await api.put("/users/profile", userData);
+        this.user = response.data;
+        useUIStore().addToast({ type: "success", message: "Profile updated" });
+      } catch (error: any) {
+        useUIStore().addToast({
+          type: "error",
+          message: error.response?.data?.msg || "Update failed",
+        });
+      }
+    },
+    async updatePreferences(prefs: Partial<User["preferences"]>) {
+      if (!this.user) return;
+      try {
+        const response = await api.put("/users/preferences", prefs);
+        this.user.preferences = response.data.preferences;
+        useUIStore().addToast({
+          type: "success",
+          message: "Preferences saved",
+        });
+      } catch (error: any) {
+        useUIStore().addToast({
+          type: "error",
+          message: error.response?.data?.msg || "Update failed",
+        });
+      }
+    },
+  },
 });

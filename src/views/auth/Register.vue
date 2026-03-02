@@ -23,7 +23,7 @@
         <img
           src="@/assets/goaltab-logo.png"
           alt="GoalTabs"
-          class="w-50 h-50 mx-auto shadow-2xl object-contain"
+          class="w-40 h-40 mx-auto shadow-2xl object-contain"
         />
         <h1 class="text-3xl font-bold text-white mb-2">Join GoalTabs</h1>
         <p class="text-gray-400">Start your savings journey today</p>
