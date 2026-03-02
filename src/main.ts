@@ -23,7 +23,10 @@ app.config.errorHandler = (err, instance, info) => {
   console.error("Vue Error:", err, instance, info);
 };
 
-// No need to manually checkAuth – the store will restore from persistence automatically
+// Restore auth state before mounting
+const authStore = useAuthStore();
+authStore.initializeAuth();
+
 app.mount("#app");
 
 if (import.meta.env.DEV) {

@@ -1,5 +1,4 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
 import api from "@/services/api";
 import { useUIStore } from "./ui";
 
@@ -31,23 +30,35 @@ export const useAuthStore = defineStore("auth", {
     user: null as User | null,
     token: null as string | null,
   }),
-  persist: true, // 👈 automatically persists to localStorage
+  persist: true,
   getters: {
     isAuthenticated: (state) => !!state.user && !!state.token,
   },
   actions: {
+    initializeAuth() {
+      // Restore token from localStorage on app startup
+      const storedToken = localStorage.getItem("token");
+      if (storedToken && !this.token) {
+        this.token = storedToken;
+      }
+    },
     async checkAuth() {
       if (!this.token) return;
+      // Sync token to localStorage for axios interceptor
+      if (!localStorage.getItem("token")) {
+        localStorage.setItem("token", this.token);
+      }
       try {
         const response = await api.get("/auth/me");
         this.user = response.data;
+        console.log("[Auth] token valid, user updated");
       } catch (error: any) {
         if (error.response?.status === 401) {
+          console.log("[Auth] token invalid, logging out");
           this.logout();
         } else {
-          // Keep existing user, but show warning
-          const uiStore = useUIStore();
-          uiStore.addToast({
+          console.warn("[Auth] network error, keeping cached user");
+          useUIStore().addToast({
             type: "warning",
             message: "Offline mode: using cached user data",
           });
@@ -56,15 +67,19 @@ export const useAuthStore = defineStore("auth", {
     },
     async login(email: string, password: string, rememberMe: boolean = false) {
       try {
+        console.log("[Auth] login attempt");
         const response = await api.post("/auth/login", { email, password });
         const { token, user } = response.data;
         this.token = token;
         this.user = user;
+        localStorage.setItem("token", token); // for axios interceptor
+        console.log("[Auth] login successful, token stored");
         useUIStore().addToast({
           type: "success",
           message: "Login successful!",
         });
       } catch (error: any) {
+        console.error("[Auth] login error", error);
         const message = error.response?.data?.msg || "Login failed";
         useUIStore().addToast({ type: "error", message });
         throw error;
@@ -85,6 +100,7 @@ export const useAuthStore = defineStore("auth", {
         const { token, user } = response.data;
         this.token = token;
         this.user = user;
+        localStorage.setItem("token", token);
         useUIStore().addToast({
           type: "success",
           message: "Registration successful!",
@@ -98,6 +114,7 @@ export const useAuthStore = defineStore("auth", {
     logout() {
       this.user = null;
       this.token = null;
+      localStorage.removeItem("token");
       useUIStore().addToast({ type: "info", message: "Logged out" });
     },
     async updateUser(userData: Partial<User>) {
