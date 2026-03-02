@@ -79,15 +79,11 @@
 
       <!-- Sidebar -->
       <div class="space-y-8">
-        <div
-          "
-        >
+        <div>
           <QuickActions />
         </div>
 
-        <div
-          class="bg-gray-900/40 backdrop-blur-xl border border-gray-800 rounded-2xl p-4"
-        >
+        <div>
           <RecentActivity />
         </div>
       </div>
