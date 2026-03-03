@@ -90,7 +90,7 @@
 
     <!-- Create Goal Modal -->
     <BaseModal v-model="uiStore.showCreateGoalModal" title="Create New Goal">
-      <GoalForm @submit="handleCreateGoal" />
+      <SmartGoalForm @submit="handleCreateGoal" />
     </BaseModal>
 
     <!-- Add Funds Modal -->
@@ -128,7 +128,7 @@ import StatsCard from "@/components/dashboard/StatsCard.vue";
 import QuickActions from "@/components/dashboard/QuickActions.vue";
 import RecentActivity from "@/components/dashboard/RecentActivity.vue";
 import GoalCard from "@/components/goals/GoalCard.vue";
-import GoalForm from "@/components/goals/GoalForm.vue";
+import SmartGoalForm from "@/components/goals/SmartGoalForm.vue";
 import GoalCompletedModal from "@/components/goals/GoalCompletedModal.vue";
 import AddFundsModal from "@/components/goals/AddFundsModal.vue";
 import Confetti from "@/components/shared/Confetti.vue";
