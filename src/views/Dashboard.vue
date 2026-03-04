@@ -193,30 +193,39 @@ const handleAddFunds = (amount: number) => {
 };
 
 const handleWithdraw = (id: string) => {
+  console.log("handleWithdraw called for goal:", id);
   const goal = goals.value.find((g) => g.id === id);
+  console.log("Found goal:", goal);
   if (goal && goal.progress >= 100) {
+    console.log("Goal completed, opening modal");
     selectedWithdrawGoal.value = goal;
     showWithdrawModal.value = true;
   } else {
+    console.log("Goal not completed, showing warning");
     uiStore.addToast({ type: "warning", message: "Complete the goal first!" });
   }
 };
 
 const submitWithdrawRequest = async (data: any) => {
+  console.log("submitWithdrawRequest called with:", data);
   try {
-    await api.post('/withdrawals', {
+    await api.post("/withdrawals", {
       goalId: selectedWithdrawGoal.value?.id,
       amount: data.amount,
       accountDetails: {
         bankName: data.bankName,
         accountNumber: data.accountNumber,
-        accountName: data.accountName
-      }
+        accountName: data.accountName,
+      },
     });
-    uiStore.addToast({ type: 'success', message: 'Withdrawal request submitted!' });
+    uiStore.addToast({
+      type: "success",
+      message: "Withdrawal request submitted!",
+    });
     showWithdrawModal.value = false;
   } catch (err) {
-    uiStore.addToast({ type: 'error', message: 'Failed to submit request' });
+    console.error("Withdrawal submission error:", err);
+    uiStore.addToast({ type: "error", message: "Failed to submit request" });
   }
 };
 
@@ -249,7 +258,10 @@ const handleShare = () => {
       url: window.location.origin,
     });
   } else {
-    uiStore.addToast({ type: "info", message: "Sharing not supported on this device." });
+    uiStore.addToast({
+      type: "info",
+      message: "Sharing not supported on this device.",
+    });
   }
 };
 </script>

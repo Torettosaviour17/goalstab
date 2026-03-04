@@ -4,12 +4,16 @@
       <div v-if="goal" class="p-4 bg-gray-800/50 rounded-xl">
         <p class="text-sm text-gray-400">Requesting withdrawal from:</p>
         <p class="font-medium text-white">{{ goal.title }}</p>
-        <p class="text-sm text-gray-300 mt-1">Available balance: ₦{{ formatNumber(goal.saved) }}</p>
+        <p class="text-sm text-gray-300 mt-1">
+          Available balance: ₦{{ formatNumber(goal.saved) }}
+        </p>
       </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Amount (₦)</label>
+          <label class="block text-sm font-medium text-gray-300 mb-1"
+            >Amount (₦)</label
+          >
           <input
             v-model.number="form.amount"
             type="number"
@@ -19,13 +23,18 @@
             step="100"
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <p v-if="form.amount > (goal?.saved || 0)" class="mt-1 text-xs text-danger">
+          <p
+            v-if="form.amount > (goal?.saved || 0)"
+            class="mt-1 text-xs text-danger"
+          >
             Amount exceeds available balance
           </p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Bank Name</label>
+          <label class="block text-sm font-medium text-gray-300 mb-1"
+            >Bank Name</label
+          >
           <input
             v-model="form.bankName"
             type="text"
@@ -35,7 +44,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Account Name</label>
+          <label class="block text-sm font-medium text-gray-300 mb-1"
+            >Account Name</label
+          >
           <input
             v-model="form.accountName"
             type="text"
@@ -45,7 +56,9 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Account Number</label>
+          <label class="block text-sm font-medium text-gray-300 mb-1"
+            >Account Number</label
+          >
           <input
             v-model="form.accountNumber"
             type="text"
@@ -67,63 +80,89 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import BaseModal from '@/components/shared/BaseModal.vue'
-import BaseButton from '@/components/shared/BaseButton.vue'
-import type { Goal } from '@/types/goal'
+import { ref, computed, watch } from "vue";
+import BaseModal from "@/components/shared/BaseModal.vue";
+import BaseButton from "@/components/shared/BaseButton.vue";
+import type { Goal } from "@/types/goal";
 
 const props = defineProps<{
-  modelValue: boolean
-  goal?: Goal | null
-}>()
+  modelValue: boolean;
+  goal?: Goal | null;
+}>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-  (e: 'submit', data: any): void
-}>()
+  (e: "update:modelValue", value: boolean): void;
+  (e: "submit", data: any): void;
+}>();
 
-const show = ref(props.modelValue)
-const loading = ref(false)
+console.log("WithdrawModal created, initial modelValue:", props.modelValue);
+
+const show = ref(props.modelValue);
+const loading = ref(false);
 
 const form = ref({
   amount: 0,
-  bankName: '',
-  accountName: '',
-  accountNumber: ''
-})
+  bankName: "",
+  accountName: "",
+  accountNumber: "",
+});
 
-watch(() => props.goal, (goal) => {
-  if (goal) {
-    form.value.amount = goal.saved // default to full amount
-  }
-}, { immediate: true })
+watch(
+  () => props.goal,
+  (goal) => {
+    console.log("WithdrawModal goal changed:", goal);
+    if (goal) {
+      form.value.amount = goal.saved; // default to full amount
+    }
+  },
+  { immediate: true },
+);
 
 watch(show, (val) => {
-  emit('update:modelValue', val)
+  console.log("WithdrawModal internal show changed:", val);
+  emit("update:modelValue", val);
   if (!val) {
-    form.value = { amount: 0, bankName: '', accountName: '', accountNumber: '' }
+    form.value = {
+      amount: 0,
+      bankName: "",
+      accountName: "",
+      accountNumber: "",
+    };
   }
-})
+});
+
+watch(
+  () => props.modelValue,
+  (val) => {
+    console.log("WithdrawModal external modelValue changed:", val);
+    show.value = val;
+  },
+);
 
 const isValid = computed(() => {
-  const { amount, bankName, accountName, accountNumber } = form.value
-  return amount > 0 && amount <= (props.goal?.saved || 0) &&
-         bankName && accountName && accountNumber && accountNumber.length >= 10
-})
+  const { amount, bankName, accountName, accountNumber } = form.value;
+  return (
+    amount > 0 &&
+    amount <= (props.goal?.saved || 0) &&
+    bankName &&
+    accountName &&
+    accountNumber &&
+    accountNumber.length >= 10
+  );
+});
 
 const close = () => {
-  show.value = false
-}
+  show.value = false;
+};
 
 const handleSubmit = async () => {
-  if (!isValid.value) return
-  loading.value = true
-  // Simulate delay
-  await new Promise(resolve => setTimeout(resolve, 500))
-  emit('submit', { ...form.value })
-  loading.value = false
-  close()
-}
+  if (!isValid.value) return;
+  loading.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  emit("submit", { ...form.value });
+  loading.value = false;
+  close();
+};
 
-const formatNumber = (num: number) => new Intl.NumberFormat().format(num)
+const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
 </script>
