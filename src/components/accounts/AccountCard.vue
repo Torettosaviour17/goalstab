@@ -6,14 +6,25 @@
       >
         <span class="text-xl">{{ getBankIcon(account.bankName) }}</span>
       </div>
+
       <div>
-        <p class="font-medium text-white">{{ account.bankName }}</p>
-        <p class="text-sm text-gray-400">•••• {{ account.lastFour }}</p>
-        <p v-if="account.balance" class="text-sm font-semibold text-white mt-1">
-          ₦{{ formatNumber(account.balance) }}
+        <p class="font-medium text-white">
+          {{ account.bankName }}
+        </p>
+
+        <p class="text-sm text-gray-400">
+          •••• {{ account.lastFour }}
+        </p>
+
+        <p
+          v-if="account.balance !== undefined"
+          class="text-sm font-semibold text-white mt-1"
+        >
+          {{ formatCurrency(account.balance, account.currency) }}
         </p>
       </div>
     </div>
+
     <div class="flex items-center gap-2">
       <span
         v-if="account.isDefault"
@@ -21,46 +32,54 @@
       >
         Default
       </span>
+
       <button
         @click="$emit('edit')"
         class="p-2 hover:bg-gray-700 rounded transition"
         title="Edit"
       >
-        <span class="text-lg">✎</span>
+        ✎
       </button>
+
       <button
         @click="$emit('delete')"
-        class="p-2 hover:bg-gray-700 rounded transition text-danger"
+        class="p-2 hover:bg-gray-700 rounded transition text-red-400"
         title="Remove"
       >
-        <span class="text-lg">🗑️</span>
+        🗑️
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { BankAccount } from "@/types/user";
+import type { Account } from '@/stores/accounts'
 
 defineProps<{
-  account: BankAccount;
-}>();
+  account: Account
+}>()
 
 defineEmits<{
-  (e: "edit"): void;
-  (e: "delete"): void;
-}>();
-
-const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
+  (e: 'edit'): void
+  (e: 'delete'): void
+}>()
 
 const getBankIcon = (bankName: string) => {
   const icons: Record<string, string> = {
-    GTBank: "🏦",
-    "Zenith Bank": "💎",
-    "First Bank": "🔷",
-    UBA: "🔴",
-    Access: "🟢",
-  };
-  return icons[bankName] || "🏛️";
-};
+    GTBank: '🏦',
+    'Zenith Bank': '💎',
+    'First Bank': '🔷',
+    UBA: '🔴',
+    Access: '🟢'
+  }
+
+  return icons[bankName] || '🏛️'
+}
+
+const formatCurrency = (value: number, currency: string) => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency
+  }).format(value)
+}
 </script>

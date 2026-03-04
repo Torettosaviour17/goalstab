@@ -30,21 +30,7 @@
         <!-- Right section -->
         <div class="flex items-center gap-3">
           <!-- Notifications -->
-          <button
-            @click="toggleNotifications"
-            class="relative p-2 rounded-lg hover:bg-gray-800/50 transition"
-            aria-label="Notifications"
-          >
-            <span class="text-xl">🔔</span>
-            <span
-              v-if="hasUnreadNotifications"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"
-            ></span>
-            <span
-              v-if="hasUnreadNotifications"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
-            ></span>
-          </button>
+          <NotificationBell />
 
           <!-- User menu -->
           <div class="relative">
@@ -161,6 +147,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
+import NotificationBell from "@/components/notifications/NotificationBell.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -168,7 +155,6 @@ const { user } = storeToRefs(authStore);
 
 const showUserMenu = ref(false);
 const mobileMenuOpen = ref(false);
-const hasUnreadNotifications = ref(true);
 
 // Navigation Config
 const navLinks = [
@@ -176,6 +162,7 @@ const navLinks = [
   { name: "Goals", path: "/goals", icon: "🎯" },
   { name: "Analytics", path: "/analytics", icon: "📈" },
   { name: "Settings", path: "/settings", icon: "⚙️" },
+  { name: "Accounts", path: "/accounts", icon: "🏦" }, // optionally add
 ];
 
 // Computed User Data
@@ -192,10 +179,6 @@ const userInitials = computed(() => {
     .toUpperCase()
     .slice(0, 2);
 });
-
-const toggleNotifications = () => {
-  console.log("Notifications toggled");
-};
 
 // UI Actions
 const toggleUserMenu = () => (showUserMenu.value = !showUserMenu.value);

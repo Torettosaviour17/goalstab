@@ -1,6 +1,6 @@
 <template>
   <div
-    class="glass-card p-4 hover:scale-[1.02] transition-all duration-300 border border-gray-700/50 hover:border-primary-500/30"
+    class="glass-card p-5 hover:scale-[1.02] transition-all duration-300 border border-gray-700/50 hover:border-primary-500/30"
   >
     <div class="flex items-start justify-between mb-4">
       <div class="flex items-center gap-3">
@@ -12,11 +12,11 @@
         </div>
         <div>
           <h3 class="font-bold text-white">{{ goal.title }}</h3>
-          <p class="text-sm text-gray-400">{{ goal.category || "General" }}</p>
+          <p class="text-sm text-gray-400">{{ goal.category || 'General' }}</p>
         </div>
       </div>
       <span class="text-xs px-2 py-1 rounded-full" :class="lockedClass">
-        {{ goal.locked ? "Locked" : "Unlocked" }}
+        {{ goal.locked ? 'Locked' : 'Unlocked' }}
       </span>
     </div>
 
@@ -24,22 +24,21 @@
 
     <div class="flex justify-between items-center mb-4">
       <div>
-        <p class="text-2xl font-bold text-white">
-          ₦{{ formatNumber(goal.saved) }}
-        </p>
+        <p class="text-2xl font-bold text-white">₦{{ formatNumber(goal.saved) }}</p>
         <p class="text-sm text-gray-400">of ₦{{ formatNumber(goal.target) }}</p>
       </div>
       <div class="text-right">
         <p class="text-xs text-gray-400">Auto-save</p>
         <p class="font-semibold text-white">
-          {{
-            goal.type === "percentage"
-              ? `${goal.autoSave}%`
-              : `₦${formatNumber(goal.autoSave)}`
-          }}
+          {{ goal.type === 'percentage' ? `${goal.autoSave}%` : `₦${formatNumber(goal.autoSave)}` }}
           <span class="text-xs text-gray-400">/{{ goal.frequency }}</span>
         </p>
       </div>
+    </div>
+
+    <!-- Next auto-save indicator (if enabled) -->
+    <div v-if="goal.autoSaveEnabled && goal.nextAutoSave" class="mb-3 text-xs text-gray-400 flex items-center gap-1">
+      <span>⏰</span> Next: {{ formatDate(goal.nextAutoSave) }}
     </div>
 
     <div class="flex gap-2">
@@ -60,41 +59,45 @@
         @click.stop="$emit('withdraw')"
       >
         <template #icon>💸</template>
-        {{ goal.locked ? "Locked" : "Withdraw" }}
+        {{ goal.locked ? 'Locked' : 'Withdraw' }}
       </BaseButton>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import BaseButton from "@/components/shared/BaseButton.vue";
-import GoalProgress from "./GoalProgress.vue";
-import type { Goal } from "@/types/goal";
+import { computed } from 'vue'
+import BaseButton from '@/components/shared/BaseButton.vue'
+import GoalProgress from './GoalProgress.vue'
+import type { Goal } from '@/types/goal'
 
 interface Props {
-  goal: Goal;
+  goal: Goal
 }
 
-const props = defineProps<Props>();
+const props = defineProps<Props>()
 
 defineEmits<{
-  (e: "add-funds"): void;
-  (e: "withdraw"): void;
-}>();
+  (e: 'add-funds'): void
+  (e: 'withdraw'): void
+}>()
 
-const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
+const formatNumber = (num: number) => new Intl.NumberFormat().format(num)
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
 
 const lockedClass = computed(() => {
   return props.goal.locked
-    ? "bg-gray-700 text-gray-300"
-    : "bg-success/20 text-success";
-});
+    ? 'bg-gray-700 text-gray-300'
+    : 'bg-success/20 text-success'
+})
 
 const progressColor = computed(() => {
-  if (props.goal.progress >= 100) return "success";
-  if (props.goal.progress >= 75) return "primary";
-  if (props.goal.progress >= 50) return "warning";
-  return "danger";
-});
+  if (props.goal.progress >= 100) return 'success'
+  if (props.goal.progress >= 75) return 'primary'
+  if (props.goal.progress >= 50) return 'warning'
+  return 'danger'
+})
 </script>

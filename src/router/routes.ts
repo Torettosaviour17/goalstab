@@ -116,4 +116,10 @@ export const routes: RouteRecordRaw[] = [
   component: () => import('@/views/Terms.vue'),
   meta: { title: 'Terms of Service' }
 }
+{
+  path: '/accounts',
+  name: 'accounts',
+  component: () => import('@/views/Accounts.vue'),
+  meta: { requiresAuth: true, title: 'Accounts' }
+}
 ];
