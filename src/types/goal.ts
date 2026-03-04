@@ -14,6 +14,8 @@ export interface Goal {
   progress: number;
   lastUpdated: string;
   category?: string;
+  autoSaveEnabled?: boolean;
+  nextAutoSave?: string;
   sharedWith?: SharedUser[];
   createdAt: string;
 }
