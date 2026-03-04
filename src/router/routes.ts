@@ -86,40 +86,15 @@ export const routes: RouteRecordRaw[] = [
     meta: {
       requiresAuth: true,
       title: "Goal Details",
-    },
-  },
-  {
-    path: "/goals/:id",
-    name: "goal-detail",
-    component: () => import("@/views/GoalDetail.vue"),
-    meta: {
-      requiresAuth: true,
-      title: "Goal Details",
       transition: "slide-left",
     },
   },
   {
-    path: "/analytics",
-    name: "analytics",
-    component: () => import("@/views/Analytics.vue"),
+    path: "/terms",
+    name: "terms",
+    component: () => import("@/views/Terms.vue"),
     meta: {
-      requiresAuth: true,
-      title: "Analytics",
-      icon: "📈",
-      showInNav: true,
-      transition: "slide-up",
+      title: "Terms of Service",
     },
   },
-  {
-  path: '/terms',
-  name: 'terms',
-  component: () => import('@/views/Terms.vue'),
-  meta: { title: 'Terms of Service' }
-}
-{
-  path: '/accounts',
-  name: 'accounts',
-  component: () => import('@/views/Accounts.vue'),
-  meta: { requiresAuth: true, title: 'Accounts' }
-}
 ];
