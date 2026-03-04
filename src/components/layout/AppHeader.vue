@@ -4,13 +4,13 @@
   >
     <div class="container mx-auto px-4 md:px-6">
       <div class="flex items-center justify-between h-16">
-        <!-- Logo -->
+        <!-- Logo (unchanged) -->
         <div class="flex items-center gap-3">
           <router-link to="/" class="flex items-center group">
             <img
               src="@/assets/goaltab-logo.png"
               alt="GoalTabs"
-              class="w-15 h-15 rounded-lg object-contain group-hover:scale-110 transition-transform duration-300 shadow-lg"
+              class="w-9 h-9 rounded-lg object-contain group-hover:scale-110 transition-transform duration-300 shadow-lg"
             />
             <div>
               <h1 class="text-lg font-bold text-white tracking-tight">
@@ -27,12 +27,26 @@
           >
         </div>
 
-        <!-- Right section -->
+        <!-- Right section (notifications + user menu) -->
         <div class="flex items-center gap-3">
-          <!-- Notifications -->
-          <NotificationBell />
+          <!-- Notifications bell -->
+          <button
+            @click="toggleNotifications"
+            class="relative p-2 rounded-lg hover:bg-gray-800/50 transition"
+            aria-label="Notifications"
+          >
+            <span class="text-xl">🔔</span>
+            <span
+              v-if="hasUnreadNotifications"
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"
+            ></span>
+            <span
+              v-if="hasUnreadNotifications"
+              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
+            ></span>
+          </button>
 
-          <!-- User menu -->
+          <!-- User menu (unchanged) -->
           <div class="relative">
             <button
               @click="toggleUserMenu"
@@ -72,7 +86,7 @@
               </svg>
             </button>
 
-            <!-- Dropdown (closes when clicking outside) -->
+            <!-- Dropdown -->
             <transition name="fade-slide">
               <div
                 v-if="showUserMenu"
@@ -105,38 +119,7 @@
               </div>
             </transition>
           </div>
-
-          <!-- Mobile menu toggle -->
-          <button
-            @click="toggleMobileMenu"
-            class="md:hidden p-2 rounded-lg hover:bg-gray-800/50 transition"
-          >
-            <span class="text-xl">{{ mobileMenuOpen ? "✕" : "☰" }}</span>
-          </button>
         </div>
-      </div>
-    </div>
-
-    <!-- Mobile menu (no outside click, but we could add a backdrop later) -->
-    <div
-      v-if="mobileMenuOpen"
-      class="md:hidden bg-gray-900 border-t border-gray-800/50 animate-slide-down"
-    >
-      <div class="px-4 py-4 space-y-2">
-        <router-link
-          v-for="link in navLinks"
-          :key="link.path"
-          :to="link.path"
-          @click="closeMobileMenu"
-          class="flex items-center gap-4 px-4 py-3 rounded-xl transition"
-          :class="
-            $route.path === link.path
-              ? 'bg-primary-500/20 text-white'
-              : 'text-gray-400 hover:bg-white/5'
-          "
-        >
-          <span class="text-xl">{{ link.icon }}</span> {{ link.name }}
-        </router-link>
       </div>
     </div>
   </header>
@@ -147,25 +130,15 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
-import NotificationBell from "@/components/notifications/NotificationBell.vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const showUserMenu = ref(false);
-const mobileMenuOpen = ref(false);
+const hasUnreadNotifications = ref(true);
 
-// Navigation Config
-const navLinks = [
-  { name: "Dashboard", path: "/", icon: "📊" },
-  { name: "Goals", path: "/goals", icon: "🎯" },
-  { name: "Analytics", path: "/analytics", icon: "📈" },
-  { name: "Settings", path: "/settings", icon: "⚙️" },
-  { name: "Accounts", path: "/accounts", icon: "🏦" }, // optionally add
-];
-
-// Computed User Data
+// Computed user data (unchanged)
 const userName = computed(() => user.value?.name || "User");
 const userEmail = computed(() => user.value?.email || "user@example.com");
 const userPlan = computed(() => (user.value?.isPremium ? "Premium" : "Free"));
@@ -180,11 +153,12 @@ const userInitials = computed(() => {
     .slice(0, 2);
 });
 
-// UI Actions
+const toggleNotifications = () => {
+  console.log("Notifications toggled");
+};
+
 const toggleUserMenu = () => (showUserMenu.value = !showUserMenu.value);
 const closeUserMenu = () => (showUserMenu.value = false);
-const toggleMobileMenu = () => (mobileMenuOpen.value = !mobileMenuOpen.value);
-const closeMobileMenu = () => (mobileMenuOpen.value = false);
 
 const handleLogout = () => {
   closeUserMenu();
@@ -192,12 +166,9 @@ const handleLogout = () => {
   router.push("/login");
 };
 
-// Global Event Listeners
+// Escape key closes user menu
 const handleEscapeKey = (event: KeyboardEvent) => {
-  if (event.key === "Escape") {
-    closeUserMenu();
-    closeMobileMenu();
-  }
+  if (event.key === "Escape") closeUserMenu();
 };
 
 onMounted(() => document.addEventListener("keydown", handleEscapeKey));
@@ -213,19 +184,5 @@ onUnmounted(() => document.removeEventListener("keydown", handleEscapeKey));
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);
-}
-
-@keyframes slide-down {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.animate-slide-down {
-  animation: slide-down 0.3s ease-out forwards;
 }
 </style>

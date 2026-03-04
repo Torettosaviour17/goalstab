@@ -1,7 +1,8 @@
 <template>
   <div
-    class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 text-white"
+    class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900"
   >
+    <!-- Animated background elements (unchanged) -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <div
         class="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl animate-pulse-soft"
@@ -12,12 +13,15 @@
       ></div>
     </div>
 
-    <AppHeader v-if="showHeader" />
+    <!-- Header (always visible) -->
+    <AppHeader />
 
-    <div class="flex" :class="{ 'pt-16': showHeader }">
-      <AppSidebar v-if="showSidebar" />
+    <div class="flex pt-16">
+      <!-- Sidebar only on desktop -->
+      <AppSidebar v-if="showSidebar" class="hidden md:block" />
 
-      <main class="flex-1 min-h-[calc(100vh-4rem)]">
+      <!-- Main content: add bottom padding on mobile for bottom nav -->
+      <main class="flex-1 min-h-[calc(100vh-4rem)] pb-16 md:pb-0">
         <router-view v-slot="{ Component }">
           <PageTransition>
             <component :is="Component" />
@@ -26,6 +30,10 @@
       </main>
     </div>
 
+    <!-- Mobile Bottom Navigation (only when authenticated and not on auth pages) -->
+    <MobileBottomNav v-if="showMobileNav" />
+
+    <!-- Floating button only on dashboard -->
     <FloatingButton
       v-if="showFloatingButton"
       @click="uiStore.openCreateGoalModal"
@@ -37,63 +45,34 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import AppHeader from "@/components/layout/AppHeader.vue";
 import AppSidebar from "@/components/layout/AppSidebar.vue";
+import MobileBottomNav from "@/components/layout/MobileBottomNav.vue";
 import FloatingButton from "@/components/shared/FloatingButton.vue";
 import ToastNotification from "@/components/shared/ToastNotification.vue";
 import PageTransition from "@/components/shared/PageTransition.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 
-// Initialize Stores
 const route = useRoute();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
 const { isAuthenticated } = storeToRefs(authStore);
 
-/** * Auth pages where we want to hide navigation UI
- */
 const authPages = ["login", "register", "forgot-password", "terms"];
 
-/**
- * Logic to show/hide Header
- */
-const showHeader = computed(() => {
-  return isAuthenticated.value && !authPages.includes(route.name as string);
-});
-
-/**
- * Logic to show/hide Sidebar
- */
 const showSidebar = computed(() => {
   return isAuthenticated.value && !authPages.includes(route.name as string);
 });
 
-/**
- * Logic for Dashboard Floating Action Button
- */
+const showMobileNav = computed(() => {
+  return isAuthenticated.value && !authPages.includes(route.name as string);
+});
+
 const showFloatingButton = computed(() => {
   return isAuthenticated.value && route.name === "dashboard";
 });
-
-/**
- * IMPORTANT: Token is already restored in main.ts via initializeAuth()
- * No need to validate here - let the router handle it as needed
- */
-onMounted(async () => {
-  // Optional: Validate token periodically, but don't force it on every refresh
-  // await authStore.checkAuth()
-});
 </script>
-
-<style>
-/* Ensure the page transition doesn't cause horizontal scrolling */
-body {
-  overflow-x: hidden;
-  margin: 0;
-  padding: 0;
-}
-</style>
