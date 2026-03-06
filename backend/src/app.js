@@ -1,37 +1,41 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database");
-const adminRoutes = require("./routes/admin");
-app.use("/api/admin", adminRoutes);
 
-// Import routes
+// ⚠️ IMPORTANT: Create the app instance FIRST
+const app = express();
+
+// Connect Database
+connectDB();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Import routes (after app is created)
 const authRoutes = require("./routes/auth");
 const goalRoutes = require("./routes/goals");
 const accountRoutes = require("./routes/accounts");
 const userRoutes = require("./routes/users");
-const notificationRoutes = require("./routes/notifications"); // exports { router, sendNotification }
-const withdrawalRoutes = require("./routes/withdrawals"); // if exists
-
-const app = express();
-
-connectDB();
-
-app.use(cors());
-app.use(express.json());
+const notificationRoutes = require("./routes/notifications").router;
+const withdrawalRoutes = require("./routes/withdrawals");
+const adminRoutes = require("./routes/admin"); // ✅ admin routes imported here
 
 // Mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/accounts", accountRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/notifications", notificationRoutes.router); // 👈 use .router
-if (withdrawalRoutes) app.use("/api/withdrawals", withdrawalRoutes); // ensure it's a router
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/admin", adminRoutes); // ✅ admin routes used here
 
+// Test route
 app.get("/api/test", (req, res) => {
   res.json({ message: "API is working" });
 });
 
-// Error handler
+// Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ msg: "Something went wrong!" });
