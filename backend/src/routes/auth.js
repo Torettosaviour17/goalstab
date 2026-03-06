@@ -6,43 +6,29 @@ const User = require("../models/User");
 const auth = require("../middleware/auth");
 
 // @route   POST api/auth/register
-router.post("/register", async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ msg: "Please provide all fields" });
-  }
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+  console.log("Login attempt for email:", email);
   try {
-    let user = await User.findOne({ email });
-    if (user) return res.status(400).json({ msg: "User already exists" });
-
-    user = new User({ name, email, password });
-    await user.save();
-
-    const payload = { user: { id: user.id } };
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" },
-      (err, token) => {
-        if (err) throw err;
-        res.json({
-          token,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            preferences: user.preferences,
-            isAdmin: user.isAdmin, // ✅ added
-          },
-        });
-      },
-    );
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log("User not found");
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
+    console.log("User found:", user.email);
+    const isMatch = await user.comparePassword(password);
+    console.log("Password match result:", isMatch);
+    if (!isMatch) {
+      return res.status(400).json({ msg: "Invalid credentials" });
+    }
+    // ... rest of login (token generation)
+    console.log("Login successful, generating token");
+    // ... (rest of your code)
   } catch (err) {
-    console.error(err.message);
+    console.error("Login error:", err);
     res.status(500).send("Server error");
   }
 });
-
 // @route   POST api/auth/login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
