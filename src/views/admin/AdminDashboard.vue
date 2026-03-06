@@ -293,6 +293,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
 import { useAdminStore } from "@/stores/admin";
 import { useUIStore } from "@/stores/ui";
 import BaseModal from "@/components/shared/BaseModal.vue";

@@ -16,6 +16,7 @@ export interface User {
   name: string;
   phone?: string;
   isPremium: boolean;
+  isAdmin?: boolean;
   avatar?: string;
   preferences: {
     currency: string;
