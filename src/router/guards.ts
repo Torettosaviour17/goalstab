@@ -27,6 +27,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/admin",
+    name: "admin",
+    component: () => import("@/views/Admin.vue"),
+    meta: { requiresAuth: true, adminOnly: true },
+  },
+  {
     path: "/login",
     name: "login",
     component: () => import("@/views/auth/Login.vue"),
@@ -52,21 +58,34 @@ const router = createRouter({
   },
 });
 
-// Wait for auth before routing
+// 🔐 AUTH + ADMIN GUARD (async-safe)
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
 
-  // If auth not checked yet, wait
-  if (!authStore.user && !authStore.token) {
-    await authStore.checkAuth();
+  // Wait for token validation if user not loaded
+  if (!authStore.user && authStore.token) {
+    try {
+      await authStore.checkAuth();
+    } catch (err) {
+      console.warn("[Router] Auth check failed", err);
+    }
   }
 
   const requiresAuth = to.matched.some((r) => r.meta.requiresAuth);
   const guestOnly = to.matched.some((r) => r.meta.guestOnly);
+  const adminOnly = to.matched.some((r) => r.meta.adminOnly);
 
+  // Not logged in
   if (requiresAuth && !authStore.isAuthenticated) {
     return next({ name: "login", query: { redirect: to.fullPath } });
   }
+
+  // Admin only
+  if (adminOnly && !authStore.user?.isAdmin) {
+    return next({ name: "dashboard" });
+  }
+
+  // Logged-in user trying to visit guest page
   if (guestOnly && authStore.isAuthenticated) {
     return next({ name: "dashboard" });
   }

@@ -293,7 +293,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { storeToRefs } from "pinia";
+import { storeToRefs } from "pinia"; // ✅ added
 import { useAdminStore } from "@/stores/admin";
 import { useUIStore } from "@/stores/ui";
 import BaseModal from "@/components/shared/BaseModal.vue";
@@ -303,6 +303,9 @@ import debounce from "lodash/debounce";
 
 const adminStore = useAdminStore();
 const uiStore = useUIStore();
+
+const { users, withdrawals, stats, loading, totalPages } =
+  storeToRefs(adminStore);
 
 const activeTab = ref("Users");
 const tabs = ["Users", "Withdrawals"];
@@ -315,9 +318,6 @@ const showActionModal = ref(false);
 const actionType = ref<"approve" | "reject">("approve");
 const selectedWithdrawal = ref<any>(null);
 const adminNote = ref("");
-
-const { users, withdrawals, stats, loading, totalPages } =
-  storeToRefs(adminStore);
 
 onMounted(() => {
   adminStore.fetchStats();

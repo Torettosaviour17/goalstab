@@ -11,7 +11,7 @@ import clickOutside from "./directives/clickOutside";
 
 const app = createApp(App);
 const pinia = createPinia();
-pinia.use(piniaPluginPersistedstate); // 👈 enable persistence
+pinia.use(piniaPluginPersistedstate);
 
 app.directive("click-outside", clickOutside);
 app.use(pinia);
@@ -23,11 +23,11 @@ app.config.errorHandler = (err, instance, info) => {
   console.error("Vue Error:", err, instance, info);
 };
 
-// Restore auth state before mounting
-const authStore = useAuthStore();
-authStore.initializeAuth();
-
-app.mount("#app");
+// ✅ Restore auth state before mounting
+const authStore = useAuthStore(pinia);
+authStore.checkAuth().finally(() => {
+  app.mount("#app");
+});
 
 if (import.meta.env.DEV) {
   console.log(`GoalTabs v${import.meta.env.PACKAGE_VERSION || "1.0.0"}`);

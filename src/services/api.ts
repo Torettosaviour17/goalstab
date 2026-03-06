@@ -10,9 +10,22 @@ const api = axios.create({
 // Request interceptor to add token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    let token = localStorage.getItem("token");
+    // if not yet synced to localStorage, fall back to pinia store
+    if (!token) {
+      try {
+        // lazy import to avoid circular deps
+        const { useAuthStore } = require("@/stores/auth");
+        const auth = useAuthStore();
+        token = auth.token || "";
+      } catch (e) {
+        // ignore if store not ready
+      }
+    }
     if (token) {
+      // support both common conventions
       config.headers.Authorization = `Bearer ${token}`;
+      config.headers["x-auth-token"] = token;
     }
     return config;
   },
