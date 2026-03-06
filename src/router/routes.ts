@@ -97,4 +97,10 @@ export const routes: RouteRecordRaw[] = [
       title: "Terms of Service",
     },
   },
+  {
+    path: "/admin",
+    name: "admin",
+    component: () => import("@/views/admin/AdminDashboard.vue"),
+    meta: { requiresAuth: true, adminOnly: true, title: "Admin" },
+  },
 ];

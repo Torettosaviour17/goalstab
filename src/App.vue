@@ -2,7 +2,7 @@
   <div
     class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900"
   >
-    <!-- Animated background elements (unchanged) -->
+    <!-- Animated background elements (always visible) -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <div
         class="absolute -top-40 -right-40 w-80 h-80 bg-primary-500/10 rounded-full blur-3xl animate-pulse-soft"
@@ -13,15 +13,15 @@
       ></div>
     </div>
 
-    <!-- Header (always visible) -->
-    <AppHeader />
+    <!-- Header – only shown on non‑auth pages when logged in -->
+    <AppHeader v-if="showHeader" />
 
-    <div class="flex pt-16">
-      <!-- Sidebar only on desktop -->
+    <div class="flex" :class="{ 'pt-16': showHeader }">
+      <!-- Sidebar – only shown on desktop when logged in and not on auth pages -->
       <AppSidebar v-if="showSidebar" class="hidden md:block" />
 
-      <!-- Main content: add bottom padding on mobile for bottom nav -->
-      <main class="flex-1 min-h-[calc(100vh-4rem)] pb-16 md:pb-0">
+      <!-- Main content – add bottom padding on mobile for bottom nav -->
+      <main class="flex-1 min-h-screen" :class="{ 'pb-16': showMobileNav }">
         <router-view v-slot="{ Component }">
           <PageTransition>
             <component :is="Component" />
@@ -30,7 +30,7 @@
       </main>
     </div>
 
-    <!-- Mobile Bottom Navigation (only when authenticated and not on auth pages) -->
+    <!-- Mobile Bottom Navigation – only when authenticated and not on auth pages -->
     <MobileBottomNav v-if="showMobileNav" />
 
     <!-- Floating button only on dashboard -->
@@ -62,7 +62,12 @@ const authStore = useAuthStore();
 const uiStore = useUIStore();
 const { isAuthenticated } = storeToRefs(authStore);
 
+// List of auth pages where header/sidebar/nav should be hidden
 const authPages = ["login", "register", "forgot-password", "terms"];
+
+const showHeader = computed(() => {
+  return isAuthenticated.value && !authPages.includes(route.name as string);
+});
 
 const showSidebar = computed(() => {
   return isAuthenticated.value && !authPages.includes(route.name as string);

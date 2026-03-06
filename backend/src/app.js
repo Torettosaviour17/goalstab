@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/database");
+const adminRoutes = require("./routes/admin");
+app.use("/api/admin", adminRoutes);
 
 // Import routes
 const authRoutes = require("./routes/auth");
