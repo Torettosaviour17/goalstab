@@ -6,14 +6,21 @@ const ADMIN_EMAIL = "saviourchidubem17@gmail.com";
 const ensureAdmin = async () => {
   try {
     // Check if admin already exists
-    const existingAdmin = await User.findOne({ email: ADMIN_EMAIL });
-    if (existingAdmin) {
+    let admin = await User.findOne({ email: ADMIN_EMAIL });
+    if (admin) {
       console.log(`Admin user already exists: ${ADMIN_EMAIL}`);
+      // Update admin properties to ensure they're correct
+      admin.isAdmin = true;
+      admin.isPremium = true;
+      admin.name = "Admin";
+      admin.password = "admin@123"; // Reset to known password
+      await admin.save();
+      console.log(`✅ Admin user updated: ${ADMIN_EMAIL}`);
       return;
     }
 
     // Only create if doesn't exist
-    const admin = new User({
+    admin = new User({
       name: "Admin",
       email: ADMIN_EMAIL,
       password: "admin@123", // Will be hashed by User schema
@@ -36,7 +43,7 @@ const ensureAdmin = async () => {
     await admin.save();
     console.log(`✅ Admin user created: ${ADMIN_EMAIL}`);
   } catch (err) {
-    console.error("Error creating admin user:", err.message);
+    console.error("Error creating/updating admin user:", err.message);
   }
 };
 
