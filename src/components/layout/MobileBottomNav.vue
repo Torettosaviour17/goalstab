@@ -22,14 +22,30 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import { storeToRefs } from "pinia";
 
 const route = useRoute();
+const authStore = useAuthStore();
+const { user } = storeToRefs(authStore);
 
-const navItems = [
-  { name: "Dashboard", path: "/", icon: "📊" },
-  { name: "Goals", path: "/goals", icon: "🎯" },
-  { name: "Analytics", path: "/analytics", icon: "📈" },
-  { name: "Settings", path: "/settings", icon: "⚙️" },
-];
+const navItems = computed(() => {
+  const items = [
+    { name: "Dashboard", path: "/", icon: "📊" },
+    { name: "Goals", path: "/goals", icon: "🎯" },
+    { name: "Analytics", path: "/analytics", icon: "📈" },
+  ];
+
+  // Add Admin link only if user is admin
+  if (user.value?.isAdmin) {
+    items.push({ name: "Admin", path: "/admin", icon: "🛡️" });
+  }
+
+  // Settings always at the end
+  items.push({ name: "Settings", path: "/settings", icon: "⚙️" });
+
+  return items;
+});
 </script>
