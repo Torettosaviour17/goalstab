@@ -41,16 +41,3 @@ const ensureAdmin = async () => {
 };
 
 module.exports = ensureAdmin;
-          depositReceived: true,
-          weeklyReport: false,
-        },
-      },
-    });
-    await admin.save();
-    console.log("Admin user created successfully");
-  } catch (err) {
-    console.error("Error ensuring admin user:", err);
-  }
-};
-
-module.exports = ensureAdmin;
