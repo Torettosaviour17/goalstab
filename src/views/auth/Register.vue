@@ -264,7 +264,7 @@ const handleRegister = async () => {
   loading.value = true;
   try {
     await authStore.register(form.name, form.email, form.password);
-    router.push("/dashboard");
+    router.push("/");
   } catch (error) {
     // Error already handled in store
   } finally {
