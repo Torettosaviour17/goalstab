@@ -6,29 +6,61 @@ const User = require("../models/User");
 const auth = require("../middleware/auth");
 
 // @route   POST api/auth/register
-router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
-  console.log("Login attempt for email:", email);
+router.post("/register", async (req, res) => {
+  const { name, email, password } = req.body;
+
+  // Validation
+  if (!name || !email || !password) {
+    return res
+      .status(400)
+      .json({ msg: "Please provide name, email and password" });
+  }
+
+  if (password.length < 6) {
+    return res
+      .status(400)
+      .json({ msg: "Password must be at least 6 characters" });
+  }
+
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      console.log("User not found");
-      return res.status(400).json({ msg: "Invalid credentials" });
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res
+        .status(400)
+        .json({ msg: "User already exists with this email" });
     }
-    console.log("User found:", user.email);
-    const isMatch = await user.comparePassword(password);
-    console.log("Password match result:", isMatch);
-    if (!isMatch) {
-      return res.status(400).json({ msg: "Invalid credentials" });
-    }
-    // ... rest of login (token generation)
-    console.log("Login successful, generating token");
-    // ... (rest of your code)
+
+    // Create new user
+    user = new User({ name, email, password });
+    await user.save();
+
+    // Generate JWT token
+    const payload = { user: { id: user.id } };
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+      (err, token) => {
+        if (err) throw err;
+        res.status(201).json({
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            preferences: user.preferences,
+            isAdmin: user.isAdmin,
+          },
+        });
+      },
+    );
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).send("Server error");
+    console.error("Register error:", err);
+    res.status(500).json({ msg: "Server error during registration" });
   }
 });
+
 // @route   POST api/auth/login
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;

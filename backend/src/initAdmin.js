@@ -2,22 +2,21 @@ const User = require("./models/User");
 const bcrypt = require("bcryptjs");
 
 const ADMIN_EMAIL = "saviourchidubem17@gmail.com";
-const ADMIN_PASSWORD = "081toretto78";
 
 const ensureAdmin = async () => {
   try {
-    // Delete any existing user with that email
-    await User.deleteOne({ email: ADMIN_EMAIL });
-    console.log(`Deleted any existing user with email ${ADMIN_EMAIL}`);
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: ADMIN_EMAIL });
+    if (existingAdmin) {
+      console.log(`Admin user already exists: ${ADMIN_EMAIL}`);
+      return;
+    }
 
-    // Create admin user
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, salt);
-
+    // Only create if doesn't exist
     const admin = new User({
       name: "Admin",
       email: ADMIN_EMAIL,
-      password: hashedPassword,
+      password: "admin@123", // Will be hashed by User schema
       isPremium: true,
       isAdmin: true,
       preferences: {
@@ -28,6 +27,20 @@ const ensureAdmin = async () => {
           email: true,
           push: true,
           goalCompleted: true,
+          depositReceived: true,
+          weeklyReport: false,
+        },
+      },
+    });
+
+    await admin.save();
+    console.log(`✅ Admin user created: ${ADMIN_EMAIL}`);
+  } catch (err) {
+    console.error("Error creating admin user:", err.message);
+  }
+};
+
+module.exports = ensureAdmin;
           depositReceived: true,
           weeklyReport: false,
         },
