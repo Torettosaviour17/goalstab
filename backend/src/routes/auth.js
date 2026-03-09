@@ -6,7 +6,13 @@ const User = require("../models/User");
 const auth = require("../middleware/auth");
 
 // @route   POST api/auth/register
+// @desc    Register a new user (DISABLED - use admin panel to create users)
 router.post("/register", async (req, res) => {
+  return res.status(403).json({
+    msg: "Public registration is disabled. Please contact an administrator.",
+  });
+
+  /* UNCOMMENT BELOW TO RE-ENABLE PUBLIC REGISTRATION
   const { name, email, password } = req.body;
 
   // Validation
@@ -59,6 +65,7 @@ router.post("/register", async (req, res) => {
     console.error("Register error:", err);
     res.status(500).json({ msg: "Server error during registration" });
   }
+  */
 });
 
 // @route   POST api/auth/login

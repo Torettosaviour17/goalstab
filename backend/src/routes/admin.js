@@ -8,8 +8,70 @@ const Withdrawal = require("../models/Withdrawal");
 const Notification = require("../models/Notification");
 const { sendNotification } = require("./notifications");
 
+// @route   POST api/admin/users
+// @desc    Create a new user (admin only)
+router.post("/users", [auth, admin], async (req, res) => {
+  const {
+    name,
+    email,
+    password,
+    isPremium = false,
+    isAdmin = false,
+  } = req.body;
+
+  // Validation
+  if (!name || !email || !password) {
+    return res
+      .status(400)
+      .json({ msg: "Please provide name, email and password" });
+  }
+
+  if (password.length < 6) {
+    return res
+      .status(400)
+      .json({ msg: "Password must be at least 6 characters" });
+  }
+
+  try {
+    // Check if user already exists
+    let user = await User.findOne({ email });
+    if (user) {
+      return res
+        .status(400)
+        .json({ msg: "User already exists with this email" });
+    }
+
+    // Create new user
+    user = new User({
+      name,
+      email,
+      password,
+      isPremium,
+      isAdmin,
+    });
+    await user.save();
+
+    // Return user data (without password)
+    const userResponse = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      isPremium: user.isPremium,
+      isAdmin: user.isAdmin,
+      createdAt: user.createdAt,
+    };
+
+    res.status(201).json({
+      msg: "User created successfully",
+      user: userResponse,
+    });
+  } catch (err) {
+    console.error("Admin create user error:", err);
+    res.status(500).json({ msg: "Server error during user creation" });
+  }
+});
+
 // @route   GET api/admin/users
-// @desc    Get all users (with pagination)
 router.get("/users", [auth, admin], async (req, res) => {
   const { page = 1, limit = 20, search = "" } = req.query;
   try {
