@@ -21,7 +21,10 @@
       <AppSidebar v-if="showSidebar" class="hidden md:block" />
 
       <!-- Main content – add bottom padding on mobile for bottom nav -->
-      <main class="flex-1 min-h-screen" :class="{ 'pb-16': showMobileNav }">
+      <main
+        class="flex-1 min-h-screen w-20"
+        :class="{ 'pb-16': showMobileNav }"
+      >
         <router-view />
       </main>
     </div>
