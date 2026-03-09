@@ -22,12 +22,6 @@
 
       <!-- Main content – add bottom padding on mobile for bottom nav -->
       <main class="flex-1 min-h-screen" :class="{ 'pb-16': showMobileNav }">
-        <!-- Debug info -->
-        <div class="p-4 bg-red-500 text-white fixed top-0 left-0 z-50">
-          Auth: {{ isAuthenticated ? 'YES' : 'NO' }} | 
-          Route: {{ route.name }} | 
-          User: {{ user?.name || 'None' }}
-        </div>
         <router-view />
       </main>
     </div>
@@ -62,7 +56,6 @@ const route = useRoute();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
 const { isAuthenticated } = storeToRefs(authStore);
-const { user } = storeToRefs(authStore);
 
 // List of auth pages where header/sidebar/nav should be hidden
 const authPages = ["login", "register", "forgot-password", "terms"];
