@@ -119,15 +119,18 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 
+// Stores
 import { useGoalsStore } from "@/stores/goals";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 import { useAccountsStore } from "@/stores/accounts";
-import { useNotificationsStore } from "@/stores/notifications";
+import { useTransactionsStore } from "@/stores/transactions"; // ✅ added
 
+// API & types
 import api from "@/services/api";
 import type { Goal } from "@/types/goal";
 
+// Components
 import StatsCard from "@/components/dashboard/StatsCard.vue";
 import QuickActions from "@/components/dashboard/QuickActions.vue";
 import RecentActivity from "@/components/dashboard/RecentActivity.vue";
@@ -144,12 +147,14 @@ import WelcomeBanner from "@/components/dashboard/WelcomeBanner.vue";
 
 const router = useRouter();
 
+// Store instances
 const goalsStore = useGoalsStore();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
 const accountsStore = useAccountsStore();
-const notificationsStore = useNotificationsStore();
+const transactionsStore = useTransactionsStore(); // ✅ defined
 
+// Store refs
 const {
   goals,
   totalSaved,
@@ -160,26 +165,31 @@ const {
 
 const { user } = storeToRefs(authStore);
 
+// Computed
 const userName = computed(() => user.value?.name || "User");
 const monthlyGrowth = computed(() => totalSaved.value * 0.153);
 
+// Add Funds modal
 const showAddFundsModal = ref(false);
 const selectedGoalId = ref<string | null>(null);
-
 const selectedGoal = computed(() => {
   return goals.value.find((g) => g.id === selectedGoalId.value) || null;
 });
 
+// Withdrawals modal
 const showWithdrawModal = ref(false);
 const selectedWithdrawGoal = ref<Goal | null>(null);
 
+// Confetti & completion
 const showConfetti = ref(false);
 const showCompletedModal = ref(false);
 const completedGoal = ref<any>(null);
 
+// Helpers
 const formatCurrency = (value: number) =>
   `₦${new Intl.NumberFormat().format(value)}`;
 
+// Actions
 const openAddFunds = (id: string) => {
   selectedGoalId.value = id;
   showAddFundsModal.value = true;
@@ -187,9 +197,7 @@ const openAddFunds = (id: string) => {
 
 const handleAddFunds = (amount: number) => {
   if (!selectedGoal.value) return;
-
   goalsStore.addFunds(selectedGoal.value.id, amount);
-
   uiStore.addToast({
     type: "success",
     message: `₦${amount.toLocaleString()} added to ${selectedGoal.value.title}`,
@@ -198,15 +206,11 @@ const handleAddFunds = (amount: number) => {
 
 const handleWithdraw = (id: string) => {
   const goal = goals.value.find((g) => g.id === id);
-
   if (goal && goal.progress >= 100) {
     selectedWithdrawGoal.value = goal;
     showWithdrawModal.value = true;
   } else {
-    uiStore.addToast({
-      type: "warning",
-      message: "Complete the goal first!",
-    });
+    uiStore.addToast({ type: "warning", message: "Complete the goal first!" });
   }
 };
 
@@ -221,38 +225,26 @@ const submitWithdrawRequest = async (data: any) => {
         accountName: data.accountName,
       },
     });
-
     uiStore.addToast({
       type: "success",
       message: "Withdrawal request submitted!",
     });
-
     showWithdrawModal.value = false;
   } catch (err) {
-    uiStore.addToast({
-      type: "error",
-      message: "Failed to submit request",
-    });
+    uiStore.addToast({ type: "error", message: "Failed to submit request" });
   }
 };
 
 const handleCreateGoal = (formData: any) => {
   goalsStore.addGoal(formData);
-
   uiStore.closeCreateGoalModal();
-
-  uiStore.addToast({
-    type: "success",
-    message: "Goal created successfully!",
-  });
+  uiStore.addToast({ type: "success", message: "Goal created successfully!" });
 };
 
 watch(recentlyCompletedGoal, (newGoal) => {
   if (newGoal) {
     completedGoal.value = newGoal;
-
     showConfetti.value = true;
-
     setTimeout(() => {
       showCompletedModal.value = true;
     }, 500);
@@ -265,7 +257,6 @@ watch(showCompletedModal, (isOpen) => {
 
 const handleShare = () => {
   if (!completedGoal.value) return;
-
   if (navigator.share) {
     navigator.share({
       title: "Goal Completed!",
@@ -280,11 +271,12 @@ const handleShare = () => {
   }
 };
 
+// Lifecycle – fetch all user data on mount
 onMounted(async () => {
   await Promise.all([
     goalsStore.fetchGoals(),
     accountsStore.fetchAccounts(),
-    notificationsStore.fetchNotifications(),
+    transactionsStore.fetchRecentTransactions(), // ✅ now works
   ]);
 });
 </script>
