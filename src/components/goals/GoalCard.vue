@@ -44,9 +44,9 @@
 
     <div
       v-if="goal.autoSaveEnabled && goal.nextAutoSave"
-      class="mb-3 text-xs text-gray-400 flex items-center gap-1"
+      class="mt-2 text-xs text-gray-400 flex items-center gap-1"
     >
-      <span>⏰</span> Next: {{ formatDate(goal.nextAutoSave) }}
+      <span>⏰</span> Next auto‑save: {{ formatDate(goal.nextAutoSave) }}
     </div>
 
     <div class="flex gap-2">

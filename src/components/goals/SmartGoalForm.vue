@@ -327,6 +327,17 @@
           </select>
         </div>
 
+        <!-- Enable Auto-save Checkbox -->
+        <div class="flex items-center gap-2 pt-2">
+          <input
+            id="autoSaveEnabled"
+            v-model="form.autoSaveEnabled"
+            type="checkbox"
+            class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-primary-500 focus:ring-primary-500"
+          />
+          <label for="autoSaveEnabled" class="text-sm text-gray-300">Enable auto‑save</label>
+        </div>
+
         <!-- Deadline (optional) -->
         <div>
           <label class="block text-sm font-medium text-gray-300 mb-1"
@@ -412,6 +423,8 @@ interface SmartGoalFormData {
   deadline?: string;
   category?: string;
   accountId: string;
+  // NEW: enable/disable auto‑save
+  autoSaveEnabled: boolean;
   // Product fields
   productLink?: string;
   storeName?: string;
@@ -485,6 +498,7 @@ const form = reactive<SmartGoalFormData>({
   deadline: props.initialData.deadline || "",
   category: props.initialData.category || "",
   accountId: props.initialData.accountId || "",
+  autoSaveEnabled: props.initialData.autoSaveEnabled ?? true,
   productLink: props.initialData.productLink || "",
   storeName: props.initialData.storeName || "",
   serviceDate: props.initialData.serviceDate || "",

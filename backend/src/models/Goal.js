@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const express = require('express');
-const router = express.Router();
 
 const SharedWithSchema = new mongoose.Schema(
   {
@@ -98,16 +96,28 @@ const GoalSchema = new mongoose.Schema(
       ref: 'Account'
     },
 
-    sharedWith: [SharedWithSchema]
+    sharedWith: [SharedWithSchema],
+
+    // Auto‑save tracking fields (new)
+    autoSaveEnabled: {
+      type: Boolean,
+      default: true
+    },
+
+    lastAutoSave: {
+      type: Date
+    },
+
+    nextAutoSave: {
+      type: Date
+    }
   },
   {
     timestamps: true // automatically adds createdAt & updatedAt
   }
 );
 
-//
 // 🔥 Auto-calculate progress before saving
-//
 GoalSchema.pre('save', function (next) {
   if (this.target > 0) {
     this.progress = Math.min(
@@ -117,13 +127,10 @@ GoalSchema.pre('save', function (next) {
   } else {
     this.progress = 0;
   }
-
   next();
 });
 
-//
-// 🔥 Optional: Recalculate progress when updating with findOneAndUpdate
-//
+// 🔥 Recalculate progress when updating with findOneAndUpdate
 GoalSchema.pre('findOneAndUpdate', async function (next) {
   const update = this.getUpdate();
 
