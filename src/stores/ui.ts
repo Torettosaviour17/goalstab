@@ -12,7 +12,14 @@ export const useUIStore = defineStore("ui", () => {
   const globalLoading = ref(false);
   const showCreateGoalModal = ref(false);
   const toasts = ref<Toast[]>([]);
+  const authChecking = ref(true);
+  const welcomeBannerShown = ref(false);
+
   let nextToastId = 0;
+
+  const setAuthChecking = (value: boolean) => {
+    authChecking.value = value;
+  };
 
   const setGlobalLoading = (loading: boolean) => {
     globalLoading.value = loading;
@@ -28,7 +35,12 @@ export const useUIStore = defineStore("ui", () => {
 
   const addToast = (toast: Omit<Toast, "id">) => {
     const id = nextToastId++;
-    const newToast = { ...toast, id };
+
+    const newToast = {
+      ...toast,
+      id,
+    };
+
     toasts.value.push(newToast);
 
     if (toast.duration !== 0) {
@@ -46,6 +58,9 @@ export const useUIStore = defineStore("ui", () => {
     globalLoading,
     showCreateGoalModal,
     toasts,
+    authChecking,
+    welcomeBannerShown,
+    setAuthChecking,
     setGlobalLoading,
     openCreateGoalModal,
     closeCreateGoalModal,

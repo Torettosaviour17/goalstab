@@ -25,24 +25,27 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useUIStore } from '@/stores/ui'
 
 const props = defineProps<{
   userName: string
 }>()
 
-const visible = ref(true)
+const uiStore = useUIStore()
+const visible = ref(!uiStore.welcomeBannerShown)
 
 const dismiss = () => {
   visible.value = false
+  uiStore.welcomeBannerShown = true
 }
 
 onMounted(() => {
-  // Auto-dismiss after 5 seconds
   const timer = setTimeout(() => {
-    visible.value = false
+    if (visible.value) {
+      dismiss()
+    }
   }, 5000)
 
-  // Cleanup timeout if component unmounts early
   return () => clearTimeout(timer)
 })
 </script>

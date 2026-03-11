@@ -138,12 +138,14 @@ function getCategoryColor(category) {
 
 // @route   GET api/analytics/transactions
 // @desc    Get recent transactions
+// @route   GET api/analytics/transactions
+// @desc    Get recent transactions
 router.get('/transactions', auth, async (req, res) => {
   const { limit = 10 } = req.query;
   try {
     const transactions = await Transaction.find({ user: req.user.id })
       .populate('goal', 'title')
-      .sort({ date: -1 })
+      .sort({ createdAt: -1 })
       .limit(parseInt(limit));
     res.json(transactions);
   } catch (err) {

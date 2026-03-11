@@ -1,4 +1,4 @@
-    import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/services/api'
 import { useUIStore } from './ui'
@@ -22,11 +22,15 @@ export const useTransactionsStore = defineStore('transactions', () => {
     try {
       const { data } = await api.get(`/analytics/transactions?limit=${limit}`)
       transactions.value = data
-    } catch (err) {
-      uiStore.addToast({
-        type: 'error',
-        message: 'Failed to load recent activity'
-      })
+    } catch (err: any) {
+      // Silently ignore 404 (endpoint not implemented yet)
+      if (err.response?.status !== 404) {
+        uiStore.addToast({
+          type: 'error',
+          message: 'Failed to load recent activity'
+        })
+      }
+      // Keep empty array
     } finally {
       loading.value = false
     }
