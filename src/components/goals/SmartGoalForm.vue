@@ -2,7 +2,9 @@
   <div class="space-y-5">
     <!-- Step Progress – scrollable on small screens, more compact -->
     <div class="relative mb-5">
-      <div class="flex overflow-x-auto scrollbar-hide gap-2 pb-2 -mx-4 px-4 md:mx-0 md:px-0">
+      <div
+        class="flex overflow-x-auto scrollbar-hide gap-2 pb-2 -mx-4 px-4 md:mx-0 md:px-0"
+      >
         <div
           v-for="(step, index) in steps"
           :key="step.key"
@@ -40,18 +42,26 @@
         </div>
       </div>
       <!-- Gradient edges for scroll hint -->
-      <div class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none md:hidden"></div>
-      <div class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none md:hidden"></div>
+      <div
+        class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none md:hidden"
+      ></div>
+      <div
+        class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none md:hidden"
+      ></div>
     </div>
 
     <form @submit.prevent="handleSubmit" class="space-y-5">
       <!-- Step 1: Basic Info -->
       <div v-if="currentStep === 1" class="space-y-4 animate-fade-in">
-        <h3 class="text-lg font-bold text-white mb-3">Let's start with the basics</h3>
+        <h3 class="text-lg font-bold text-white mb-3">
+          Let's start with the basics
+        </h3>
 
         <!-- Goal Type Selection -->
         <div>
-          <label class="block text-xs font-medium text-gray-300 mb-2">What are you saving for?</label>
+          <label class="block text-xs font-medium text-gray-300 mb-2"
+            >What are you saving for?</label
+          >
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               type="button"
@@ -65,7 +75,9 @@
             >
               <span class="text-xl block mb-1">📦</span>
               <span class="text-sm font-medium text-white block">Product</span>
-              <p class="text-[11px] text-gray-400 mt-0.5">Electronics, gadgets, items</p>
+              <p class="text-[11px] text-gray-400 mt-0.5">
+                Electronics, gadgets, items
+              </p>
             </button>
             <button
               type="button"
@@ -79,28 +91,41 @@
             >
               <span class="text-xl block mb-1">🎫</span>
               <span class="text-sm font-medium text-white block">Service</span>
-              <p class="text-[11px] text-gray-400 mt-0.5">Travel, events, fees, rent</p>
+              <p class="text-[11px] text-gray-400 mt-0.5">
+                Travel, events, fees, rent
+              </p>
             </button>
           </div>
         </div>
 
         <!-- Title -->
         <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1">Goal Title</label>
+          <label class="block text-xs font-medium text-gray-300 mb-1"
+            >Goal Title</label
+          >
           <input
             v-model="title"
             type="text"
             required
-            :placeholder="goalCategory === 'product' ? 'e.g., MacBook Pro' : 'e.g., Bali Vacation'"
+            :placeholder="
+              goalCategory === 'product'
+                ? 'e.g., MacBook Pro'
+                : 'e.g., Bali Vacation'
+            "
             class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
         <!-- Target Amount -->
         <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1">Target Amount (₦)</label>
+          <label class="block text-xs font-medium text-gray-300 mb-1"
+            >Target Amount (₦)</label
+          >
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₦</span>
+            <span
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+              >₦</span
+            >
             <input
               v-model.number="target"
               type="number"
@@ -121,7 +146,9 @@
         <!-- Product-specific fields -->
         <template v-if="goalCategory === 'product'">
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1">Product Link (optional)</label>
+            <label class="block text-xs font-medium text-gray-300 mb-1"
+              >Product Link (optional)</label
+            >
             <input
               v-model="productLink"
               type="url"
@@ -130,7 +157,9 @@
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1">Store Name (optional)</label>
+            <label class="block text-xs font-medium text-gray-300 mb-1"
+              >Store Name (optional)</label
+            >
             <input
               v-model="storeName"
               type="text"
@@ -143,7 +172,9 @@
         <!-- Service-specific fields -->
         <template v-else-if="goalCategory === 'service'">
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1">Service Date (optional)</label>
+            <label class="block text-xs font-medium text-gray-300 mb-1"
+              >Service Date (optional)</label
+            >
             <input
               v-model="serviceDate"
               type="date"
@@ -151,7 +182,9 @@
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1">Location (optional)</label>
+            <label class="block text-xs font-medium text-gray-300 mb-1"
+              >Location (optional)</label
+            >
             <input
               v-model="location"
               type="text"
@@ -160,7 +193,9 @@
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1">Number of People (optional)</label>
+            <label class="block text-xs font-medium text-gray-300 mb-1"
+              >Number of People (optional)</label
+            >
             <input
               v-model.number="peopleCount"
               type="number"
@@ -170,7 +205,9 @@
             />
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1">Special Instructions (optional)</label>
+            <label class="block text-xs font-medium text-gray-300 mb-1"
+              >Special Instructions (optional)</label
+            >
             <textarea
               v-model="instructions"
               rows="2"
@@ -183,7 +220,9 @@
         <!-- Icon & Color (common) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-2">Icon</label>
+            <label class="block text-xs font-medium text-gray-300 mb-2"
+              >Icon</label
+            >
             <div class="flex flex-wrap gap-1.5">
               <button
                 v-for="iconItem in icons"
@@ -191,14 +230,20 @@
                 type="button"
                 @click="icon = iconItem"
                 class="w-8 h-8 rounded-lg flex items-center justify-center text-base transition"
-                :class="icon === iconItem ? 'bg-primary-500' : 'bg-gray-700 hover:bg-gray-600'"
+                :class="
+                  icon === iconItem
+                    ? 'bg-primary-500'
+                    : 'bg-gray-700 hover:bg-gray-600'
+                "
               >
                 {{ iconItem }}
               </button>
             </div>
           </div>
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-2">Color Theme</label>
+            <label class="block text-xs font-medium text-gray-300 mb-2"
+              >Color Theme</label
+            >
             <div class="flex flex-wrap gap-1.5">
               <button
                 v-for="colorItem in colors"
@@ -221,13 +266,19 @@
 
         <!-- Auto-save Type -->
         <div>
-          <label class="block text-xs font-medium text-gray-300 mb-2">Auto-save Type</label>
+          <label class="block text-xs font-medium text-gray-300 mb-2"
+            >Auto-save Type</label
+          >
           <div class="flex flex-col sm:flex-row gap-2">
             <button
               type="button"
               @click="type = 'percentage'"
               class="flex-1 py-2.5 text-sm rounded-lg transition"
-              :class="type === 'percentage' ? 'bg-primary-500' : 'bg-gray-700 hover:bg-gray-600'"
+              :class="
+                type === 'percentage'
+                  ? 'bg-primary-500'
+                  : 'bg-gray-700 hover:bg-gray-600'
+              "
             >
               Percentage
             </button>
@@ -235,7 +286,11 @@
               type="button"
               @click="type = 'fixed'"
               class="flex-1 py-2.5 text-sm rounded-lg transition"
-              :class="type === 'fixed' ? 'bg-primary-500' : 'bg-gray-700 hover:bg-gray-600'"
+              :class="
+                type === 'fixed'
+                  ? 'bg-primary-500'
+                  : 'bg-gray-700 hover:bg-gray-600'
+              "
             >
               Fixed Amount
             </button>
@@ -245,13 +300,18 @@
         <!-- Auto-save Value -->
         <div>
           <label class="block text-xs font-medium text-gray-300 mb-1">
-            {{ type === 'percentage' ? 'Percentage of income (%)' : 'Amount per period (₦)' }}
+            {{
+              type === "percentage"
+                ? "Percentage of income (%)"
+                : "Amount per period (₦)"
+            }}
           </label>
           <div class="relative">
             <span
               v-if="type === 'fixed'"
               class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
-            >₦</span>
+              >₦</span
+            >
             <input
               v-model.number="autoSave"
               type="number"
@@ -266,7 +326,9 @@
 
         <!-- Frequency -->
         <div>
-          <label class="block text-xs font-medium text-gray-300 mb-2">Frequency</label>
+          <label class="block text-xs font-medium text-gray-300 mb-2"
+            >Frequency</label
+          >
           <select
             v-model="frequency"
             class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -285,12 +347,16 @@
             type="checkbox"
             class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-primary-500 focus:ring-primary-500"
           />
-          <label for="autoSaveEnabled" class="text-xs text-gray-300">Enable auto‑save</label>
+          <label for="autoSaveEnabled" class="text-xs text-gray-300"
+            >Enable auto‑save</label
+          >
         </div>
 
         <!-- Deadline (optional) -->
         <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1">Deadline (optional)</label>
+          <label class="block text-xs font-medium text-gray-300 mb-1"
+            >Deadline (optional)</label
+          >
           <input
             v-model="deadline"
             type="date"
@@ -300,7 +366,9 @@
 
         <!-- Category (optional) -->
         <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1">Category</label>
+          <label class="block text-xs font-medium text-gray-300 mb-1"
+            >Category</label
+          >
           <select
             v-model="category"
             class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
@@ -392,7 +460,7 @@ const props = withDefaults(
   {
     initialData: () => ({}),
     submitLabel: "Create Goal",
-  }
+  },
 );
 
 const emit = defineEmits<{
@@ -431,10 +499,26 @@ const instructions = ref(props.initialData.instructions || "");
 
 const icons = ["💻", "🏝️", "🚗", "🏠", "🎓", "🛡️", "🎮", "📱", "👕", "🍔"];
 const colors = [
-  { label: "Blue", value: "from-blue-500 to-cyan-400", bg: "linear-gradient(to right, #3b82f6, #22d3ee)" },
-  { label: "Green", value: "from-emerald-500 to-teal-400", bg: "linear-gradient(to right, #10b981, #2dd4bf)" },
-  { label: "Orange", value: "from-amber-500 to-orange-400", bg: "linear-gradient(to right, #f59e0b, #fb923c)" },
-  { label: "Purple", value: "from-purple-500 to-pink-500", bg: "linear-gradient(to right, #a855f7, #ec4899)" },
+  {
+    label: "Blue",
+    value: "from-blue-500 to-cyan-400",
+    bg: "linear-gradient(to right, #3b82f6, #22d3ee)",
+  },
+  {
+    label: "Green",
+    value: "from-emerald-500 to-teal-400",
+    bg: "linear-gradient(to right, #10b981, #2dd4bf)",
+  },
+  {
+    label: "Orange",
+    value: "from-amber-500 to-orange-400",
+    bg: "linear-gradient(to right, #f59e0b, #fb923c)",
+  },
+  {
+    label: "Purple",
+    value: "from-purple-500 to-pink-500",
+    bg: "linear-gradient(to right, #a855f7, #ec4899)",
+  },
 ];
 
 const canProceed = computed(() => {
@@ -445,7 +529,10 @@ const canProceed = computed(() => {
     return true;
   }
   if (currentStep.value === 3) {
-    return autoSave.value > 0 && (type.value !== "percentage" || autoSave.value <= 100);
+    return (
+      autoSave.value > 0 &&
+      (type.value !== "percentage" || autoSave.value <= 100)
+    );
   }
   return false;
 });
@@ -460,7 +547,7 @@ const prevStep = () => {
 
 const handleSubmit = async () => {
   loading.value = true;
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   emit("submit", {
     goalCategory: goalCategory.value,
     title: title.value,
@@ -490,7 +577,13 @@ const handleSubmit = async () => {
   animation: fadeIn 0.3s ease-out;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

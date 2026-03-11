@@ -11,9 +11,8 @@ export interface SharedUser {
 }
 
 export interface Goal {
-  _id: string; // Use _id to match MongoDB
-  id: string;  // Keep for backward compatibility? Better to use _id consistently.
-  // We'll use _id as the primary key, and provide a computed id getter if needed.
+  _id: string;
+  id: string; // for compatibility
   title: string;
   target: number;
   saved: number;
@@ -30,7 +29,6 @@ export interface Goal {
   category?: string;
   accountId?: string;
   sharedWith: SharedUser[];
-  // Auto‑save fields
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
 }
@@ -46,7 +44,7 @@ export interface GoalFormData {
   deadline?: string;
   category?: string;
   accountId?: string;
-  autoSaveEnabled?: boolean; // Add this
+  autoSaveEnabled?: boolean;
 }
 
 export const useGoalsStore = defineStore("goals", () => {
@@ -55,44 +53,53 @@ export const useGoalsStore = defineStore("goals", () => {
   const recentlyCompletedGoal = ref<Goal | null>(null);
   const loading = ref(false);
 
-  /* =========================
-     COMPUTED
-  ========================== */
+  const generateId = () => crypto.randomUUID();
+
+  const recalculateProgress = (goal: Goal) => {
+    if (goal.target <= 0) {
+      goal.progress = 0;
+      return;
+    }
+    const previousProgress = goal.progress;
+    goal.progress = Math.min(100, Math.round((goal.saved / goal.target) * 100));
+    if (previousProgress < 100 && goal.progress >= 100) {
+      goal.locked = false;
+      recentlyCompletedGoal.value = goal;
+    }
+  };
+
+  const recalculateAll = () => goals.value.forEach(recalculateProgress);
+
   const totalSaved = computed(() =>
-    goals.value.reduce((sum, g) => sum + g.saved, 0)
+    goals.value.reduce((sum, g) => sum + g.saved, 0),
   );
-
   const totalTarget = computed(() =>
-    goals.value.reduce((sum, g) => sum + g.target, 0)
+    goals.value.reduce((sum, g) => sum + g.target, 0),
   );
-
   const overallProgress = computed(() =>
     totalTarget.value
       ? Math.min(100, Math.round((totalSaved.value / totalTarget.value) * 100))
-      : 0
+      : 0,
   );
-
   const activeGoals = computed(() =>
-    goals.value.filter((g) => g.progress < 100)
+    goals.value.filter((g) => g.progress < 100),
   );
-
   const completedGoals = computed(() =>
-    goals.value.filter((g) => g.progress >= 100)
+    goals.value.filter((g) => g.progress >= 100),
   );
-
   const activeGoalsCount = computed(() => activeGoals.value.length);
   const completedGoalsCount = computed(() => completedGoals.value.length);
 
-  /* =========================
-     ACTIONS (API)
-  ========================== */
-
-  // Fetch all goals for the current user
+  // API actions
   const fetchGoals = async () => {
     loading.value = true;
     try {
       const { data } = await api.get("/goals");
-      goals.value = data;
+      // Ensure id field is set for compatibility with frontend
+      goals.value = data.map((g: any) => ({
+        ...g,
+        id: g.id || g._id,
+      }));
     } catch (err) {
       uiStore.addToast({ type: "error", message: "Failed to load goals" });
     } finally {
@@ -100,71 +107,50 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
-  // Create a new goal
-  const addGoal = async (goalData: any) => {
-  try {
-    // Only send fields that exist in the backend Goal model
-    const payload = {
-      title: goalData.title,
-      target: goalData.target,
-      icon: goalData.icon,
-      color: goalData.color,
-      type: goalData.type,                // auto-save type
-      autoSave: goalData.autoSave,        // auto-save amount
-      frequency: goalData.frequency,
-      deadline: goalData.deadline || undefined,
-      category: goalData.category || undefined,
-      accountId: goalData.accountId || undefined,
-      autoSaveEnabled: goalData.autoSaveEnabled ?? true,
-    };
-    const { data } = await api.post("/goals", payload);
-    goals.value.unshift(data);
-    uiStore.addToast({ type: "success", message: "Goal created!" });
-    return data;
-  } catch (err) {
-    uiStore.addToast({ type: "error", message: "Failed to create goal" });
-    throw err;
-  }
-};
-
-  // Update an existing goal
-  const updateGoal = async (id: string, updates: Partial<GoalFormData>) => {
+  const addGoal = async (goalData: GoalFormData) => {
     try {
-      const { data } = await api.put(`/goals/${id}`, updates);
-      const index = goals.value.findIndex((g) => g._id === id);
-      if (index !== -1) goals.value[index] = data;
-      uiStore.addToast({ type: "success", message: "Goal updated" });
+      // Send only the fields the backend expects
+      const payload = {
+        title: goalData.title,
+        target: Number(goalData.target),
+        icon: goalData.icon || "🎯",
+        color: goalData.color || "from-blue-500 to-cyan-400",
+        type: goalData.type || "percentage",
+        autoSave: Number(goalData.autoSave) || 10,
+        frequency: goalData.frequency || "monthly",
+        deadline: goalData.deadline || undefined,
+        category: goalData.category || undefined,
+        accountId: goalData.accountId || undefined,
+        autoSaveEnabled: goalData.autoSaveEnabled ?? true,
+      };
+      const { data } = await api.post("/goals", payload);
+      // Ensure id field is set for compatibility with frontend
+      if (data._id && !data.id) {
+        data.id = data._id;
+      }
+      goals.value.unshift(data);
+      uiStore.addToast({ type: "success", message: "Goal created!" });
       return data;
-    } catch (err) {
-      uiStore.addToast({ type: "error", message: "Failed to update goal" });
+    } catch (err: any) {
+      console.error("Add goal error:", err.response?.data || err.message);
+      uiStore.addToast({
+        type: "error",
+        message: err.response?.data?.msg || "Failed to create goal",
+      });
       throw err;
     }
   };
 
-  // Delete a goal
-  const deleteGoal = async (id: string) => {
-    try {
-      await api.delete(`/goals/${id}`);
-      goals.value = goals.value.filter((g) => g._id !== id);
-      uiStore.addToast({ type: "success", message: "Goal deleted" });
-    } catch (err) {
-      uiStore.addToast({ type: "error", message: "Failed to delete goal" });
-      throw err;
-    }
-  };
-
-  // Add funds to a goal
   const addFunds = async (id: string, amount: number) => {
     try {
       const { data } = await api.post(`/goals/${id}/add-funds`, { amount });
-      const index = goals.value.findIndex((g) => g._id === id);
-      if (index !== -1) goals.value[index] = data;
-
-      // Check if goal completed (the backend already handles notifications)
-      if (data.progress >= 100) {
-        recentlyCompletedGoal.value = data;
+      // Ensure id field is set
+      if (data._id && !data.id) {
+        data.id = data._id;
       }
-
+      const index = goals.value.findIndex((g) => g._id === id || g.id === id);
+      if (index !== -1) goals.value[index] = data;
+      if (data.progress >= 100) recentlyCompletedGoal.value = data;
       uiStore.addToast({
         type: "success",
         message: `₦${amount.toLocaleString()} added`,
@@ -176,14 +162,34 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
-  // (Optional) Withdraw funds – we already have a separate withdrawals store,
-  // so we might not need this here. Keep for completeness.
-  const withdrawFunds = async (id: string, amount: number) => {
-    // This would need a backend endpoint. Currently not implemented.
-    uiStore.addToast({ type: "error", message: "Not implemented" });
+  const updateGoal = async (id: string, updates: Partial<GoalFormData>) => {
+    try {
+      const { data } = await api.put(`/goals/${id}`, updates);
+      // Ensure id field is set
+      if (data._id && !data.id) {
+        data.id = data._id;
+      }
+      const index = goals.value.findIndex((g) => g._id === id || g.id === id);
+      if (index !== -1) goals.value[index] = data;
+      uiStore.addToast({ type: "success", message: "Goal updated" });
+      return data;
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to update goal" });
+      throw err;
+    }
   };
 
-  // Clear the completed goal flag after modal closes
+  const deleteGoal = async (id: string) => {
+    try {
+      await api.delete(`/goals/${id}`);
+      goals.value = goals.value.filter((g) => g._id !== id);
+      uiStore.addToast({ type: "success", message: "Goal deleted" });
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to delete goal" });
+      throw err;
+    }
+  };
+
   const clearCompleted = () => {
     recentlyCompletedGoal.value = null;
   };
@@ -205,6 +211,5 @@ export const useGoalsStore = defineStore("goals", () => {
     updateGoal,
     deleteGoal,
     addFunds,
-    withdrawFunds,
   };
 });

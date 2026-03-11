@@ -54,11 +54,11 @@
         <div v-if="goals.length" class="grid grid-cols-1 md:grid-cols-2 gap-5">
           <GoalCard
             v-for="goal in goals"
-            :key="goal.id"
+            :key="goal.id || goal._id"
             :goal="goal"
             class="hover:-translate-y-1 transition-all duration-300"
-            @add-funds="openAddFunds(goal.id)"
-            @withdraw="handleWithdraw(goal.id)"
+            @add-funds="openAddFunds(goal.id || goal._id)"
+            @withdraw="handleWithdraw(goal.id || goal._id)"
           />
         </div>
 
@@ -173,7 +173,11 @@ const monthlyGrowth = computed(() => totalSaved.value * 0.153);
 const showAddFundsModal = ref(false);
 const selectedGoalId = ref<string | null>(null);
 const selectedGoal = computed(() => {
-  return goals.value.find((g) => g.id === selectedGoalId.value) || null;
+  return (
+    goals.value.find(
+      (g) => g.id === selectedGoalId.value || g._id === selectedGoalId.value,
+    ) || null
+  );
 });
 
 // Withdrawals modal
@@ -190,22 +194,41 @@ const formatCurrency = (value: number) =>
   `₦${new Intl.NumberFormat().format(value)}`;
 
 // Actions
-const openAddFunds = (id: string) => {
+const openAddFunds = (id: string | undefined) => {
+  if (!id || id === "undefined") {
+    console.warn("openAddFunds called with invalid id", id, goals.value);
+    return;
+  }
+  // accept either frontend `id` or MongoDB `_id`
   selectedGoalId.value = id;
   showAddFundsModal.value = true;
 };
 
 const handleAddFunds = (amount: number) => {
   if (!selectedGoal.value) return;
-  goalsStore.addFunds(selectedGoal.value.id, amount);
+  const goalId = selectedGoal.value.id || selectedGoal.value._id;
+  if (!goalId || goalId === "undefined") {
+    console.error(
+      "Attempted to add funds with invalid goalId",
+      goalId,
+      selectedGoal.value,
+    );
+    return;
+  }
+  console.log("Adding funds to goal", {
+    goalId,
+    selectedGoal: selectedGoal.value,
+  });
+  goalsStore.addFunds(goalId, amount);
   uiStore.addToast({
     type: "success",
     message: `₦${amount.toLocaleString()} added to ${selectedGoal.value.title}`,
   });
 };
 
-const handleWithdraw = (id: string) => {
-  const goal = goals.value.find((g) => g.id === id);
+const handleWithdraw = (id: string | undefined) => {
+  if (!id) return;
+  const goal = goals.value.find((g) => g.id === id || g._id === id);
   if (goal && goal.progress >= 100) {
     selectedWithdrawGoal.value = goal;
     showWithdrawModal.value = true;
