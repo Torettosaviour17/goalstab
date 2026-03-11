@@ -101,17 +101,31 @@ export const useGoalsStore = defineStore("goals", () => {
   };
 
   // Create a new goal
-  const addGoal = async (goalData: GoalFormData) => {
-    try {
-      const { data } = await api.post("/goals", goalData);
-      goals.value.unshift(data);
-      uiStore.addToast({ type: "success", message: "Goal created!" });
-      return data;
-    } catch (err) {
-      uiStore.addToast({ type: "error", message: "Failed to create goal" });
-      throw err;
-    }
-  };
+  const addGoal = async (goalData: any) => {
+  try {
+    // Only send fields that exist in the backend Goal model
+    const payload = {
+      title: goalData.title,
+      target: goalData.target,
+      icon: goalData.icon,
+      color: goalData.color,
+      type: goalData.type,                // auto-save type
+      autoSave: goalData.autoSave,        // auto-save amount
+      frequency: goalData.frequency,
+      deadline: goalData.deadline || undefined,
+      category: goalData.category || undefined,
+      accountId: goalData.accountId || undefined,
+      autoSaveEnabled: goalData.autoSaveEnabled ?? true,
+    };
+    const { data } = await api.post("/goals", payload);
+    goals.value.unshift(data);
+    uiStore.addToast({ type: "success", message: "Goal created!" });
+    return data;
+  } catch (err) {
+    uiStore.addToast({ type: "error", message: "Failed to create goal" });
+    throw err;
+  }
+};
 
   // Update an existing goal
   const updateGoal = async (id: string, updates: Partial<GoalFormData>) => {
