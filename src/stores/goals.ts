@@ -1,6 +1,7 @@
-// src/stores/goals.ts
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import api from "@/services/api";
+import { useUIStore } from "./ui";
 
 export interface SharedUser {
   id: string;
@@ -10,7 +11,9 @@ export interface SharedUser {
 }
 
 export interface Goal {
-  id: string;
+  _id: string; // Use _id to match MongoDB
+  id: string;  // Keep for backward compatibility? Better to use _id consistently.
+  // We'll use _id as the primary key, and provide a computed id getter if needed.
   title: string;
   target: number;
   saved: number;
@@ -24,9 +27,12 @@ export interface Goal {
   progress: number;
   lastUpdated: string;
   createdAt: string;
-  sharedWith: SharedUser[];
   category?: string;
   accountId?: string;
+  sharedWith: SharedUser[];
+  // Auto‑save fields
+  autoSaveEnabled?: boolean;
+  nextAutoSave?: string;
 }
 
 export interface GoalFormData {
@@ -40,211 +46,137 @@ export interface GoalFormData {
   deadline?: string;
   category?: string;
   accountId?: string;
+  autoSaveEnabled?: boolean; // Add this
 }
 
 export const useGoalsStore = defineStore("goals", () => {
-  /* =========================
-     STATE
-  ========================== */
-
-  const goals = ref<Goal[]>([
-    {
-      id: "goal-1",
-      title: "MacBook Pro M3",
-      target: 250000,
-      saved: 120000,
-      icon: "💻",
-      color: "from-blue-500 to-cyan-400",
-      type: "percentage",
-      autoSave: 10,
-      frequency: "weekly",
-      deadline: "2024-06-30",
-      locked: true,
-      progress: 48,
-      lastUpdated: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-      category: "Electronics",
-      accountId: "acc-1",
-      sharedWith: [],
-    },
-  ]);
-
+  const uiStore = useUIStore();
+  const goals = ref<Goal[]>([]);
   const recentlyCompletedGoal = ref<Goal | null>(null);
-
-  const generateId = () => crypto.randomUUID();
-
-  /* =========================
-     HELPERS
-  ========================== */
-
-  const recalculateProgress = (goal: Goal) => {
-    if (goal.target <= 0) {
-      goal.progress = 0;
-      return;
-    }
-
-    const previousProgress = goal.progress;
-
-    goal.progress = Math.min(100, Math.round((goal.saved / goal.target) * 100));
-
-    if (previousProgress < 100 && goal.progress >= 100) {
-      goal.locked = false;
-      recentlyCompletedGoal.value = goal;
-    }
-  };
-
-  const recalculateAll = () => goals.value.forEach(recalculateProgress);
+  const loading = ref(false);
 
   /* =========================
      COMPUTED
   ========================== */
-
   const totalSaved = computed(() =>
-    goals.value.reduce((sum, g) => sum + g.saved, 0),
+    goals.value.reduce((sum, g) => sum + g.saved, 0)
   );
 
   const totalTarget = computed(() =>
-    goals.value.reduce((sum, g) => sum + g.target, 0),
+    goals.value.reduce((sum, g) => sum + g.target, 0)
   );
 
   const overallProgress = computed(() =>
     totalTarget.value
       ? Math.min(100, Math.round((totalSaved.value / totalTarget.value) * 100))
-      : 0,
+      : 0
   );
 
   const activeGoals = computed(() =>
-    goals.value.filter((g) => g.progress < 100),
+    goals.value.filter((g) => g.progress < 100)
   );
 
   const completedGoals = computed(() =>
-    goals.value.filter((g) => g.progress >= 100),
+    goals.value.filter((g) => g.progress >= 100)
   );
 
   const activeGoalsCount = computed(() => activeGoals.value.length);
   const completedGoalsCount = computed(() => completedGoals.value.length);
 
   /* =========================
-     ACTIONS
+     ACTIONS (API)
   ========================== */
 
-  const addGoal = (goalData: GoalFormData) => {
-    const now = new Date().toISOString();
-
-    const newGoal: Goal = {
-      id: generateId(),
-      title: goalData.title,
-      target: goalData.target,
-      saved: 0,
-      icon: goalData.icon,
-      color: goalData.color,
-      type: goalData.type,
-      autoSave: goalData.autoSave,
-      frequency: goalData.frequency,
-      deadline: goalData.deadline || undefined,
-      locked: true,
-      progress: 0,
-      lastUpdated: now,
-      createdAt: now,
-      category: goalData.category,
-      accountId: goalData.accountId,
-      sharedWith: [],
-    };
-
-    goals.value.unshift(newGoal);
-    return newGoal;
+  // Fetch all goals for the current user
+  const fetchGoals = async () => {
+    loading.value = true;
+    try {
+      const { data } = await api.get("/goals");
+      goals.value = data;
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to load goals" });
+    } finally {
+      loading.value = false;
+    }
   };
 
-  const addFunds = (id: string, amount: number) => {
-    const goal = goals.value.find((g) => g.id === id);
-    if (!goal || amount <= 0) return;
-
-    goal.saved = Math.min(goal.saved + amount, goal.target);
-    goal.lastUpdated = new Date().toISOString();
-
-    recalculateProgress(goal);
+  // Create a new goal
+  const addGoal = async (goalData: GoalFormData) => {
+    try {
+      const { data } = await api.post("/goals", goalData);
+      goals.value.unshift(data);
+      uiStore.addToast({ type: "success", message: "Goal created!" });
+      return data;
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to create goal" });
+      throw err;
+    }
   };
 
-  const withdrawFunds = (id: string, amount: number) => {
-    const goal = goals.value.find((g) => g.id === id);
-    if (!goal || goal.locked || amount <= 0) return;
-
-    goal.saved = Math.max(0, goal.saved - amount);
-    goal.lastUpdated = new Date().toISOString();
-
-    recalculateProgress(goal);
+  // Update an existing goal
+  const updateGoal = async (id: string, updates: Partial<GoalFormData>) => {
+    try {
+      const { data } = await api.put(`/goals/${id}`, updates);
+      const index = goals.value.findIndex((g) => g._id === id);
+      if (index !== -1) goals.value[index] = data;
+      uiStore.addToast({ type: "success", message: "Goal updated" });
+      return data;
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to update goal" });
+      throw err;
+    }
   };
 
-  const updateGoal = (id: string, updates: Partial<GoalFormData>) => {
-    const goal = goals.value.find((g) => g.id === id);
-    if (!goal) return;
-
-    Object.assign(goal, updates);
-    goal.lastUpdated = new Date().toISOString();
-
-    recalculateProgress(goal);
+  // Delete a goal
+  const deleteGoal = async (id: string) => {
+    try {
+      await api.delete(`/goals/${id}`);
+      goals.value = goals.value.filter((g) => g._id !== id);
+      uiStore.addToast({ type: "success", message: "Goal deleted" });
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to delete goal" });
+      throw err;
+    }
   };
 
-  const deleteGoal = (id: string) => {
-    goals.value = goals.value.filter((g) => g.id !== id);
-  };
+  // Add funds to a goal
+  const addFunds = async (id: string, amount: number) => {
+    try {
+      const { data } = await api.post(`/goals/${id}/add-funds`, { amount });
+      const index = goals.value.findIndex((g) => g._id === id);
+      if (index !== -1) goals.value[index] = data;
 
-  const shareGoal = (
-    goalId: string,
-    user: { email: string; role: "owner" | "contributor" | "viewer" },
-  ) => {
-    const goal = goals.value.find((g) => g.id === goalId);
-    if (!goal) return;
-
-    if (goal.sharedWith.some((u) => u.email === user.email)) return;
-
-    const newUser: SharedUser = {
-      id: generateId(),
-      name: user.email.split("@")[0] ?? "user",
-      email: user.email,
-      role: user.role,
-    };
-
-    goal.sharedWith.push(newUser);
-  };
-
-  const unshareGoal = (goalId: string, userId: string) => {
-    const goal = goals.value.find((g) => g.id === goalId);
-    if (!goal) return;
-
-    goal.sharedWith = goal.sharedWith.filter((u) => u.id !== userId);
-  };
-
-  /* 🔥 Auto Save Processor */
-  const processAutoSave = () => {
-    let totalAdded = 0;
-
-    goals.value.forEach((goal) => {
-      if (goal.progress >= 100) return;
-
-      let amountToAdd = 0;
-
-      if (goal.type === "percentage") {
-        amountToAdd = (goal.target * goal.autoSave) / 100;
-      } else {
-        amountToAdd = goal.autoSave;
+      // Check if goal completed (the backend already handles notifications)
+      if (data.progress >= 100) {
+        recentlyCompletedGoal.value = data;
       }
 
-      goal.saved = Math.min(goal.saved + amountToAdd, goal.target);
-      totalAdded += amountToAdd;
-
-      recalculateProgress(goal);
-    });
-
-    return totalAdded;
+      uiStore.addToast({
+        type: "success",
+        message: `₦${amount.toLocaleString()} added`,
+      });
+      return data;
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to add funds" });
+      throw err;
+    }
   };
 
+  // (Optional) Withdraw funds – we already have a separate withdrawals store,
+  // so we might not need this here. Keep for completeness.
+  const withdrawFunds = async (id: string, amount: number) => {
+    // This would need a backend endpoint. Currently not implemented.
+    uiStore.addToast({ type: "error", message: "Not implemented" });
+  };
+
+  // Clear the completed goal flag after modal closes
   const clearCompleted = () => {
     recentlyCompletedGoal.value = null;
   };
 
   return {
     goals,
+    loading,
     recentlyCompletedGoal,
     clearCompleted,
     totalSaved,
@@ -254,14 +186,11 @@ export const useGoalsStore = defineStore("goals", () => {
     completedGoals,
     activeGoalsCount,
     completedGoalsCount,
+    fetchGoals,
     addGoal,
-    addFunds,
-    withdrawFunds,
     updateGoal,
     deleteGoal,
-    shareGoal,
-    unshareGoal,
-    processAutoSave,
-    recalculateAll,
+    addFunds,
+    withdrawFunds,
   };
 });

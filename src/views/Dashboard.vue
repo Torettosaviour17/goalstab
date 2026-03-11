@@ -77,12 +77,8 @@
 
       <!-- Sidebar -->
       <div class="space-y-8">
-        <div>
-          <QuickActions />
-        </div>
-        <div>
-          <RecentActivity />
-        </div>
+        <QuickActions />
+        <RecentActivity />
       </div>
     </div>
 
@@ -103,7 +99,7 @@
       @submit="submitWithdrawRequest"
     />
 
-    <!-- Confetti & Completion -->
+    <!-- Confetti -->
     <Confetti
       v-if="showConfetti"
       :duration="3000"
@@ -119,12 +115,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
+
 import { useGoalsStore } from "@/stores/goals";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
+import { useAccountsStore } from "@/stores/accounts";
+import { useNotificationsStore } from "@/stores/notifications";
+
 import api from "@/services/api";
 import type { Goal } from "@/types/goal";
 
@@ -143,9 +143,12 @@ import EmptyState from "@/components/dashboard/EmptyState.vue";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner.vue";
 
 const router = useRouter();
+
 const goalsStore = useGoalsStore();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
+const accountsStore = useAccountsStore();
+const notificationsStore = useNotificationsStore();
 
 const {
   goals,
@@ -160,14 +163,13 @@ const { user } = storeToRefs(authStore);
 const userName = computed(() => user.value?.name || "User");
 const monthlyGrowth = computed(() => totalSaved.value * 0.153);
 
-// Add Funds
 const showAddFundsModal = ref(false);
 const selectedGoalId = ref<string | null>(null);
+
 const selectedGoal = computed(() => {
   return goals.value.find((g) => g.id === selectedGoalId.value) || null;
 });
 
-// Withdrawals
 const showWithdrawModal = ref(false);
 const selectedWithdrawGoal = ref<Goal | null>(null);
 
@@ -185,7 +187,9 @@ const openAddFunds = (id: string) => {
 
 const handleAddFunds = (amount: number) => {
   if (!selectedGoal.value) return;
+
   goalsStore.addFunds(selectedGoal.value.id, amount);
+
   uiStore.addToast({
     type: "success",
     message: `₦${amount.toLocaleString()} added to ${selectedGoal.value.title}`,
@@ -193,21 +197,20 @@ const handleAddFunds = (amount: number) => {
 };
 
 const handleWithdraw = (id: string) => {
-  console.log("handleWithdraw called for goal:", id);
   const goal = goals.value.find((g) => g.id === id);
-  console.log("Found goal:", goal);
+
   if (goal && goal.progress >= 100) {
-    console.log("Goal completed, opening modal");
     selectedWithdrawGoal.value = goal;
     showWithdrawModal.value = true;
   } else {
-    console.log("Goal not completed, showing warning");
-    uiStore.addToast({ type: "warning", message: "Complete the goal first!" });
+    uiStore.addToast({
+      type: "warning",
+      message: "Complete the goal first!",
+    });
   }
 };
 
 const submitWithdrawRequest = async (data: any) => {
-  console.log("submitWithdrawRequest called with:", data);
   try {
     await api.post("/withdrawals", {
       goalId: selectedWithdrawGoal.value?.id,
@@ -218,27 +221,38 @@ const submitWithdrawRequest = async (data: any) => {
         accountName: data.accountName,
       },
     });
+
     uiStore.addToast({
       type: "success",
       message: "Withdrawal request submitted!",
     });
+
     showWithdrawModal.value = false;
   } catch (err) {
-    console.error("Withdrawal submission error:", err);
-    uiStore.addToast({ type: "error", message: "Failed to submit request" });
+    uiStore.addToast({
+      type: "error",
+      message: "Failed to submit request",
+    });
   }
 };
 
 const handleCreateGoal = (formData: any) => {
   goalsStore.addGoal(formData);
+
   uiStore.closeCreateGoalModal();
-  uiStore.addToast({ type: "success", message: "Goal created successfully!" });
+
+  uiStore.addToast({
+    type: "success",
+    message: "Goal created successfully!",
+  });
 };
 
 watch(recentlyCompletedGoal, (newGoal) => {
   if (newGoal) {
     completedGoal.value = newGoal;
+
     showConfetti.value = true;
+
     setTimeout(() => {
       showCompletedModal.value = true;
     }, 500);
@@ -251,6 +265,7 @@ watch(showCompletedModal, (isOpen) => {
 
 const handleShare = () => {
   if (!completedGoal.value) return;
+
   if (navigator.share) {
     navigator.share({
       title: "Goal Completed!",
@@ -264,4 +279,12 @@ const handleShare = () => {
     });
   }
 };
+
+onMounted(async () => {
+  await Promise.all([
+    goalsStore.fetchGoals(),
+    accountsStore.fetchAccounts(),
+    notificationsStore.fetchNotifications(),
+  ]);
+});
 </script>
