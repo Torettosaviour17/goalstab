@@ -1,5 +1,6 @@
 export interface Goal {
   id: string;
+  _id: string;
   title: string;
   target: number;
   saved: number;

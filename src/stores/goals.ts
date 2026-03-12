@@ -12,7 +12,7 @@ export interface SharedUser {
 
 export interface Goal {
   _id: string;
-  id: string; // for compatibility
+  id: string; // frontend alias
   title: string;
   target: number;
   saved: number;
@@ -95,7 +95,7 @@ export const useGoalsStore = defineStore("goals", () => {
     loading.value = true;
     try {
       const { data } = await api.get("/goals");
-      // Ensure id field is set for compatibility with frontend
+      // Ensure id field is set for compatibility
       goals.value = data.map((g: any) => ({
         ...g,
         id: g.id || g._id,
@@ -109,7 +109,6 @@ export const useGoalsStore = defineStore("goals", () => {
 
   const addGoal = async (goalData: GoalFormData) => {
     try {
-      // Send only the fields the backend expects
       const payload = {
         title: goalData.title,
         target: Number(goalData.target),
@@ -124,10 +123,7 @@ export const useGoalsStore = defineStore("goals", () => {
         autoSaveEnabled: goalData.autoSaveEnabled ?? true,
       };
       const { data } = await api.post("/goals", payload);
-      // Ensure id field is set for compatibility with frontend
-      if (data._id && !data.id) {
-        data.id = data._id;
-      }
+      if (data._id && !data.id) data.id = data._id;
       goals.value.unshift(data);
       uiStore.addToast({ type: "success", message: "Goal created!" });
       return data;
@@ -144,10 +140,7 @@ export const useGoalsStore = defineStore("goals", () => {
   const addFunds = async (id: string, amount: number) => {
     try {
       const { data } = await api.post(`/goals/${id}/add-funds`, { amount });
-      // Ensure id field is set
-      if (data._id && !data.id) {
-        data.id = data._id;
-      }
+      if (data._id && !data.id) data.id = data._id;
       const index = goals.value.findIndex((g) => g._id === id || g.id === id);
       if (index !== -1) goals.value[index] = data;
       if (data.progress >= 100) recentlyCompletedGoal.value = data;
@@ -165,10 +158,7 @@ export const useGoalsStore = defineStore("goals", () => {
   const updateGoal = async (id: string, updates: Partial<GoalFormData>) => {
     try {
       const { data } = await api.put(`/goals/${id}`, updates);
-      // Ensure id field is set
-      if (data._id && !data.id) {
-        data.id = data._id;
-      }
+      if (data._id && !data.id) data.id = data._id;
       const index = goals.value.findIndex((g) => g._id === id || g.id === id);
       if (index !== -1) goals.value[index] = data;
       uiStore.addToast({ type: "success", message: "Goal updated" });
@@ -186,6 +176,51 @@ export const useGoalsStore = defineStore("goals", () => {
       uiStore.addToast({ type: "success", message: "Goal deleted" });
     } catch (err) {
       uiStore.addToast({ type: "error", message: "Failed to delete goal" });
+      throw err;
+    }
+  };
+
+  // 🔥 New share actions
+  const shareGoal = async (
+    goalId: string,
+    email: string,
+    role: "viewer" | "contributor",
+  ) => {
+    try {
+      const { data } = await api.post(`/goals/${goalId}/share`, {
+        email,
+        role,
+      });
+      if (data._id && !data.id) data.id = data._id;
+      const index = goals.value.findIndex((g) => g._id === goalId);
+      if (index !== -1) goals.value[index] = data;
+      uiStore.addToast({
+        type: "success",
+        message: `Goal shared with ${email}`,
+      });
+      return data;
+    } catch (err: any) {
+      uiStore.addToast({
+        type: "error",
+        message: err.response?.data?.msg || "Failed to share goal",
+      });
+      throw err;
+    }
+  };
+
+  const unshareGoal = async (goalId: string, userId: string) => {
+    try {
+      const { data } = await api.delete(`/goals/${goalId}/share/${userId}`);
+      if (data._id && !data.id) data.id = data._id;
+      const index = goals.value.findIndex((g) => g._id === goalId);
+      if (index !== -1) goals.value[index] = data;
+      uiStore.addToast({ type: "success", message: "User removed from goal" });
+      return data;
+    } catch (err: any) {
+      uiStore.addToast({
+        type: "error",
+        message: err.response?.data?.msg || "Failed to remove user",
+      });
       throw err;
     }
   };
@@ -211,5 +246,7 @@ export const useGoalsStore = defineStore("goals", () => {
     updateGoal,
     deleteGoal,
     addFunds,
+    shareGoal,
+    unshareGoal,
   };
 });
