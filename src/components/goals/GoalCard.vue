@@ -2,7 +2,6 @@
   <div
     class="glass-card p-5 hover:scale-[1.02] transition-all duration-300 border border-gray-700/50 hover:border-primary-500/30"
   >
-    <!-- Header -->
     <div class="flex items-start justify-between mb-4">
       <div class="flex items-center gap-3">
         <div
@@ -11,91 +10,91 @@
         >
           {{ goal.icon }}
         </div>
-
         <div>
           <h3 class="font-bold text-white">{{ goal.title }}</h3>
-          <p class="text-sm text-gray-400">
-            {{ goal.category || "General" }}
-          </p>
+          <p class="text-sm text-gray-400">{{ goal.category || "General" }}</p>
         </div>
       </div>
-
-      <span class="text-xs px-2 py-1 rounded-full" :class="lockedClass">
-        {{ goal.locked ? "Locked" : "Unlocked" }}
+      <span class="text-xs px-2 py-1 rounded-full" :class="statusClass">
+        {{ statusText }}
       </span>
     </div>
 
-    <!-- Progress -->
     <GoalProgress :value="goal.progress" :color="progressColor" class="mb-4" />
 
-    <!-- Amount -->
     <div class="flex justify-between items-center mb-4">
       <div>
         <p class="text-2xl font-bold text-white">
           ₦{{ formatNumber(goal.saved) }}
         </p>
-
         <p class="text-sm text-gray-400">of ₦{{ formatNumber(goal.target) }}</p>
       </div>
-
       <div class="text-right">
         <p class="text-xs text-gray-400">Auto-save</p>
-
         <p class="font-semibold text-white">
           {{
             goal.type === "percentage"
               ? `${goal.autoSave}%`
               : `₦${formatNumber(goal.autoSave)}`
           }}
-          <span class="text-xs text-gray-400"> /{{ goal.frequency }} </span>
+          <span class="text-xs text-gray-400">/{{ goal.frequency }}</span>
         </p>
       </div>
     </div>
 
-    <!-- Next autosave -->
     <div
-      v-if="goal.autoSaveEnabled && goal.nextAutoSave"
+      v-if="goal.autoSaveEnabled && goal.nextAutoSave && !isCompleted"
       class="mt-2 text-xs text-gray-400 flex items-center gap-1"
     >
-      <span>⏰</span>
-      Next auto-save: {{ formatDate(goal.nextAutoSave) }}
+      <span>⏰</span> Next auto‑save: {{ formatDate(goal.nextAutoSave) }}
     </div>
 
-    <!-- Buttons -->
+    <!-- Action Buttons -->
     <div class="flex gap-2 mt-4">
-      <!-- Add Funds -->
-      <BaseButton
-        variant="secondary"
-        size="sm"
-        class="flex-1"
-        @click.stop="$emit('add-funds')"
-      >
-        <template #icon>💰</template>
-        Add
-      </BaseButton>
+      <!-- Incomplete goal: Add + Withdraw (disabled if locked) -->
+      <template v-if="!isCompleted">
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          class="flex-1"
+          @click.stop="$emit('add-funds')"
+        >
+          <template #icon>💰</template>
+          Add
+        </BaseButton>
+        <BaseButton
+          :variant="goal.locked ? 'ghost' : 'primary'"
+          size="sm"
+          class="flex-1"
+          :disabled="goal.locked"
+          @click.stop="handleWithdrawClick"
+        >
+          <template #icon>💸</template>
+          {{ goal.locked ? "Locked" : "Withdraw" }}
+        </BaseButton>
+      </template>
 
-      <!-- Withdraw -->
-      <BaseButton
-        :variant="goal.locked ? 'ghost' : 'primary'"
-        size="sm"
-        class="flex-1"
-        :disabled="goal.locked"
-        @click.stop="handleWithdrawClick"
-      >
-        <template #icon>💸</template>
-        {{ goal.locked ? "Locked" : "Withdraw" }}
-      </BaseButton>
-
-      <!-- Share -->
-      <BaseButton
-        variant="ghost"
-        size="sm"
-        class="flex-1"
-        @click.stop="$emit('share')"
-      >
-        <template #icon>🔗</template>
-        Share
-      </BaseButton>
+      <!-- Completed goal: Withdraw + Share -->
+      <template v-else>
+        <BaseButton
+          variant="primary"
+          size="sm"
+          class="flex-1"
+          @click.stop="$emit('withdraw')"
+        >
+          <template #icon>💸</template>
+          Withdraw
+        </BaseButton>
+        <BaseButton
+          variant="secondary"
+          size="sm"
+          class="flex-1"
+          @click.stop="$emit('share')"
+        >
+          <template #icon>🔗</template>
+          Share
+        </BaseButton>
+      </template>
     </div>
   </div>
 </template>
@@ -118,38 +117,36 @@ const emit = defineEmits<{
   (e: "share"): void;
 }>();
 
-const formatNumber = (num: number) => {
-  return new Intl.NumberFormat().format(num);
-};
-
+const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
-const lockedClass = computed(() => {
+const isCompleted = computed(() => props.goal.progress >= 100);
+
+const statusClass = computed(() => {
+  if (isCompleted.value) return "bg-success/20 text-success";
   return props.goal.locked
     ? "bg-gray-700 text-gray-300"
-    : "bg-success/20 text-success";
+    : "bg-warning/20 text-warning";
+});
+
+const statusText = computed(() => {
+  if (isCompleted.value) return "Completed";
+  return props.goal.locked ? "Locked" : "In Progress";
 });
 
 const progressColor = computed(() => {
-  if (props.goal.progress >= 100) return "success";
+  if (isCompleted.value) return "success";
   if (props.goal.progress >= 75) return "primary";
   if (props.goal.progress >= 50) return "warning";
   return "danger";
 });
 
 const handleWithdrawClick = () => {
-  console.log("Withdraw clicked:", props.goal);
-
   if (!props.goal.locked) {
     emit("withdraw");
-  } else {
-    console.log("Goal is locked");
   }
 };
 </script>
