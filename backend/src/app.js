@@ -19,11 +19,11 @@ const accountRoutes = require("./routes/accounts");
 const userRoutes = require("./routes/users");
 const notificationRoutes = require("./routes/notifications").router;
 const withdrawalRoutes = require("./routes/withdrawals");
-const adminRoutes = require("./routes/admin"); // ✅ admin routes imported here
-const analyticsRoutes = require('./routes/analytics');
+const adminRoutes = require("./routes/admin");
+const analyticsRoutes = require("./routes/analytics");
 
 // Mount routes
-app.use('/api/analytics', analyticsRoutes);
+app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/accounts", accountRoutes);
