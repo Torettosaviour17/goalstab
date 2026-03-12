@@ -85,11 +85,18 @@
           </div>
           <div class="h-64 sm:h-72 md:h-80">
             <apexchart
+              v-if="trendData.labels.length"
               type="area"
               height="100%"
               :options="trendChartOptions"
               :series="trendSeries"
             />
+            <div
+              v-else
+              class="flex items-center justify-center h-full text-gray-400"
+            >
+              No transactions yet
+            </div>
           </div>
         </div>
 
