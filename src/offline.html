@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline - GoalTabs</title>
+    <style>
+      body {
+        background: #0f172a;
+        color: #f1f5f9;
+        font-family: "Inter", sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        text-align: center;
+        padding: 1rem;
+      }
+      .container {
+        max-width: 400px;
+      }
+      h1 {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+      p {
+        color: #94a3b8;
+        margin-bottom: 2rem;
+      }
+      button {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📱 You're offline</h1>
+      <p>Please check your internet connection and try again.</p>
+      <button onclick="window.location.reload()">Retry</button>
+    </div>
+  </body>
+</html>
