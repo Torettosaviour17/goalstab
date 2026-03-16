@@ -5,12 +5,16 @@
     role="alert"
   >
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center">
+      <div
+        class="w-10 h-10 rounded-full bg-primary-500/20 flex items-center justify-center"
+      >
         <span class="text-xl">👋</span>
       </div>
       <div>
         <h3 class="font-semibold text-white">Welcome back, {{ userName }}!</h3>
-        <p class="text-sm text-gray-300">Ready to continue your savings journey?</p>
+        <p class="text-sm text-gray-300">
+          Ready to continue your savings journey✨?
+        </p>
       </div>
     </div>
     <button
@@ -24,30 +28,30 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useUIStore } from '@/stores/ui'
+import { ref, onMounted } from "vue";
+import { useUIStore } from "@/stores/ui";
 
 const props = defineProps<{
-  userName: string
-}>()
+  userName: string;
+}>();
 
-const uiStore = useUIStore()
-const visible = ref(!uiStore.welcomeBannerShown)
+const uiStore = useUIStore();
+const visible = ref(!uiStore.welcomeBannerShown);
 
 const dismiss = () => {
-  visible.value = false
-  uiStore.welcomeBannerShown = true
-}
+  visible.value = false;
+  uiStore.welcomeBannerShown = true;
+};
 
 onMounted(() => {
   const timer = setTimeout(() => {
     if (visible.value) {
-      dismiss()
+      dismiss();
     }
-  }, 5000)
+  }, 5000);
 
-  return () => clearTimeout(timer)
-})
+  return () => clearTimeout(timer);
+});
 </script>
 
 <style scoped>
@@ -55,7 +59,13 @@ onMounted(() => {
   animation: slideDown 0.3s ease-out;
 }
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
