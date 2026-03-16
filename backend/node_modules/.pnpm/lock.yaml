@@ -32,6 +32,9 @@ importers:
       node-cron:
         specifier: ^4.2.1
         version: 4.2.1
+      nodemailer:
+        specifier: ^8.0.2
+        version: 8.0.2
     devDependencies:
       nodemon:
         specifier: ^3.1.14
@@ -423,6 +426,10 @@ packages:
 
   node-cron@4.2.1:
     resolution: {integrity: sha512-lgimEHPE/QDgFlywTd8yTR61ptugX3Qer29efeyWw2rv259HtGBNn1vZVmp8lB9uo9wC0t/AT4iGqXxia+CJFg==}
+    engines: {node: '>=6.0.0'}
+
+  nodemailer@8.0.2:
+    resolution: {integrity: sha512-zbj002pZAIkWQFxyAaqoxvn+zoIwRnS40hgjqTXudKOOJkiFFgBeNqjgD3/YCR12sZnrghWYBY+yP1ZucdDRpw==}
     engines: {node: '>=6.0.0'}
 
   nodemon@3.1.14:
@@ -978,6 +985,8 @@ snapshots:
   negotiator@1.0.0: {}
 
   node-cron@4.2.1: {}
+
+  nodemailer@8.0.2: {}
 
   nodemon@3.1.14:
     dependencies:
