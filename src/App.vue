@@ -40,6 +40,9 @@
     />
 
     <ToastNotification />
+
+    <!-- Global confetti effect -->
+    <Confetti v-if="uiStore.showConfetti" />
   </div>
 </template>
 
@@ -52,6 +55,7 @@ import AppSidebar from "@/components/layout/AppSidebar.vue";
 import MobileBottomNav from "@/components/layout/MobileBottomNav.vue";
 import FloatingButton from "@/components/shared/FloatingButton.vue";
 import ToastNotification from "@/components/shared/ToastNotification.vue";
+import Confetti from "@/components/shared/Confetti.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 

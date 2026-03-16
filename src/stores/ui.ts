@@ -14,6 +14,7 @@ export const useUIStore = defineStore("ui", () => {
   const toasts = ref<Toast[]>([]);
   const authChecking = ref(true);
   const welcomeBannerShown = ref(false);
+  const showConfetti = ref(false);
 
   let nextToastId = 0;
 
@@ -54,17 +55,26 @@ export const useUIStore = defineStore("ui", () => {
     toasts.value = toasts.value.filter((t) => t.id !== id);
   };
 
+  const triggerConfetti = (duration = 3000) => {
+    showConfetti.value = true;
+    setTimeout(() => {
+      showConfetti.value = false;
+    }, duration);
+  };
+
   return {
     globalLoading,
     showCreateGoalModal,
     toasts,
     authChecking,
     welcomeBannerShown,
+    showConfetti,
     setAuthChecking,
     setGlobalLoading,
     openCreateGoalModal,
     closeCreateGoalModal,
     addToast,
     removeToast,
+    triggerConfetti,
   };
 });
