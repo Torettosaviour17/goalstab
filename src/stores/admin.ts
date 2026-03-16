@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import api from "@/services/api";
 import { useUIStore } from "./ui";
+import { useTransactionsStore } from "./transactions";
 
 export interface User {
   _id: string;
@@ -29,6 +30,7 @@ export interface Withdrawal {
 
 export const useAdminStore = defineStore("admin", () => {
   const uiStore = useUIStore();
+  const transactionsStore = useTransactionsStore();
   const users = ref<User[]>([]);
   const withdrawals = ref<Withdrawal[]>([]);
   const stats = ref({
@@ -121,6 +123,8 @@ export const useAdminStore = defineStore("admin", () => {
       await api.put(`/admin/withdrawals/${id}/approve`, { adminNote: note });
       const wd = withdrawals.value.find((w) => w._id === id);
       if (wd) wd.status = "approved";
+      // Refresh transactions to show updated status
+      transactionsStore.refreshTransactions();
       uiStore.addToast({ type: "success", message: "Withdrawal approved" });
     } catch (err) {
       uiStore.addToast({ type: "error", message: "Failed to approve" });
@@ -132,6 +136,8 @@ export const useAdminStore = defineStore("admin", () => {
       await api.put(`/admin/withdrawals/${id}/reject`, { adminNote: note });
       const wd = withdrawals.value.find((w) => w._id === id);
       if (wd) wd.status = "rejected";
+      // Refresh transactions to show updated status
+      transactionsStore.refreshTransactions();
       uiStore.addToast({ type: "success", message: "Withdrawal rejected" });
     } catch (err) {
       uiStore.addToast({ type: "error", message: "Failed to reject" });

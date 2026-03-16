@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import api from '@/services/api'
 import { useUIStore } from './ui'
+import { useGoalsStore } from './goals'
+import { useTransactionsStore } from './transactions'
 
 export interface Notification {
   _id: string
@@ -96,6 +98,23 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
     eventSource.onmessage = (event) => {
       const data = JSON.parse(event.data)
+
+      // Handle goal deletion
+      if (data.type === 'goal_deleted' && data.goalId) {
+        const goalsStore = useGoalsStore()
+        goalsStore.removeGoalById(data.goalId)
+        uiStore.addToast({
+          type: 'info',
+          message: data.message || 'A goal was removed.'
+        })
+        return // skip adding as notification
+      }
+
+      // Handle withdrawal status changes - refresh transactions
+      if (data.type === 'withdrawal_processed') {
+        const transactionsStore = useTransactionsStore()
+        transactionsStore.fetchRecentTransactions()
+      }
 
       // Toast
       uiStore.addToast({

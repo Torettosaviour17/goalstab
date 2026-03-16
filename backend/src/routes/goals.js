@@ -7,6 +7,7 @@ const Notification = require("../models/Notification");
 const User = require("../models/User"); // <-- ADD THIS
 const { sendNotification } = require("./notifications");
 const { runAutoSave } = require("../services/autoSave");
+const { sendEmailToUser } = require("../services/emailService");
 
 // @route   GET api/goals
 // @desc    Get all goals for user
@@ -121,7 +122,7 @@ router.post("/:id/add-funds", auth, async (req, res) => {
     if (goal.user.toString() !== req.user.id)
       return res.status(401).json({ msg: "Not authorized" });
 
-    goal.saved = Math.min(goal.saved + amount, goal.target);
+    goal.saved += amount;
     goal.lastUpdated = Date.now();
 
     await goal.save();
@@ -147,6 +148,13 @@ router.post("/:id/add-funds", auth, async (req, res) => {
       message: `Funds added to ${goal.title}`,
     });
 
+    // After adding funds
+    await sendEmailToUser(
+      req.user.id,
+      "Funds Added",
+      `<p>₦${amount.toLocaleString()} added to your goal: <strong>${goal.title}</strong></p>`,
+    );
+
     if (goal.saved >= goal.target) {
       await Notification.create({
         user: req.user.id,
@@ -160,6 +168,12 @@ router.post("/:id/add-funds", auth, async (req, res) => {
         type: "goal_completed",
         message: `Goal completed: ${goal.title}`,
       });
+
+      await sendEmailToUser(
+        req.user.id,
+        "Goal Completed! 🎉",
+        `<h1>Congratulations!</h1><p>You've reached your goal: <strong>${goal.title}</strong></p>`,
+      );
     }
 
     res.json(goal.toObject ? goal.toObject() : goal);

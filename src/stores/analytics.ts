@@ -29,6 +29,7 @@ export interface Transaction {
   amount: number;
   description?: string;
   goal?: { _id: string; title: string };
+  status?: string;
   createdAt: string;
 }
 

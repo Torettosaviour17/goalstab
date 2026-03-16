@@ -52,6 +52,10 @@
         <p v-if="amountError" class="mt-2 text-sm text-danger">
           {{ amountError }}
         </p>
+        <p v-if="isExceedingTarget" class="mt-2 text-sm text-yellow-400">
+          ⚠️ Adding this amount will exceed your goal target. You can still save
+          extra.
+        </p>
       </div>
 
       <!-- Quick Amounts -->
@@ -116,6 +120,12 @@ const amountError = computed(() => {
   if (amount.value === null || amount.value === undefined) return null;
   if (amount.value <= 0) return "Please enter an amount greater than 0";
   return null;
+});
+
+const isExceedingTarget = computed(() => {
+  if (!props.goal) return false;
+  const newTotal = (props.goal.saved || 0) + (amount.value || 0);
+  return newTotal > props.goal.target;
 });
 
 const isValidAmount = computed(() => {

@@ -229,11 +229,16 @@ export const useGoalsStore = defineStore("goals", () => {
     recentlyCompletedGoal.value = null;
   };
 
+  const removeGoalById = (goalId: string) => {
+    goals.value = goals.value.filter(g => g._id !== goalId && g.id !== goalId);
+  };
+
   return {
     goals,
     loading,
     recentlyCompletedGoal,
     clearCompleted,
+    removeGoalById,
     totalSaved,
     totalTarget,
     overallProgress,

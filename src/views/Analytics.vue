@@ -24,6 +24,15 @@
         >
           {{ p.label }}
         </button>
+
+        <!-- Export button -->
+        <button
+          @click="exportTransactions"
+          class="px-4 py-2 text-sm md:text-base rounded-lg font-medium whitespace-nowrap transition shrink-0 bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+          :disabled="!transactions.length"
+        >
+          <span>📥</span> Export CSV
+        </button>
       </div>
     </div>
 
@@ -231,12 +240,34 @@ import { ref, computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 import { useAnalyticsStore } from "@/stores/analytics";
 import { useGoalsStore } from "@/stores/goals";
+import { useUIStore } from "@/stores/ui";
+import { exportToCSV } from "@/utils/export";
 
 const analyticsStore = useAnalyticsStore();
 const goalsStore = useGoalsStore();
 const { overview, trendData, distribution, transactions, loading } =
   storeToRefs(analyticsStore);
 const { goals } = storeToRefs(goalsStore);
+const uiStore = useUIStore();
+
+const exportTransactions = () => {
+  if (!transactions.value.length) {
+    uiStore.addToast({ type: "warning", message: "No transactions to export" });
+    return;
+  }
+
+  // Format data for CSV
+  const exportData = transactions.value.map((tx) => ({
+    Date: formatDate(tx.createdAt),
+    Type: tx.type,
+    Goal: tx.goal?.title || "",
+    Amount: tx.amount,
+    Description: tx.description || "",
+  }));
+
+  const filename = `transactions-${new Date().toISOString().slice(0, 10)}.csv`;
+  exportToCSV(exportData, filename);
+};
 
 const selectedPeriod = ref("month");
 const periods = [

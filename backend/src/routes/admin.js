@@ -5,6 +5,7 @@ const admin = require("../middleware/admin");
 const User = require("../models/User");
 const Goal = require("../models/Goal");
 const Withdrawal = require("../models/Withdrawal");
+const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
 const { sendNotification } = require("./notifications");
 
@@ -187,6 +188,34 @@ router.put("/withdrawals/:id/approve", [auth, admin], async (req, res) => {
     if (goal) {
       goal.saved -= withdrawal.amount;
       await goal.save();
+
+      // If goal saved becomes zero or negative, delete it and notify
+      if (goal.saved <= 0) {
+        const goalId = goal._id;
+        const goalTitle = goal.title;
+        await goal.deleteOne();
+        // Send SSE event for goal deletion
+        sendNotification(withdrawal.user.toString(), {
+          type: "goal_deleted",
+          goalId: goalId.toString(),
+          message: `Goal "${goalTitle}" was removed after full withdrawal.`,
+        });
+      }
+    }
+
+    // Update transaction status to approved
+    const transaction = await Transaction.findOne({
+      user: withdrawal.user,
+      goal: withdrawal.goal,
+      type: "withdrawal",
+      amount: withdrawal.amount,
+      status: "pending",
+    }).sort({ createdAt: -1 });
+
+    if (transaction) {
+      transaction.status = "approved";
+      transaction.description = `Withdrawal approved from ${goal?.title || "goal"}`;
+      await transaction.save();
     }
 
     // Notify user
@@ -216,6 +245,21 @@ router.put("/withdrawals/:id/reject", [auth, admin], async (req, res) => {
     withdrawal.processedAt = new Date();
     withdrawal.processedBy = req.user.id;
     await withdrawal.save();
+
+    // Update transaction status to rejected
+    const transaction = await Transaction.findOne({
+      user: withdrawal.user,
+      goal: withdrawal.goal,
+      type: "withdrawal",
+      amount: withdrawal.amount,
+      status: "pending",
+    }).sort({ createdAt: -1 });
+
+    if (transaction) {
+      transaction.status = "rejected";
+      transaction.description = `Withdrawal rejected: ${adminNote || "No reason provided"}`;
+      await transaction.save();
+    }
 
     // Notify user
     sendNotification(withdrawal.user.toString(), {

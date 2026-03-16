@@ -5,6 +5,7 @@ const Withdrawal = require("../models/Withdrawal");
 const Goal = require("../models/Goal");
 const Transaction = require("../models/Transaction");
 const { sendNotification } = require("./notifications");
+const { sendEmailToUser } = require("../services/emailService");
 
 // @route   POST api/withdrawals
 // @desc    Request a withdrawal from a completed goal
@@ -36,6 +37,7 @@ router.post("/", auth, async (req, res) => {
       type: "withdrawal",
       amount,
       description: `Withdrawal request from ${goal.title}`,
+      status: "pending",
     });
     await transaction.save();
 
@@ -84,7 +86,8 @@ router.get("/admin", auth, async (req, res) => {
 });
 
 // @route   PUT api/withdrawals/:id/approve
-// @desc    Approve a withdrawal (admin)
+// @desc    Approve a withdrawal (admin) - MOVED TO ADMIN ROUTES
+/*
 router.put("/:id/approve", auth, async (req, res) => {
   // TODO: Add admin check
   const { adminNote } = req.body;
@@ -105,6 +108,19 @@ router.put("/:id/approve", auth, async (req, res) => {
       goal.saved -= withdrawal.amount;
       goal.locked = false; // unlock if needed
       await goal.save();
+
+      // If goal saved becomes zero or negative, delete it and notify
+      if (goal.saved <= 0) {
+        const goalId = goal._id;
+        const goalTitle = goal.title;
+        await goal.deleteOne();
+        // Send SSE event for goal deletion
+        sendNotification(withdrawal.user.toString(), {
+          type: "goal_deleted",
+          goalId: goalId.toString(),
+          message: `Goal "${goalTitle}" was removed after full withdrawal.`,
+        });
+      }
     }
 
     // Update transaction status when withdrawal is approved
@@ -115,7 +131,8 @@ router.put("/:id/approve", auth, async (req, res) => {
       amount: withdrawal.amount,
     }).sort({ createdAt: -1 });
     if (transaction) {
-      transaction.description = `Withdrawal approved from ${goal.title}`;
+      transaction.status = "approved";
+      transaction.description = `Withdrawal approved from ${goal?.title || "goal"}`;
       await transaction.save();
     }
 
@@ -125,15 +142,23 @@ router.put("/:id/approve", auth, async (req, res) => {
       message: `Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been approved.`,
     });
 
+    await sendEmailToUser(
+      withdrawal.user,
+      "Withdrawal Approved",
+      `<p>Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been approved.</p>`,
+    );
+
     res.json(withdrawal);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
   }
 });
+*/
 
 // @route   PUT api/withdrawals/:id/reject
-// @desc    Reject a withdrawal (admin)
+// @desc    Reject a withdrawal (admin) - MOVED TO ADMIN ROUTES
+/*
 router.put("/:id/reject", auth, async (req, res) => {
   // TODO: Add admin check
   const { adminNote } = req.body;
@@ -148,11 +173,30 @@ router.put("/:id/reject", auth, async (req, res) => {
     withdrawal.processedBy = req.user.id;
     await withdrawal.save();
 
+    // Update transaction status when withdrawal is rejected
+    const transaction = await Transaction.findOne({
+      user: withdrawal.user,
+      goal: withdrawal.goal,
+      type: "withdrawal",
+      amount: withdrawal.amount,
+    }).sort({ createdAt: -1 });
+    if (transaction) {
+      transaction.status = "rejected";
+      transaction.description = `Withdrawal rejected: ${adminNote || "No reason"}`;
+      await transaction.save();
+    }
+
     // Notify user
     sendNotification(withdrawal.user.toString(), {
       type: "withdrawal_processed",
       message: `Your withdrawal request was rejected. Reason: ${adminNote || "No reason provided"}`,
     });
+
+    await sendEmailToUser(
+      withdrawal.user,
+      "Withdrawal Rejected",
+      `<p>Your withdrawal request was rejected. Reason: ${adminNote || "Not specified"}</p>`,
+    );
 
     res.json(withdrawal);
   } catch (err) {
@@ -160,5 +204,6 @@ router.put("/:id/reject", auth, async (req, res) => {
     res.status(500).send("Server error");
   }
 });
+*/
 
 module.exports = router;
