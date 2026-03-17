@@ -11,61 +11,65 @@
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1"
-            >Amount (₦)</label
-          >
+          <label class="block text-sm font-medium text-gray-300 mb-1">
+            Amount (₦)
+          </label>
           <input
             v-model.number="form.amount"
             type="number"
             required
             min="1"
-            :max="goal?.saved"
-            step="100"
+            :max="maxAllowed"
+            step="1"
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <p
-            v-if="form.amount > (goal?.saved || 0)"
-            class="mt-1 text-xs text-danger"
-          >
-            Amount exceeds available balance
-          </p>
+          <p v-if="amountError" class="mt-1 text-xs text-danger">{{ amountError }}</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1"
-            >Bank Name</label
-          >
-          <input
+          <label class="block text-sm font-medium text-gray-300 mb-1">
+            Bank Name
+          </label>
+          <select
             v-model="form.bankName"
-            type="text"
             required
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
+          >
+            <option value="" disabled>Select bank</option>
+            <option v-for="bank in banks" :key="bank" :value="bank">
+              {{ bank }}
+            </option>
+          </select>
+          <p v-if="bankError" class="mt-1 text-xs text-danger">{{ bankError }}</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1"
-            >Account Name</label
-          >
+          <label class="block text-sm font-medium text-gray-300 mb-1">
+            Account Name
+          </label>
           <input
             v-model="form.accountName"
             type="text"
             required
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
+          <p v-if="nameError" class="mt-1 text-xs text-danger">{{ nameError }}</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1"
-            >Account Number</label
-          >
+          <label class="block text-sm font-medium text-gray-300 mb-1">
+            Account Number
+          </label>
           <input
             v-model="form.accountNumber"
             type="text"
             required
-            maxlength="10"
+            maxlength="11"
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
+          <p v-if="accountNumberError" class="mt-1 text-xs text-danger">
+            {{ accountNumberError }}
+          </p>
         </div>
 
         <div class="flex gap-2 justify-end pt-4">
@@ -100,6 +104,22 @@ console.log("WithdrawModal created, initial modelValue:", props.modelValue);
 const show = ref(props.modelValue);
 const loading = ref(false);
 
+const banks = [
+  "Access Bank",
+  "FCMB",
+  "Fidelity Bank",
+  "First Bank",
+  "Guaranty Trust Bank",
+  "United Bank for Africa",
+  "Zenith Bank",
+  "Standard Chartered",
+  "Sterling Bank",
+  "Union Bank",
+  "Polaris Bank",
+  "Wema Bank",
+  "EcoBank",
+];
+
 const form = ref({
   amount: 0,
   bankName: "",
@@ -107,19 +127,22 @@ const form = ref({
   accountNumber: "",
 });
 
+const maxAllowed = computed(() => {
+  if (!props.goal) return 0;
+  return Math.min(props.goal.saved, (props.goal.userTarget || 0) - (props.goal.withdrawn || 0));
+});
+
 watch(
   () => props.goal,
   (goal) => {
-    console.log("WithdrawModal goal changed:", goal);
     if (goal) {
-      form.value.amount = goal.saved; // default to full amount
+      form.value.amount = maxAllowed.value; // default to max allowed
     }
   },
   { immediate: true },
 );
 
 watch(show, (val) => {
-  console.log("WithdrawModal internal show changed:", val);
   emit("update:modelValue", val);
   if (!val) {
     form.value = {
@@ -134,20 +157,43 @@ watch(show, (val) => {
 watch(
   () => props.modelValue,
   (val) => {
-    console.log("WithdrawModal external modelValue changed:", val);
     show.value = val;
   },
 );
 
+const amountError = computed(() => {
+  const amount = form.value.amount;
+  if (amount <= 0) return "Amount must be positive";
+  if (amount > maxAllowed.value) return "Amount exceeds your available limit";
+  return null;
+});
+
+const bankError = computed(() => {
+  if (!form.value.bankName) return "Select a bank";
+  if (!banks.includes(form.value.bankName)) return "Please select a valid bank";
+  return null;
+});
+
+const nameError = computed(() => {
+  const name = form.value.accountName;
+  if (!name) return "Account name is required";
+  if (!/^[A-Za-z\s]+$/.test(name)) return "Only letters and spaces allowed";
+  return null;
+});
+
+const accountNumberError = computed(() => {
+  const num = form.value.accountNumber;
+  if (!num) return "Account number is required";
+  if (!/^\d{11}$/.test(num)) return "Account number must be exactly 11 digits";
+  return null;
+});
+
 const isValid = computed(() => {
-  const { amount, bankName, accountName, accountNumber } = form.value;
   return (
-    amount > 0 &&
-    amount <= (props.goal?.saved || 0) &&
-    bankName &&
-    accountName &&
-    accountNumber &&
-    accountNumber.length >= 10
+    !amountError.value &&
+    !bankError.value &&
+    !nameError.value &&
+    !accountNumberError.value
   );
 });
 

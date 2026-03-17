@@ -2,8 +2,11 @@ export interface Goal {
   id: string;
   _id: string;
   title: string;
-  target: number;
+  userTarget: number; // 👈 new
+  fee: number; // 👈 new
+  target: number; // total (userTarget + fee)
   saved: number;
+  withdrawn: number;
   icon: string;
   color: string;
   type: "percentage" | "fixed";
@@ -23,7 +26,7 @@ export interface Goal {
 
 export interface GoalFormData {
   title: string;
-  target: number;
+  userTarget: number; // 👈 new
   icon: string;
   color: string;
   type: "percentage" | "fixed";
@@ -31,6 +34,8 @@ export interface GoalFormData {
   frequency: "daily" | "weekly" | "monthly";
   deadline?: string;
   category?: string;
+  accountId?: string;
+  autoSaveEnabled?: boolean;
 }
 
 export interface GoalStats {

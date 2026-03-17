@@ -18,8 +18,32 @@ router.post("/", auth, async (req, res) => {
       return res.status(401).json({ msg: "Not authorized" });
     if (goal.progress < 100)
       return res.status(400).json({ msg: "Goal not completed yet" });
-    if (amount > goal.saved)
-      return res.status(400).json({ msg: "Amount exceeds saved balance" });
+
+    // Check if there's already a pending withdrawal for this goal
+    const pendingWithdrawal = await Withdrawal.findOne({
+      goal: goalId,
+      status: "pending",
+    });
+    if (pendingWithdrawal) {
+      return res
+        .status(400)
+        .json({ msg: "A withdrawal request is already pending for this goal" });
+    }
+
+    // Calculate maximum withdrawable amount
+    const maxWithdrawable = Math.min(
+      goal.saved,
+      goal.userTarget - (goal.withdrawn || 0),
+    );
+
+    if (amount > maxWithdrawable) {
+      return res
+        .status(400)
+        .json({ msg: "Amount exceeds your available withdrawal limit" });
+    }
+    if (amount <= 0) {
+      return res.status(400).json({ msg: "Amount must be positive" });
+    }
 
     // Create withdrawal request
     const withdrawal = new Withdrawal({

@@ -32,12 +32,17 @@ router.post("/", auth, async (req, res) => {
       req.body.accountId = undefined;
     }
 
-    req.body.target = Number(req.body.target);
-    req.body.autoSave = Number(req.body.autoSave);
+    // New fields
+    const { userTarget, ...rest } = req.body;
+    const fee = 100; // fixed fee
+    const target = userTarget + fee;
 
     const newGoal = new Goal({
       user: req.user.id,
-      ...req.body,
+      userTarget,
+      fee,
+      target,
+      ...rest,
     });
 
     if (newGoal.autoSaveEnabled) {

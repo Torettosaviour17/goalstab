@@ -49,6 +49,10 @@
       <span>⏰</span> Next auto‑save: {{ formatDate(goal.nextAutoSave) }}
     </div>
 
+    <div v-if="goal.fee > 0" class="mt-1 text-xs text-gray-400">
+      Service fee: ₦{{ formatNumber(goal.fee) }} (included in target)
+    </div>
+
     <!-- Action Buttons -->
     <div class="flex gap-2 mt-4">
       <!-- Incomplete goal: Add + Withdraw (disabled if locked) -->

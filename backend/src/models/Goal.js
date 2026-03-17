@@ -29,7 +29,18 @@ const GoalSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-
+    // 👇 NEW: userTarget is the amount the user will receive (excluding fee)
+    userTarget: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    // 👇 NEW: fee charged by platform
+    fee: {
+      type: Number,
+      default: 100,
+      min: 0,
+    },
     target: {
       type: Number,
       required: true,
@@ -37,6 +48,12 @@ const GoalSchema = new mongoose.Schema(
     },
 
     saved: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    // 👇 NEW: total amount already withdrawn (tracked to enforce userTarget limit)
+    withdrawn: {
       type: Number,
       default: 0,
       min: 0,

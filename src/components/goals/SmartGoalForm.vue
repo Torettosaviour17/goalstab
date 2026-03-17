@@ -167,6 +167,7 @@
               class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
+
         </template>
 
         <!-- Service-specific fields -->
@@ -438,7 +439,8 @@ const props = withDefaults(
     initialData?: Partial<{
       goalCategory: "product" | "service";
       title: string;
-      target: number;
+      userTarget: number;
+      fee?: number;
       icon: string;
       color: string;
       type: "percentage" | "fixed";
@@ -446,8 +448,8 @@ const props = withDefaults(
       frequency: "daily" | "weekly" | "monthly";
       deadline?: string;
       category?: string;
-      accountId: string;
-      autoSaveEnabled: boolean;
+      accountId?: string;
+      autoSaveEnabled?: boolean;
       productLink?: string;
       storeName?: string;
       serviceDate?: string;
@@ -480,7 +482,8 @@ const loading = ref(false);
 
 const goalCategory = ref(props.initialData.goalCategory || "product");
 const title = ref(props.initialData.title || "");
-const target = ref(props.initialData.target || 0);
+const target = ref(props.initialData.userTarget || 0);
+const fee = 100; // fixed platform fee
 const icon = ref(props.initialData.icon || "💻");
 const color = ref(props.initialData.color || "from-blue-500 to-cyan-400");
 const type = ref(props.initialData.type || "percentage");
@@ -551,7 +554,8 @@ const handleSubmit = async () => {
   emit("submit", {
     goalCategory: goalCategory.value,
     title: title.value,
-    target: target.value,
+    userTarget: target.value, // rename: the target input becomes userTarget
+    fee: fee,
     icon: icon.value,
     color: color.value,
     type: type.value,

@@ -184,35 +184,40 @@ router.put("/withdrawals/:id/approve", [auth, admin], async (req, res) => {
     withdrawal.processedBy = req.user.id;
     await withdrawal.save();
 
-    // Update goal saved amount
+    // Update goal saved amount & withdrawn tracking
     const goal = await Goal.findById(withdrawal.goal);
     if (goal) {
-      goal.saved -= withdrawal.amount;
-      await goal.save();
+      goal.withdrawn = (goal.withdrawn || 0) + withdrawal.amount;
+      goal.saved = Math.max(0, goal.saved - withdrawal.amount);
 
-      if (goal.saved > 0) {
-        // Transfer leftover to platform
-        await LeftoverFunds.create({
-          user: goal.user,
-          goal: goal._id,
-          amount: goal.saved,
-          originalGoalTitle: goal.title,
-          withdrawal: withdrawal._id,
-          createdAt: new Date(),
+      // If user has withdrawn all their target, finalize the goal
+      if (goal.withdrawn >= goal.userTarget) {
+        // Transfer any remaining saved (fee + oversave) to leftover funds
+        if (goal.saved > 0) {
+          await LeftoverFunds.create({
+            user: goal.user,
+            goal: goal._id,
+            amount: goal.saved,
+            originalGoalTitle: goal.title,
+            withdrawal: withdrawal._id,
+            createdAt: new Date(),
+          });
+        }
+
+        const goalTitle = goal.title;
+        const goalId = goal._id;
+        await goal.deleteOne();
+
+        // Send SSE event for goal deletion
+        sendNotification(withdrawal.user.toString(), {
+          type: "goal_deleted",
+          goalId: goalId.toString(),
+          message: `Goal "${goalTitle}" was removed after full withdrawal.`,
         });
+      } else {
+        // Keep the goal alive so remaining target can still be withdrawn later
+        await goal.save();
       }
-
-      // Always delete the goal after approval (whether leftover exists or not)
-      const goalTitle = goal.title;
-      const goalId = goal._id;
-      await goal.deleteOne();
-
-      // Send SSE event for goal deletion
-      sendNotification(withdrawal.user.toString(), {
-        type: "goal_deleted",
-        goalId: goalId.toString(),
-        message: `Goal "${goalTitle}" was removed after full withdrawal.`,
-      });
     }
 
     // Update transaction status to approved

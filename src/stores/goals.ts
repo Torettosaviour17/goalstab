@@ -14,8 +14,11 @@ export interface Goal {
   _id: string;
   id: string; // frontend alias
   title: string;
+  userTarget: number;
+  fee: number;
   target: number;
   saved: number;
+  withdrawn: number;
   icon: string;
   color: string;
   type: "percentage" | "fixed";
@@ -35,7 +38,7 @@ export interface Goal {
 
 export interface GoalFormData {
   title: string;
-  target: number;
+  userTarget: number;
   icon: string;
   color: string;
   type: "percentage" | "fixed";
@@ -111,7 +114,7 @@ export const useGoalsStore = defineStore("goals", () => {
     try {
       const payload = {
         title: goalData.title,
-        target: Number(goalData.target),
+        userTarget: Number(goalData.userTarget),
         icon: goalData.icon || "🎯",
         color: goalData.color || "from-blue-500 to-cyan-400",
         type: goalData.type || "percentage",
