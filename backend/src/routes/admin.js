@@ -7,6 +7,7 @@ const Goal = require("../models/Goal");
 const Withdrawal = require("../models/Withdrawal");
 const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
+const LeftoverFunds = require("../models/LeftoverFunds");
 const { sendNotification } = require("./notifications");
 
 // @route   POST api/admin/users
@@ -189,18 +190,29 @@ router.put("/withdrawals/:id/approve", [auth, admin], async (req, res) => {
       goal.saved -= withdrawal.amount;
       await goal.save();
 
-      // If goal saved becomes zero or negative, delete it and notify
-      if (goal.saved <= 0) {
-        const goalId = goal._id;
-        const goalTitle = goal.title;
-        await goal.deleteOne();
-        // Send SSE event for goal deletion
-        sendNotification(withdrawal.user.toString(), {
-          type: "goal_deleted",
-          goalId: goalId.toString(),
-          message: `Goal "${goalTitle}" was removed after full withdrawal.`,
+      if (goal.saved > 0) {
+        // Transfer leftover to platform
+        await LeftoverFunds.create({
+          user: goal.user,
+          goal: goal._id,
+          amount: goal.saved,
+          originalGoalTitle: goal.title,
+          withdrawal: withdrawal._id,
+          createdAt: new Date(),
         });
       }
+
+      // Always delete the goal after approval (whether leftover exists or not)
+      const goalTitle = goal.title;
+      const goalId = goal._id;
+      await goal.deleteOne();
+
+      // Send SSE event for goal deletion
+      sendNotification(withdrawal.user.toString(), {
+        type: "goal_deleted",
+        goalId: goalId.toString(),
+        message: `Goal "${goalTitle}" was removed after full withdrawal.`,
+      });
     }
 
     // Update transaction status to approved
@@ -297,6 +309,21 @@ router.get("/stats", [auth, admin], async (req, res) => {
       pendingWithdrawals,
       completedWithdrawals,
     });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// @route   GET api/admin/leftover-funds
+// @desc    Get all leftover funds (service fees)
+router.get("/leftover-funds", [auth, admin], async (req, res) => {
+  try {
+    const funds = await LeftoverFunds.find()
+      .populate("user", "name email")
+      .populate("goal", "title")
+      .sort({ createdAt: -1 });
+    res.json(funds);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");

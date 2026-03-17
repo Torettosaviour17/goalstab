@@ -45,6 +45,7 @@ export const useAdminStore = defineStore("admin", () => {
   const totalWithdrawals = ref(0);
   const currentPage = ref(1);
   const totalPages = ref(1);
+  const leftoverFunds = ref<any[]>([]);
 
   const fetchStats = async () => {
     try {
@@ -144,6 +145,18 @@ export const useAdminStore = defineStore("admin", () => {
     }
   };
 
+  const fetchLeftoverFunds = async () => {
+    try {
+      const { data } = await api.get("/admin/leftover-funds");
+      leftoverFunds.value = data;
+    } catch (err) {
+      uiStore.addToast({
+        type: "error",
+        message: "Failed to load leftover funds",
+      });
+    }
+  };
+
   return {
     users,
     withdrawals,
@@ -153,6 +166,7 @@ export const useAdminStore = defineStore("admin", () => {
     totalWithdrawals,
     currentPage,
     totalPages,
+    leftoverFunds,
     fetchStats,
     fetchUsers,
     toggleAdmin,
@@ -160,5 +174,6 @@ export const useAdminStore = defineStore("admin", () => {
     fetchWithdrawals,
     approveWithdrawal,
     rejectWithdrawal,
+    fetchLeftoverFunds,
   };
 });

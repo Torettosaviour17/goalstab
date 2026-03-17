@@ -4,7 +4,7 @@
       Admin Dashboard
     </h1>
     <p class="text-gray-400 mb-8">
-      Manage users, withdrawals, and platform analytics
+      Manage users, withdrawals, and platform fees
     </p>
 
     <!-- Stats Cards -->
@@ -245,6 +245,64 @@
       />
     </div>
 
+    <!-- 🆕 Fees Tab -->
+    <div v-if="activeTab === 'Fees'">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">
+          Service Fees (Leftover Funds)
+        </h2>
+        <p class="text-sm text-gray-400">
+          Total collected: ₦{{ formatTotalFees }}
+        </p>
+      </div>
+      <div class="glass-card overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr
+              class="text-left text-sm text-gray-400 border-b border-gray-800"
+            >
+              <th class="p-4">User</th>
+              <th class="p-4">Goal</th>
+              <th class="p-4">Amount</th>
+              <th class="p-4">Date</th>
+              <th class="p-4">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="fee in leftoverFunds"
+              :key="fee._id"
+              class="border-b border-gray-800"
+            >
+              <td class="p-4 text-white">{{ fee.user?.name || "Unknown" }}</td>
+              <td class="p-4 text-gray-300">{{ fee.originalGoalTitle }}</td>
+              <td class="p-4 text-green-400 font-medium">
+                ₦{{ formatNumber(fee.amount) }}
+              </td>
+              <td class="p-4 text-gray-300">{{ formatDate(fee.createdAt) }}</td>
+              <td class="p-4">
+                <span
+                  class="px-2 py-1 rounded-full text-xs"
+                  :class="
+                    fee.status === 'unclaimed'
+                      ? 'bg-yellow-500/20 text-yellow-400'
+                      : 'bg-green-500/20 text-green-400'
+                  "
+                >
+                  {{ fee.status }}
+                </span>
+              </td>
+            </tr>
+            <tr v-if="leftoverFunds.length === 0">
+              <td colspan="5" class="p-8 text-center text-gray-500">
+                No fees collected yet
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- Action Modal -->
     <BaseModal
       v-model="showActionModal"
@@ -292,7 +350,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { storeToRefs } from "pinia"; // ✅ added
 import { useAdminStore } from "@/stores/admin";
 import { useUIStore } from "@/stores/ui";
@@ -304,11 +362,11 @@ import debounce from "lodash/debounce";
 const adminStore = useAdminStore();
 const uiStore = useUIStore();
 
-const { users, withdrawals, stats, loading, totalPages } =
+const { users, withdrawals, stats, loading, totalPages, leftoverFunds } =
   storeToRefs(adminStore);
 
 const activeTab = ref("Users");
-const tabs = ["Users", "Withdrawals"];
+const tabs = ["Users", "Withdrawals", "Fees"];
 const statuses = ["pending", "approved", "rejected", "all"];
 const selectedStatus = ref("pending");
 const search = ref("");
@@ -323,10 +381,16 @@ onMounted(() => {
   adminStore.fetchStats();
   adminStore.fetchUsers();
   adminStore.fetchWithdrawals(1, selectedStatus.value);
+  adminStore.fetchLeftoverFunds();
 });
 
 const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
 const formatDate = (date: string) => new Date(date).toLocaleDateString();
+
+const formatTotalFees = computed(() => {
+  const total = leftoverFunds.value.reduce((sum, fee) => sum + fee.amount, 0);
+  return formatNumber(total);
+});
 
 const statusClass = (status: string) =>
   ({
@@ -384,5 +448,6 @@ const submitAction = async () => {
   }
   showActionModal.value = false;
   adminStore.fetchWithdrawals(currentPage.value, selectedStatus.value);
+  adminStore.fetchLeftoverFunds(); // refresh fees after approval
 };
 </script>

@@ -230,7 +230,9 @@ export const useGoalsStore = defineStore("goals", () => {
   };
 
   const removeGoalById = (goalId: string) => {
-    goals.value = goals.value.filter(g => g._id !== goalId && g.id !== goalId);
+    goals.value = goals.value.filter(
+      (g) => g._id !== goalId && g.id !== goalId,
+    );
   };
 
   return {
