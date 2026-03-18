@@ -1,6 +1,14 @@
 <template>
   <div class="glass-card p-6">
-    <h3 class="text-lg font-bold mb-4">Recent Activity</h3>
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold text-white">Recent Activity</h3>
+      <router-link
+        to="/transactions"
+        class="text-sm text-primary-400 hover:text-primary-300 transition flex items-center gap-1"
+      >
+        View All <span>→</span>
+      </router-link>
+    </div>
 
     <div v-if="loading" class="flex justify-center py-6">
       <div
@@ -8,9 +16,9 @@
       ></div>
     </div>
 
-    <div v-else-if="transactions.length" class="space-y-3">
+    <div v-else-if="displayedTransactions.length" class="space-y-3">
       <div
-        v-for="tx in transactions"
+        v-for="tx in displayedTransactions"
         :key="tx._id"
         class="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition"
       >
@@ -24,26 +32,30 @@
             <span>{{ getActivityIcon(tx.type) }}</span>
           </div>
           <div>
-            <p class="font-medium">
+            <p class="font-medium text-white">
               {{ tx.description || formatDefaultDescription(tx) }}
             </p>
-            <p class="text-sm opacity-60">{{ formatTime(tx.createdAt) }}</p>
+            <p class="text-sm text-gray-400">{{ formatTime(tx.createdAt) }}</p>
+            <span
+              v-if="tx.type === 'withdrawal' && tx.status"
+              class="inline-block text-xs px-2 py-1 rounded-full mt-1"
+              :class="statusClass(tx.status)"
+            >
+              {{ tx.status }}
+            </span>
           </div>
         </div>
         <div class="text-right">
           <p
             class="font-bold"
-            :class="tx.amount >= 0 ? 'text-green-400' : 'text-red-400'"
+            :class="
+              tx.type === 'withdrawal' ? 'text-red-400' : 'text-green-400'
+            "
           >
-            {{ tx.amount >= 0 ? "+" : "" }}₦{{ formatNumber(tx.amount) }}
+            {{ tx.type === "withdrawal" ? "-" : "+" }}₦{{
+              formatNumber(tx.amount)
+            }}
           </p>
-          <span
-            v-if="tx.type === 'withdrawal'"
-            class="inline-block text-xs px-2 py-1 rounded-full mt-1"
-            :class="statusBadge(tx)?.class"
-          >
-            {{ statusBadge(tx)?.text }}
-          </span>
         </div>
       </div>
     </div>
@@ -60,10 +72,11 @@ import { useTransactionsStore } from "@/stores/transactions";
 const transactionsStore = useTransactionsStore();
 const { transactions, loading } = storeToRefs(transactionsStore);
 
-// Load transactions when component mounts
 onMounted(() => {
-  transactionsStore.fetchRecentTransactions();
+  transactionsStore.fetchRecentTransactions(3); // limit to 3 for dashboard
 });
+
+const displayedTransactions = computed(() => transactions.value.slice(0, 3));
 
 const getActivityIcon = (type: string): string => {
   const icons: Record<string, string> = {
@@ -107,9 +120,12 @@ const formatDefaultDescription = (tx: any): string => {
   if (tx.description) return tx.description;
   if (tx.type === "deposit") return `Deposit to ${tx.goal?.title || "goal"}`;
   if (tx.type === "withdrawal") {
-    if (tx.status === "pending") return `Withdrawal pending from ${tx.goal?.title || "goal"}`;
-    if (tx.status === "approved") return `Withdrawal approved from ${tx.goal?.title || "goal"}`;
-    if (tx.status === "rejected") return `Withdrawal rejected from ${tx.goal?.title || "goal"}`;
+    if (tx.status === "pending")
+      return `Withdrawal pending from ${tx.goal?.title || "goal"}`;
+    if (tx.status === "approved")
+      return `Withdrawal approved from ${tx.goal?.title || "goal"}`;
+    if (tx.status === "rejected")
+      return `Withdrawal rejected from ${tx.goal?.title || "goal"}`;
     return `Withdrawal from ${tx.goal?.title || "goal"}`;
   }
   if (tx.type === "goal_completed")
@@ -119,17 +135,13 @@ const formatDefaultDescription = (tx: any): string => {
   return tx.type.replace("_", " ");
 };
 
-const statusBadge = (tx: any) => {
-  if (tx.type !== "withdrawal") return null;
-  const status = tx.status || "pending";
-  const classes = {
+const statusClass = (status: string) => {
+  const classes: Record<string, string> = {
     pending: "bg-yellow-500/20 text-yellow-400",
     approved: "bg-green-500/20 text-green-400",
     rejected: "bg-red-500/20 text-red-400",
+    completed: "bg-gray-500/20 text-gray-400",
   };
-  return {
-    class: classes[status as keyof typeof classes] || "bg-gray-500/20",
-    text: status.charAt(0).toUpperCase() + status.slice(1),
-  };
+  return classes[status] || "bg-gray-500/20";
 };
 </script>

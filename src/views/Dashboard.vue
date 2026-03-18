@@ -38,6 +38,36 @@
       />
     </div>
 
+    <!-- No active goals but past activity -->
+    <div
+      v-if="activeGoalsCount === 0 && lifetime.totalSavedLifetime > 0"
+      class="mb-6 glass-card p-4 bg-primary-500/10 border border-primary-500/20"
+    >
+      <div class="flex items-center gap-4">
+        <div
+          class="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center"
+        >
+          <span class="text-2xl">🎉</span>
+        </div>
+        <div>
+          <p class="text-white font-medium">
+            You've saved ₦{{ formatNumber(lifetime.totalSavedLifetime) }} in
+            total and completed {{ lifetime.goalsCompletedLifetime }} goals!
+          </p>
+          <p class="text-sm text-gray-300">
+            Ready to start a new savings journey?
+          </p>
+        </div>
+        <BaseButton
+          size="sm"
+          @click="uiStore.openCreateGoalModal"
+          class="ml-auto"
+        >
+          New Goal
+        </BaseButton>
+      </div>
+    </div>
+
     <!-- Goals Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div class="lg:col-span-2">
@@ -142,6 +172,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 import { useAccountsStore } from "@/stores/accounts";
 import { useTransactionsStore } from "@/stores/transactions";
+import { useAnalyticsStore } from "@/stores/analytics";
 
 // API
 import api from "@/services/api";
@@ -169,6 +200,7 @@ const authStore = useAuthStore();
 const uiStore = useUIStore();
 const accountsStore = useAccountsStore();
 const transactionsStore = useTransactionsStore();
+const analyticsStore = useAnalyticsStore();
 
 const {
   goals,
@@ -178,6 +210,7 @@ const {
   recentlyCompletedGoal,
 } = storeToRefs(goalsStore);
 const { user } = storeToRefs(authStore);
+const { lifetime } = storeToRefs(analyticsStore);
 
 // Computed
 const userName = computed(() => user.value?.name || "User");
@@ -210,6 +243,9 @@ const completedGoal = ref<any>(null);
 // Helpers
 const formatCurrency = (value: number) =>
   `₦${new Intl.NumberFormat().format(value)}`;
+const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat().format(num);
+};
 
 // Open add funds
 const openAddFunds = (id: string | undefined) => {
@@ -329,6 +365,11 @@ watch(recentlyCompletedGoal, (newGoal) => {
 
 watch(showCompletedModal, (open) => {
   if (!open) goalsStore.clearCompleted();
+});
+
+// Load lifetime stats on mount
+onMounted(async () => {
+  await analyticsStore.fetchLifetimeStats();
 });
 
 // Share completed goal

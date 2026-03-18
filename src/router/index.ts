@@ -28,6 +28,12 @@ const routes = [
     meta: { requiresAuth: true, title: "Analytics" },
   },
   {
+    path: "/transactions",
+    name: "transactions",
+    component: () => import("@/views/Transactions.vue"),
+    meta: { requiresAuth: true, title: "Transactions" },
+  },
+  {
     path: "/settings",
     name: "settings",
     component: () => import("@/views/Settings.vue"),

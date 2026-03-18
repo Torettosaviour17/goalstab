@@ -78,6 +78,39 @@
         </div>
       </div>
 
+      <!-- Lifetime Summary Card (visible even when no active goals) -->
+      <div class="glass-card p-4 md:p-6">
+        <h2 class="text-lg md:text-xl font-bold text-white mb-4">
+          Lifetime Summary
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <p class="text-sm text-gray-400">Total Saved</p>
+            <p class="text-xl font-bold text-white">
+              ₦{{ formatNumber(lifetime.totalSavedLifetime) }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-400">Total Withdrawn</p>
+            <p class="text-xl font-bold text-white">
+              ₦{{ formatNumber(lifetime.totalWithdrawnLifetime) }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-400">Goals Completed</p>
+            <p class="text-xl font-bold text-white">
+              {{ lifetime.goalsCompletedLifetime }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm text-gray-400">Transactions</p>
+            <p class="text-xl font-bold text-white">
+              {{ lifetime.totalTransactions }}
+            </p>
+          </div>
+        </div>
+      </div>
+
       <!-- Two‑column layout for charts -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Savings Trend Chart -->
@@ -181,56 +214,6 @@
           No active goals to forecast
         </p>
       </div>
-
-      <!-- Recent Transactions -->
-      <div class="glass-card p-4 md:p-6">
-        <h2 class="text-lg md:text-xl font-bold text-white mb-4">
-          Recent Transactions
-        </h2>
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-left text-gray-400 border-b border-gray-800">
-                <th class="pb-3 font-medium">Type</th>
-                <th class="pb-3 font-medium">Goal</th>
-                <th class="pb-3 font-medium text-right">Amount</th>
-                <th class="pb-3 font-medium text-right">Date</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-800">
-              <tr
-                v-for="tx in transactions"
-                :key="tx._id"
-                class="text-gray-300"
-              >
-                <td class="py-3 capitalize">
-                  <span class="flex items-center gap-2">
-                    <span class="text-lg">{{ transactionIcon(tx.type) }}</span>
-                    {{ tx.type.replace("_", " ") }}
-                  </span>
-                </td>
-                <td class="py-3">{{ tx.goal?.title || "-" }}</td>
-                <td
-                  class="py-3 text-right font-medium"
-                  :class="transactionColor(tx.type)"
-                >
-                  {{ tx.type === "deposit" ? "+" : "" }}₦{{
-                    formatNumber(tx.amount)
-                  }}
-                </td>
-                <td class="py-3 text-right text-gray-400">
-                  {{ formatDate(tx.createdAt) }}
-                </td>
-              </tr>
-              <tr v-if="transactions.length === 0">
-                <td colspan="4" class="py-8 text-center text-gray-500">
-                  No transactions yet
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -245,7 +228,7 @@ import { exportToCSV } from "@/utils/export";
 
 const analyticsStore = useAnalyticsStore();
 const goalsStore = useGoalsStore();
-const { overview, trendData, distribution, transactions, loading } =
+const { overview, trendData, distribution, transactions, lifetime, loading } =
   storeToRefs(analyticsStore);
 const { goals } = storeToRefs(goalsStore);
 const uiStore = useUIStore();

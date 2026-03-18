@@ -5,6 +5,7 @@ import { MotionPlugin } from "@vueuse/motion";
 import App from "./App.vue";
 import router from "./router";
 import { useAuthStore } from "./stores/auth";
+import { useUIStore } from "./stores/ui";
 import "./style.css";
 import VueApexCharts from "vue3-apexcharts";
 import clickOutside from "./directives/clickOutside";
@@ -25,8 +26,13 @@ app.config.errorHandler = (err, instance, info) => {
 
 // ✅ Restore auth state before mounting
 const authStore = useAuthStore(pinia);
+const uiStore = useUIStore(pinia);
+
+uiStore.setAuthChecking(true);
+app.mount("#app");
+
 authStore.checkAuth().finally(() => {
-  app.mount("#app");
+  uiStore.setAuthChecking(false);
 });
 
 if (import.meta.env.DEV) {

@@ -37,6 +37,22 @@ export const useTransactionsStore = defineStore("transactions", () => {
     }
   };
 
+  // 👇 NEW: fetch all transactions (no limit, or large limit)
+  const fetchAllTransactions = async () => {
+    loading.value = true;
+    try {
+      const { data } = await api.get("/analytics/transactions?limit=1000"); // or implement pagination
+      transactions.value = data;
+    } catch (err: any) {
+      uiStore.addToast({
+        type: "error",
+        message: "Failed to load transactions",
+      });
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const refreshTransactions = async () => {
     await fetchRecentTransactions();
   };
@@ -45,6 +61,7 @@ export const useTransactionsStore = defineStore("transactions", () => {
     transactions,
     loading,
     fetchRecentTransactions,
+    fetchAllTransactions,
     refreshTransactions,
   };
 });

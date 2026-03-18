@@ -33,6 +33,13 @@ export interface Transaction {
   createdAt: string;
 }
 
+export interface LifetimeStats {
+  totalSavedLifetime: number;
+  totalWithdrawnLifetime: number;
+  goalsCompletedLifetime: number;
+  totalTransactions: number;
+}
+
 export const useAnalyticsStore = defineStore("analytics", () => {
   const uiStore = useUIStore();
   const overview = ref<Overview>({
@@ -48,6 +55,12 @@ export const useAnalyticsStore = defineStore("analytics", () => {
   });
   const distribution = ref<DistributionItem[]>([]);
   const transactions = ref<Transaction[]>([]);
+  const lifetime = ref<LifetimeStats>({
+    totalSavedLifetime: 0,
+    totalWithdrawnLifetime: 0,
+    goalsCompletedLifetime: 0,
+    totalTransactions: 0,
+  });
   const loading = ref(false);
 
   const fetchOverview = async () => {
@@ -95,6 +108,18 @@ export const useAnalyticsStore = defineStore("analytics", () => {
     }
   };
 
+  const fetchLifetimeStats = async () => {
+    try {
+      const { data } = await api.get("/analytics/lifetime");
+      lifetime.value = data;
+    } catch (err) {
+      uiStore.addToast({
+        type: "error",
+        message: "Failed to load lifetime stats",
+      });
+    }
+  };
+
   const fetchAll = async (period = "month") => {
     loading.value = true;
     try {
@@ -103,6 +128,7 @@ export const useAnalyticsStore = defineStore("analytics", () => {
         fetchTrend(period),
         fetchDistribution(),
         fetchTransactions(),
+        fetchLifetimeStats(), // 👈 new
       ]);
     } finally {
       loading.value = false;
@@ -114,8 +140,10 @@ export const useAnalyticsStore = defineStore("analytics", () => {
     trendData,
     distribution,
     transactions,
+    lifetime,
     loading,
     fetchAll,
     fetchTrend,
+    fetchLifetimeStats,
   };
 });

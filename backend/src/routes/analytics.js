@@ -188,4 +188,36 @@ router.get("/transactions", auth, async (req, res) => {
   }
 });
 
+// @route   GET api/analytics/lifetime
+// @desc    Get lifetime stats from all transactions
+router.get("/lifetime", auth, async (req, res) => {
+  try {
+    const transactions = await Transaction.find({ user: req.user.id });
+
+    let totalDeposits = 0;
+    let totalWithdrawals = 0;
+    let completedGoals = 0;
+
+    transactions.forEach((tx) => {
+      if (tx.type === "deposit" || tx.type === "auto_save") {
+        totalDeposits += tx.amount;
+      } else if (tx.type === "withdrawal" && tx.status === "approved") {
+        totalWithdrawals += tx.amount;
+      } else if (tx.type === "goal_completed") {
+        completedGoals += 1;
+      }
+    });
+
+    res.json({
+      totalSavedLifetime: totalDeposits,
+      totalWithdrawnLifetime: totalWithdrawals,
+      goalsCompletedLifetime: completedGoals,
+      totalTransactions: transactions.length,
+    });
+  } catch (err) {
+    console.error("Lifetime stats error:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
 module.exports = router;

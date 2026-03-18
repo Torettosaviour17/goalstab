@@ -2,6 +2,21 @@
   <div
     class="min-h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900"
   >
+    <!-- Global preloader -->
+    <transition name="fade" appear>
+      <div
+        v-if="uiStore.authChecking"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900"
+      >
+        <div class="text-center">
+          <div
+            class="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mb-4"
+          ></div>
+          <p class="text-gray-300">Loading GoalTabs...</p>
+        </div>
+      </div>
+    </transition>
+
     <!-- Animated background elements (always visible) -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <div
@@ -83,3 +98,14 @@ const showFloatingButton = computed(() => {
   return isAuthenticated.value && route.name === "dashboard";
 });
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 250ms ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
