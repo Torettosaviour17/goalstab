@@ -11,6 +11,10 @@
     "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/ios": "^8.2.0",
     "@vueuse/core": "^10.6.0",
     "@vueuse/motion": "^3.0.3",
     "apexcharts": "^5.5.0",

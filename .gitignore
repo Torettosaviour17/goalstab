@@ -18,6 +18,11 @@ dist-ssr/
 .idea/
 *.swp
 *.swo
+
+# Capacitor
+android/
+ios/
+capacitor.config.json
 *~
 
 # OS files
