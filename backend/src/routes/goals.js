@@ -4,10 +4,32 @@ const auth = require("../middleware/auth");
 const Goal = require("../models/Goal");
 const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
+const GoalActivity = require("../models/GoalActivity");
 const User = require("../models/User"); // <-- ADD THIS
 const { sendNotification } = require("./notifications");
 const { runAutoSave } = require("../services/autoSave");
 const { sendEmailToUser } = require("../services/emailService");
+
+// Helper to record activity
+async function recordGoalActivity(
+  goalId,
+  userId,
+  type,
+  amount = null,
+  metadata = {},
+) {
+  try {
+    await GoalActivity.create({
+      goal: goalId,
+      user: userId,
+      type,
+      amount,
+      metadata,
+    });
+  } catch (err) {
+    console.error("Failed to record activity:", err);
+  }
+}
 
 // @route   GET api/goals
 // @desc    Get all goals for user
@@ -57,6 +79,9 @@ router.post("/", auth, async (req, res) => {
     }
 
     const goal = await newGoal.save();
+
+    // Record activity
+    await recordGoalActivity(goal._id, req.user.id, "goal_created");
 
     res.json(goal.toObject ? goal.toObject() : goal);
   } catch (err) {
@@ -132,6 +157,9 @@ router.post("/:id/add-funds", auth, async (req, res) => {
 
     await goal.save();
 
+    // Record activity
+    await recordGoalActivity(goal._id, req.user.id, "funds_added", amount);
+
     await Transaction.create({
       user: req.user.id,
       goal: goal.id,
@@ -161,6 +189,9 @@ router.post("/:id/add-funds", auth, async (req, res) => {
     );
 
     if (goal.saved >= goal.target) {
+      // Record activity
+      await recordGoalActivity(goal._id, req.user.id, "goal_completed");
+
       await Notification.create({
         user: req.user.id,
         type: "goal_completed",
@@ -226,6 +257,13 @@ router.post("/:id/share", auth, async (req, res) => {
 
     await goal.save();
 
+    // Record activity
+    await recordGoalActivity(goal._id, req.user.id, "goal_shared", null, {
+      email,
+      role,
+      targetUserId: userToShare.id,
+    });
+
     await goal.populate("sharedWith.user", "name email");
 
     res.json(goal);
@@ -252,6 +290,11 @@ router.delete("/:id/share/:userId", auth, async (req, res) => {
 
     await goal.save();
 
+    // Record activity
+    await recordGoalActivity(goal._id, req.user.id, "user_removed", null, {
+      userId: req.params.userId,
+    });
+
     await goal.populate("sharedWith.user", "name email");
 
     res.json(goal);
@@ -276,6 +319,34 @@ router.post("/auto-save/trigger", auth, async (req, res) => {
     console.error("Auto-save trigger error:", err);
 
     res.status(500).json({ msg: "Auto-save failed" });
+  }
+});
+
+// ================================
+// ACTIVITIES
+// ================================
+
+// @route   GET api/goals/:id/activities
+// @desc    Get activity feed for a goal
+router.get("/:id/activities", auth, async (req, res) => {
+  try {
+    const goal = await Goal.findById(req.params.id);
+    if (!goal) return res.status(404).json({ msg: "Goal not found" });
+
+    // Check if user has access (owner or shared)
+    const hasAccess =
+      goal.user.toString() === req.user.id ||
+      goal.sharedWith.some((u) => u.user.toString() === req.user.id);
+    if (!hasAccess) return res.status(403).json({ msg: "Access denied" });
+
+    const activities = await GoalActivity.find({ goal: goal._id })
+      .populate("user", "name email")
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json(activities);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 

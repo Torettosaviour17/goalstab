@@ -130,6 +130,40 @@
           {{ goal.locked ? "Locked" : "Withdraw" }}
         </BaseButton>
       </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-4 border-b border-gray-800">
+        <button
+          @click="activeDetailTab = 'overview'"
+          class="px-4 py-2 font-medium transition"
+          :class="
+            activeDetailTab === 'overview'
+              ? 'text-primary-400 border-b-2 border-primary-500'
+              : 'text-gray-400'
+          "
+        >
+          Overview
+        </button>
+        <button
+          @click="activeDetailTab = 'activity'"
+          class="px-4 py-2 font-medium transition"
+          :class="
+            activeDetailTab === 'activity'
+              ? 'text-primary-400 border-b-2 border-primary-500'
+              : 'text-gray-400'
+          "
+        >
+          Activity
+        </button>
+      </div>
+
+      <!-- Activity tab -->
+      <div v-if="activeDetailTab === 'activity'" class="glass-card p-6">
+        <GoalActivityFeed
+          :activities="activities"
+          :loading="activitiesLoading"
+        />
+      </div>
     </div>
 
     <div v-else class="text-center py-12">
@@ -146,22 +180,29 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
 import { useGoalsStore } from "@/stores/goals";
 import { useUIStore } from "@/stores/ui";
+import { useActivitiesStore } from "@/stores/activities";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import GoalProgress from "@/components/goals/GoalProgress.vue";
 import AddFundsModal from "@/components/goals/AddFundsModal.vue";
+import GoalActivityFeed from "@/components/goals/GoalActivityFeed.vue";
 
 const route = useRoute();
 const router = useRouter();
 const goalsStore = useGoalsStore();
 const uiStore = useUIStore();
+const activitiesStore = useActivitiesStore();
+const { activities, loading: activitiesLoading } = storeToRefs(activitiesStore);
 
 const goal = computed(() => {
   return goalsStore.goals.find((g) => g.id === route.params.id);
 });
+
+const activeDetailTab = ref("overview");
 
 const showAddFundsModal = ref(false);
 
@@ -211,4 +252,15 @@ const handleWithdraw = () => {
     }
   }
 };
+
+// Load activities when goal changes
+watch(
+  () => goal.value,
+  (newGoal) => {
+    if (newGoal) {
+      activitiesStore.fetchGoalActivities(newGoal.id);
+    }
+  },
+  { immediate: true },
+);
 </script>
