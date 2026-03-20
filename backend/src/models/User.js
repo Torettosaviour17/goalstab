@@ -18,6 +18,7 @@ const PreferencesSchema = new mongoose.Schema(
     theme: { type: String, default: "dark" },
     autoSaveDefault: { type: Boolean, default: true },
     monthlyIncome: { type: Number, default: 500000 }, // 👈 Monthly income for percentage-based auto-saves
+    onboardingCompleted: { type: Boolean, default: false }, // 👈 Onboarding tour completion flag
     notifications: { type: NotificationSettingsSchema, default: () => ({}) },
   },
   { _id: false },

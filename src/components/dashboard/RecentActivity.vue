@@ -1,5 +1,5 @@
 <template>
-  <div class="glass-card p-6">
+  <div class="glass-card p-6 recent-activity">
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-bold text-white">Recent Activity</h3>
       <router-link

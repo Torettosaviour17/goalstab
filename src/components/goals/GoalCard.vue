@@ -1,6 +1,6 @@
 <template>
   <div
-    class="glass-card p-5 hover:scale-[1.02] transition-all duration-300 border border-gray-700/50 hover:border-primary-500/30"
+    class="glass-card p-5 hover:scale-[1.02] transition-all duration-300 border border-gray-700/50 hover:border-primary-500/30 goal-card"
   >
     <div class="flex items-start justify-between mb-4">
       <div class="flex items-center gap-3">

@@ -77,7 +77,7 @@
           <BaseButton
             @click="uiStore.openCreateGoalModal()"
             size="sm"
-            class="shadow-lg hover:shadow-primary-500/30 transition-all"
+            class="shadow-lg hover:shadow-primary-500/30 transition-all new-goal-button"
           >
             <template #icon>＋</template>
             New Goal
@@ -193,6 +193,7 @@ import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import EmptyState from "@/components/dashboard/EmptyState.vue";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner.vue";
+import { useOnboardingTour } from "@/composables/useOnboardingTour";
 
 // Stores
 const goalsStore = useGoalsStore();
@@ -201,6 +202,7 @@ const uiStore = useUIStore();
 const accountsStore = useAccountsStore();
 const transactionsStore = useTransactionsStore();
 const analyticsStore = useAnalyticsStore();
+const { shouldShowTour, startTour } = useOnboardingTour();
 
 const {
   goals,
@@ -392,5 +394,20 @@ onMounted(async () => {
     accountsStore.fetchAccounts(),
     transactionsStore.fetchRecentTransactions(),
   ]);
+});
+
+// OnboardingTour
+onMounted(async () => {
+  await Promise.all([
+    goalsStore.fetchGoals(),
+    accountsStore.fetchAccounts(),
+    transactionsStore.fetchRecentTransactions(),
+  ]);
+
+  if (shouldShowTour()) {
+    setTimeout(() => {
+      startTour();
+    }, 1000); // slight delay to ensure DOM is ready
+  }
 });
 </script>

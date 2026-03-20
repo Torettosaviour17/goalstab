@@ -1,5 +1,5 @@
 <template>
-  <div class="glass-card p-6 mb-8">
+  <div class="glass-card p-6 mb-8 quick-actions">
     <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <button

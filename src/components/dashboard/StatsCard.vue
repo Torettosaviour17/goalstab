@@ -1,5 +1,7 @@
 <template>
-  <div class="glass-card p-5 hover:bg-white/[0.08] transition-all duration-300">
+  <div
+    class="glass-card p-5 hover:bg-white/[0.08] transition-all duration-300 stats-card"
+  >
     <div class="flex items-center gap-3">
       <div
         :class="[

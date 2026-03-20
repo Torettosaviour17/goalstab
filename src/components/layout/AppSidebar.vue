@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="hidden md:block w-64 border-r border-gray-800/50 bg-gray-900/50 min-h-[calc(100vh-4rem)]"
+    class="hidden md:block w-64 border-r border-gray-800/50 bg-gray-900/50 sidebar min-h-[calc(100vh-4rem)]"
   >
     <div class="p-6 sticky top-16">
       <div class="mb-8">

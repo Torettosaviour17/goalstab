@@ -24,6 +24,7 @@ export interface User {
     theme: string;
     autoSaveDefault: boolean;
     monthlyIncome?: number; // 👈 New field for monthly income
+    onboardingCompleted?: boolean; // 👈 new
     notifications: NotificationSettings;
   };
 }

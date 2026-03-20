@@ -1,11 +1,9 @@
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { useAuthStore } from "@/stores/auth";
-import { useUIStore } from "@/stores/ui";
 
 export const useOnboardingTour = () => {
   const authStore = useAuthStore();
-  const uiStore = useUIStore();
 
   const startTour = () => {
     const driverObj = driver({
@@ -16,7 +14,7 @@ export const useOnboardingTour = () => {
           popover: {
             title: "Create Your First Goal",
             description:
-              "Click here to start a new savings goal. You can choose between a product (e.g., laptop) or a service (e.g., vacation).",
+              "Click here to start a new savings goal. Choose between a product (e.g., laptop) or a service (e.g., vacation).",
             side: "bottom",
             align: "start",
           },
@@ -70,12 +68,6 @@ export const useOnboardingTour = () => {
       onDestroyed: () => {
         // Mark onboarding as completed
         authStore.updatePreferences({ onboardingCompleted: true });
-      },
-      onPrevClick: (step) => {
-        // Optional: handle prev click
-      },
-      onNextClick: (step) => {
-        // Optional: handle next click
       },
     });
     driverObj.drive();
