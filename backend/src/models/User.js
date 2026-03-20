@@ -31,7 +31,7 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String },
   isPremium: { type: Boolean, default: false },
   isAdmin: { type: Boolean, default: false }, // ✅ admin flag added
-  avatar: { type: String },
+  avatar: { type: String, default: null },
   preferences: { type: PreferencesSchema, default: () => ({}) },
   createdAt: { type: Date, default: Date.now },
 });

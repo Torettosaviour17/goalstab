@@ -291,6 +291,53 @@ router.put("/withdrawals/:id/reject", [auth, admin], async (req, res) => {
   }
 });
 
+// @route   GET api/admin/fulfillment/pending
+// @desc    Get goals pending fulfillment (completed, not yet fulfilled)
+router.get('/fulfillment/pending', [auth, admin], async (req, res) => {
+  try {
+    const goals = await Goal.find({
+      progress: 100,
+      fulfillmentStatus: 'pending',
+    }).populate('user', 'name email');
+    res.json(goals);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   PUT api/admin/fulfillment/:id
+// @desc    Update fulfillment status for a goal
+router.put('/fulfillment/:id', [auth, admin], async (req, res) => {
+  const { status, details } = req.body;
+  try {
+    const goal = await Goal.findById(req.params.id);
+    if (!goal) return res.status(404).json({ msg: 'Goal not found' });
+
+    goal.fulfillmentStatus = status;
+    if (details) goal.fulfillmentDetails = details;
+    await goal.save();
+
+    res.json(goal);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
+// @route   GET api/admin/stats/goal-types
+// @desc    Get count of product vs service goals
+router.get('/stats/goal-types', [auth, admin], async (req, res) => {
+  try {
+    const productCount = await Goal.countDocuments({ goalType: 'product' });
+    const serviceCount = await Goal.countDocuments({ goalType: 'service' });
+    res.json({ product: productCount, service: serviceCount });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 // @route   GET api/admin/stats
 // @desc    Get platform stats
 router.get("/stats", [auth, admin], async (req, res) => {

@@ -46,6 +46,56 @@ export const useAdminStore = defineStore("admin", () => {
   const currentPage = ref(1);
   const totalPages = ref(1);
   const leftoverFunds = ref<any[]>([]);
+  const pendingFulfillment = ref<any[]>([]);
+  const goalTypeStats = ref({ product: 0, service: 0 });
+
+  const fetchPendingFulfillment = async () => {
+    try {
+      const { data } = await api.get("/admin/fulfillment/pending");
+      pendingFulfillment.value = data;
+    } catch (err) {
+      uiStore.addToast({
+        type: "error",
+        message: "Failed to load fulfillment queue",
+      });
+    }
+  };
+
+  const updateFulfillmentStatus = async (
+    id: string,
+    status: string,
+    details?: any,
+  ) => {
+    try {
+      const { data } = await api.put(`/admin/fulfillment/${id}`, {
+        status,
+        details,
+      });
+      const index = pendingFulfillment.value.findIndex((g) => g._id === id);
+      if (index !== -1) {
+        pendingFulfillment.value[index] = data;
+      }
+      uiStore.addToast({
+        type: "success",
+        message: `Fulfillment status updated to ${status}`,
+      });
+      fetchGoalTypeStats();
+    } catch (err) {
+      uiStore.addToast({
+        type: "error",
+        message: "Failed to update fulfillment status",
+      });
+    }
+  };
+
+  const fetchGoalTypeStats = async () => {
+    try {
+      const { data } = await api.get("/admin/stats/goal-types");
+      goalTypeStats.value = data;
+    } catch (err) {
+      console.error("Failed to load goal type stats");
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -175,5 +225,10 @@ export const useAdminStore = defineStore("admin", () => {
     approveWithdrawal,
     rejectWithdrawal,
     fetchLeftoverFunds,
+    pendingFulfillment,
+    goalTypeStats,
+    fetchPendingFulfillment,
+    updateFulfillmentStatus,
+    fetchGoalTypeStats,
   };
 });

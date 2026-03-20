@@ -31,6 +31,9 @@ export interface Goal {
   createdAt: string;
   category?: string;
   accountId?: string;
+  goalType?: 'product' | 'service';
+  fulfillmentStatus?: 'pending' | 'processing' | 'delivered' | 'booked';
+  fulfillmentDetails?: any;
   sharedWith: SharedUser[];
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
@@ -48,6 +51,7 @@ export interface GoalFormData {
   category?: string;
   accountId?: string;
   autoSaveEnabled?: boolean;
+  goalType?: 'product' | 'service';
 }
 
 export const useGoalsStore = defineStore("goals", () => {
@@ -124,6 +128,7 @@ export const useGoalsStore = defineStore("goals", () => {
         category: goalData.category || undefined,
         accountId: goalData.accountId || undefined,
         autoSaveEnabled: goalData.autoSaveEnabled ?? true,
+        goalType: goalData.goalType || "product",
       };
       const { data } = await api.post("/goals", payload);
       if (data._id && !data.id) data.id = data._id;

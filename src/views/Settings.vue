@@ -75,19 +75,16 @@
 
         <div class="glass-card p-6">
           <h2 class="text-xl font-bold text-white mb-4">Avatar</h2>
-          <div class="flex flex-col sm:flex-row items-center gap-4">
-            <div
-              class="w-20 h-20 rounded-full bg-linear-to-br from-primary-500 to-secondary-500 flex items-center justify-center text-3xl"
-            >
-              {{ profile.name?.charAt(0) || "U" }}
-            </div>
-            <BaseButton
-              variant="secondary"
-              class="w-full sm:w-auto"
-              @click="changeAvatar"
-              >Change Avatar</BaseButton
-            >
-          </div>
+          <AvatarUploader
+            :current-avatar="avatarPreview"
+            :user-name="profile.name"
+            @update="
+              (avatar) => {
+                avatarPreview = avatar;
+                profile.avatar = avatar || '';
+              }
+            "
+          />
         </div>
       </div>
 
@@ -329,6 +326,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
+import AvatarUploader from "@/components/ui/AvatarUploader.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 
@@ -361,7 +359,10 @@ const profile = reactive({
   name: "",
   email: "",
   phone: "",
+  avatar: "",
 });
+
+const avatarPreview = ref<string | null>(null);
 
 // Notifications
 const notificationItems = [
@@ -422,6 +423,8 @@ onMounted(() => {
     profile.email = authStore.user.email || "";
     profile.phone = (authStore.user as any).phone || "";
 
+    profile.avatar = authStore.user.avatar || "";
+    avatarPreview.value = authStore.user.avatar || null;
     if (authStore.user.preferences) {
       const prefs = authStore.user.preferences;
       if (prefs.notifications) {
@@ -437,21 +440,25 @@ onMounted(() => {
 
 const saveProfile = async () => {
   saving.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate API
-  authStore.updateUser({
-    name: profile.name,
-    email: profile.email,
-    phone: profile.phone,
-  });
-  uiStore.addToast({
-    type: "success",
-    message: "Profile updated successfully",
-  });
-  saving.value = false;
-};
-
-const changeAvatar = () => {
-  uiStore.addToast({ type: "info", message: "Avatar change coming soon" });
+  try {
+    await authStore.updateUser({
+      name: profile.name,
+      email: profile.email,
+      phone: profile.phone,
+      avatar: profile.avatar,
+    });
+    uiStore.addToast({
+      type: "success",
+      message: "Profile updated successfully",
+    });
+  } catch (err: any) {
+    uiStore.addToast({
+      type: "error",
+      message: err.response?.data?.msg || "Profile update failed",
+    });
+  } finally {
+    saving.value = false;
+  }
 };
 
 const saveNotifications = async () => {
@@ -477,17 +484,19 @@ const changePassword = async () => {
     });
     return;
   }
+
   saving.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  // In a real app, call API to change password
-  uiStore.addToast({
-    type: "success",
-    message: "Password changed successfully",
-  });
-  password.current = "";
-  password.new = "";
-  password.confirm = "";
-  saving.value = false;
+  try {
+    await authStore.changePassword(password.current, password.new);
+    password.current = "";
+    password.new = "";
+    password.confirm = "";
+  } catch (err: any) {
+    const msg = err.response?.data?.msg || "Failed to change password";
+    uiStore.addToast({ type: "error", message: msg });
+  } finally {
+    saving.value = false;
+  }
 };
 
 const openDeleteModal = () => {

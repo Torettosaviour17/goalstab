@@ -138,5 +138,39 @@ export const useAuthStore = defineStore("auth", {
         });
       }
     },
+    async changePassword(currentPassword: string, newPassword: string) {
+      try {
+        const response = await api.put("/users/password", {
+          currentPassword,
+          newPassword,
+        });
+        useUIStore().addToast({
+          type: "success",
+          message: response.data.msg || "Password changed successfully",
+        });
+        return response.data;
+      } catch (error: any) {
+        const message = error.response?.data?.msg || "Password change failed";
+        useUIStore().addToast({ type: "error", message });
+        throw error;
+      }
+    },
+    async updateAvatar(avatar: string | null) {
+      try {
+        const response = await api.put("/users/avatar", {
+          avatar: avatar || "",
+        });
+        if (this.user) {
+          this.user = { ...this.user, avatar: response.data.avatar };
+          localStorage.setItem("user", JSON.stringify(this.user));
+        }
+        useUIStore().addToast({ type: "success", message: "Avatar updated" });
+        return response.data;
+      } catch (error: any) {
+        const message = error.response?.data?.msg || "Avatar update failed";
+        useUIStore().addToast({ type: "error", message });
+        throw error;
+      }
+    },
   },
 });

@@ -64,6 +64,7 @@ router.post("/", auth, async (req, res) => {
       userTarget,
       fee,
       target,
+      goalType: req.body.goalType || 'product',
       ...rest,
     });
 

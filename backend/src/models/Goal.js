@@ -115,6 +115,22 @@ const GoalSchema = new mongoose.Schema(
 
     sharedWith: [SharedWithSchema],
 
+    goalType: {
+      type: String,
+      enum: ['product', 'service'],
+      required: true,
+      default: 'product',
+    },
+    fulfillmentStatus: {
+      type: String,
+      enum: ['pending', 'processing', 'delivered', 'booked'],
+      default: 'pending',
+    },
+    fulfillmentDetails: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
+
     // Auto‑save tracking fields
     autoSaveEnabled: {
       type: Boolean,

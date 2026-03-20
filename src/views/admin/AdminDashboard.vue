@@ -245,6 +245,90 @@
       />
     </div>
 
+    <!-- Fulfillment Tab -->
+    <div v-if="activeTab === 'Fulfillment'">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">Fulfillment Queue</h2>
+        <div class="flex gap-2">
+          <div class="bg-gray-800/50 px-3 py-1 rounded-full text-sm">
+            <span class="text-gray-400">Products:</span>
+            <span class="text-white ml-1">{{ goalTypeStats.product }}</span>
+          </div>
+          <div class="bg-gray-800/50 px-3 py-1 rounded-full text-sm">
+            <span class="text-gray-400">Services:</span>
+            <span class="text-white ml-1">{{ goalTypeStats.service }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="glass-card overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="text-left text-sm text-gray-400 border-b border-gray-800">
+              <th class="p-4">User</th>
+              <th class="p-4">Goal</th>
+              <th class="p-4">Type</th>
+              <th class="p-4">Target</th>
+              <th class="p-4">Saved</th>
+              <th class="p-4">Completed</th>
+              <th class="p-4">Status</th>
+              <th class="p-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="goal in pendingFulfillment"
+              :key="goal._id"
+              class="border-b border-gray-800"
+            >
+              <td class="p-4 text-white">{{ goal.user?.name || 'Unknown' }}</td>
+              <td class="p-4 text-gray-300">{{ goal.title }}</td>
+              <td class="p-4 capitalize">{{ goal.goalType }}</td>
+              <td class="p-4 text-white">₦{{ formatNumber(goal.target) }}</td>
+              <td class="p-4 text-white">₦{{ formatNumber(goal.saved) }}</td>
+              <td class="p-4 text-gray-300">{{ formatDate(goal.createdAt) }}</td>
+              <td class="p-4">
+                <span
+                  class="px-2 py-1 rounded-full text-xs"
+                  :class="
+                    goal.fulfillmentStatus === 'pending'
+                      ? 'bg-yellow-500/20 text-yellow-400'
+                      : goal.fulfillmentStatus === 'delivered'
+                      ? 'bg-green-500/20 text-green-400'
+                      : 'bg-blue-500/20 text-blue-400'
+                  "
+                >
+                  {{ goal.fulfillmentStatus }}
+                </span>
+              </td>
+              <td class="p-4">
+                <div class="flex gap-2">
+                  <button
+                    v-if="goal.goalType === 'product'"
+                    @click="markDelivered(goal)"
+                    class="text-sm px-3 py-1 rounded-lg bg-success/20 hover:bg-success/30 text-success transition"
+                  >
+                    Mark Delivered
+                  </button>
+                  <button
+                    v-if="goal.goalType === 'service'"
+                    @click="openServiceModal(goal)"
+                    class="text-sm px-3 py-1 rounded-lg bg-primary-500/20 hover:bg-primary-500/30 text-primary-300 transition"
+                  >
+                    Mark Booked
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="pendingFulfillment.length === 0">
+              <td colspan="8" class="p-8 text-center text-gray-500">
+                No pending fulfillment tasks
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- 🆕 Fees Tab -->
     <div v-if="activeTab === 'Fees'">
       <div class="flex justify-between items-center mb-4">
@@ -346,6 +430,27 @@
         </div>
       </form>
     </BaseModal>
+
+    <BaseModal v-model="showServiceModal" title="Book Service">
+      <form @submit.prevent="submitServiceBooking">
+        <p class="text-gray-300 mb-4">
+          Mark this service as booked. You can add notes (e.g., booking reference, confirmation number).
+        </p>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Booking Details (optional)</label>
+          <textarea
+            v-model="serviceDetails"
+            rows="3"
+            placeholder="Add any relevant information..."
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+          ></textarea>
+        </div>
+        <div class="flex gap-2 justify-end pt-4">
+          <BaseButton variant="secondary" @click="showServiceModal = false">Cancel</BaseButton>
+          <BaseButton type="submit" variant="primary">Confirm Booking</BaseButton>
+        </div>
+      </form>
+    </BaseModal>
   </div>
 </template>
 
@@ -362,17 +467,18 @@ import debounce from "lodash/debounce";
 const adminStore = useAdminStore();
 const uiStore = useUIStore();
 
-const { users, withdrawals, stats, loading, totalPages, leftoverFunds } =
+const { users, withdrawals, stats, loading, totalPages, leftoverFunds, pendingFulfillment, goalTypeStats } =
   storeToRefs(adminStore);
 
 const activeTab = ref("Users");
-const tabs = ["Users", "Withdrawals", "Fees"];
+const tabs = ["Users", "Withdrawals", "Fulfillment", "Fees"];
 const statuses = ["pending", "approved", "rejected", "all"];
 const selectedStatus = ref("pending");
 const search = ref("");
 const currentPage = ref(1);
 
 const showActionModal = ref(false);
+const showServiceModal = ref(false);
 const actionType = ref<"approve" | "reject">("approve");
 const selectedWithdrawal = ref<any>(null);
 const adminNote = ref("");
@@ -382,6 +488,8 @@ onMounted(() => {
   adminStore.fetchUsers();
   adminStore.fetchWithdrawals(1, selectedStatus.value);
   adminStore.fetchLeftoverFunds();
+  adminStore.fetchPendingFulfillment();
+  adminStore.fetchGoalTypeStats();
 });
 
 const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
@@ -450,4 +558,28 @@ const submitAction = async () => {
   adminStore.fetchWithdrawals(currentPage.value, selectedStatus.value);
   adminStore.fetchLeftoverFunds(); // refresh fees after approval
 };
+
+const markDelivered = async (goal: any) => {
+  await adminStore.updateFulfillmentStatus(goal._id, 'delivered', {
+    deliveredAt: new Date(),
+  });
+};
+
+const openServiceModal = (goal: any) => {
+  selectedGoalForService.value = goal;
+  serviceDetails.value = '';
+  showServiceModal.value = true;
+};
+
+const submitServiceBooking = async () => {
+  await adminStore.updateFulfillmentStatus(
+    selectedGoalForService.value._id,
+    'booked',
+    { bookingDetails: serviceDetails.value, bookedAt: new Date() },
+  );
+  showServiceModal.value = false;
+};
+
+const selectedGoalForService = ref<any>(null);
+const serviceDetails = ref('');
 </script>
