@@ -34,6 +34,19 @@
     <transition name="fade" mode="out-in">
       <!-- Profile -->
       <div v-if="activeTab === 'profile'" class="space-y-6">
+        <div class="glass-card p-6 w-{50vw}">
+          <h2 class="text-xl font-bold text-white mb-4">Avatar</h2>
+          <AvatarUploader
+            :current-avatar="avatarPreview"
+            :user-name="profile.name"
+            @update="
+              (avatar) => {
+                avatarPreview = avatar;
+                profile.avatar = avatar || '';
+              }
+            "
+          />
+        </div>
         <div class="glass-card p-6">
           <h2 class="text-xl font-bold text-white mb-4">Profile Information</h2>
           <div class="space-y-4">
@@ -71,20 +84,6 @@
               >Save Changes</BaseButton
             >
           </div>
-        </div>
-
-        <div class="glass-card p-6">
-          <h2 class="text-xl font-bold text-white mb-4">Avatar</h2>
-          <AvatarUploader
-            :current-avatar="avatarPreview"
-            :user-name="profile.name"
-            @update="
-              (avatar) => {
-                avatarPreview = avatar;
-                profile.avatar = avatar || '';
-              }
-            "
-          />
         </div>
       </div>
 

@@ -4,7 +4,7 @@
   >
     <div class="container mx-auto px-4 md:px-6">
       <div class="flex items-center justify-between h-16">
-        <!-- Logo (unchanged) -->
+        <!-- Logo -->
         <div class="flex items-center gap-3">
           <router-link to="/" class="flex items-center group">
             <img
@@ -27,7 +27,7 @@
           >
         </div>
 
-        <!-- Right section (notifications + user menu) -->
+        <!-- Right section -->
         <div class="flex items-center gap-3">
           <!-- Notifications bell -->
           <button
@@ -46,17 +46,28 @@
             ></span>
           </button>
 
-          <!-- User menu (unchanged) -->
+          <!-- User menu -->
           <div class="relative">
             <button
               @click="toggleUserMenu"
               class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800/50 transition border border-transparent"
               :class="{ 'border-gray-700 bg-gray-800/50': showUserMenu }"
             >
+              <!-- Avatar -->
               <div
-                class="w-8 h-8 rounded-full bg-linear-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-inner"
+                class="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden shadow-inner"
+                :class="{
+                  'bg-linear-to-br from-primary-500 to-secondary-500':
+                    !userAvatar,
+                }"
               >
-                <span class="text-sm font-bold text-white">{{
+                <img
+                  v-if="userAvatar"
+                  :src="userAvatar"
+                  alt="Avatar"
+                  class="w-full h-full object-cover"
+                />
+                <span v-else class="text-sm font-bold text-white">{{
                   userInitials
                 }}</span>
               </div>
@@ -138,10 +149,11 @@ const { user } = storeToRefs(authStore);
 const showUserMenu = ref(false);
 const hasUnreadNotifications = ref(true);
 
-// Computed user data (unchanged)
+// Computed user data
 const userName = computed(() => user.value?.name || "User");
 const userEmail = computed(() => user.value?.email || "user@example.com");
 const userPlan = computed(() => (user.value?.isPremium ? "Premium" : "Free"));
+const userAvatar = computed(() => user.value?.avatar || null);
 const userInitials = computed(() => {
   if (!user.value?.name) return "U";
   return user.value.name

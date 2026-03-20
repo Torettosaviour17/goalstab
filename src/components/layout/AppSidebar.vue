@@ -5,10 +5,22 @@
     <div class="p-6 sticky top-16">
       <div class="mb-8">
         <div class="flex items-center gap-3 mb-4">
+          <!-- Avatar -->
           <div
-            class="w-12 h-12 rounded-full bg-linear-to-br from-primary-500 to-secondary-500 flex items-center justify-center shadow-lg"
+            class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden shadow-lg"
+            :class="{
+              'bg-linear-to-br from-primary-500 to-secondary-500': !userAvatar,
+            }"
           >
-            <span class="text-xl font-bold text-white">{{ userInitials }}</span>
+            <img
+              v-if="userAvatar"
+              :src="userAvatar"
+              alt="Avatar"
+              class="w-full h-full object-cover"
+            />
+            <span v-else class="text-xl font-bold text-white">{{
+              userInitials
+            }}</span>
           </div>
           <div class="overflow-hidden">
             <p class="font-medium text-white truncate">{{ userName }}</p>
@@ -117,6 +129,7 @@ const navItems = computed(() => {
 
 const userName = computed(() => user.value?.name || "Guest User");
 const userPlan = computed(() => (user.value?.isPremium ? "Premium" : "Free"));
+const userAvatar = computed(() => user.value?.avatar || null);
 const userInitials = computed(() => {
   if (!user.value?.name) return "?";
   return user.value.name
