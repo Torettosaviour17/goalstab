@@ -75,6 +75,12 @@ const routes = [
     component: () => import("@/views/Terms.vue"),
     meta: { title: "Terms of Service" },
   },
+  {
+    path: "/help",
+    name: "help",
+    component: () => import("@/views/Help.vue"),
+    meta: { requiresAuth: true, title: "Help & Support" },
+  },
   // {
   //   path: "/privacy",
   //   name: "privacy",

@@ -119,7 +119,17 @@
                   <span>⚙️</span> Settings
                 </router-link>
 
-                <div class="border-t border-gray-700/50 mt-1 pt-1">
+                <router-link
+                  to="/help"
+                  @click="closeUserMenu"
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition text-gray-300 hover:text-white"
+                >
+                  <span>❓</span> Help & Support
+                </router-link>
+
+                <div
+                  class="border-t hidden md:flex border-gray-700/50 mt-1 pt-1"
+                >
                   <button
                     @click="handleLogout"
                     class="flex items-center gap-3 w-full px-4 py-3 hover:bg-red-500/10 transition text-red-400 font-medium"

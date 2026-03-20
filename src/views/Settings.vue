@@ -169,6 +169,15 @@
           </div>
         </div>
 
+        <!-- Logout Section (new) -->
+        <div class="glass-card p-6 border border-gray-700/50">
+          <h2 class="text-xl font-bold text-white mb-4">Session</h2>
+          <p class="text-gray-400 mb-4">Sign out of your account</p>
+          <BaseButton variant="secondary" @click="handleLogout"
+            >Sign Out</BaseButton
+          >
+        </div>
+
         <div class="glass-card p-6 border border-danger/20">
           <h2 class="text-xl font-bold text-danger mb-4">Danger Zone</h2>
           <p class="text-gray-400 mb-4">
@@ -500,6 +509,11 @@ const changePassword = async () => {
 
 const openDeleteModal = () => {
   showDeleteModal.value = true;
+};
+
+const handleLogout = () => {
+  authStore.logout();
+  router.push("/login");
 };
 
 const confirmDelete = async () => {
