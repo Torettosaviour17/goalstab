@@ -23,6 +23,7 @@ export interface User {
     currency: string;
     theme: string;
     autoSaveDefault: boolean;
+    monthlyIncome?: number; // 👈 New field for monthly income
     notifications: NotificationSettings;
   };
 }

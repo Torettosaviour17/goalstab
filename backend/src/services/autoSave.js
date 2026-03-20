@@ -2,6 +2,7 @@ const cron = require("node-cron");
 const Goal = require("../models/Goal");
 const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
+const User = require("../models/User"); // 👈 Import User model
 const { sendNotification } = require("../routes/notifications");
 
 /**
@@ -25,12 +26,15 @@ const getNextDate = (frequency) => {
  * Process auto‑save for a single goal
  */
 const processGoalAutoSave = async (goal) => {
+  // Fetch the user to get monthlyIncome from preferences
+  const user = await User.findById(goal.user);
+  if (!user) return;
+
   // Determine amount to add
   let amount = 0;
   if (goal.type === "percentage") {
-    // For demo, assume a fixed monthly income of 500,000.
-    // In a real app, you could store this in the user's preferences.
-    const monthlyIncome = 500000;
+    // Use user's monthly income, fallback to 500,000 if not set
+    const monthlyIncome = user.preferences?.monthlyIncome || 500000;
     amount = (goal.autoSave / 100) * monthlyIncome;
     // Adjust for frequency
     if (goal.frequency === "daily") amount /= 30;
@@ -38,6 +42,12 @@ const processGoalAutoSave = async (goal) => {
   } else {
     amount = goal.autoSave; // fixed amount
   }
+
+  // Ensure amount is at least 0
+  amount = Math.max(0, amount);
+
+  // If amount becomes 0, skip
+  if (amount <= 0) return;
 
   // Apply the addition
   goal.saved = Math.min(goal.saved + amount, goal.target);

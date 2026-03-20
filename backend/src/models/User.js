@@ -17,6 +17,7 @@ const PreferencesSchema = new mongoose.Schema(
     currency: { type: String, default: "NGN" },
     theme: { type: String, default: "dark" },
     autoSaveDefault: { type: Boolean, default: true },
+    monthlyIncome: { type: Number, default: 500000 }, // 👈 Monthly income for percentage-based auto-saves
     notifications: { type: NotificationSettingsSchema, default: () => ({}) },
   },
   { _id: false },

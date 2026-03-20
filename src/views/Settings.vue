@@ -244,6 +244,23 @@
               ></div>
             </label>
           </div>
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            <div>
+              <p class="font-medium text-white">Monthly Income (₦)</p>
+              <p class="text-sm text-gray-400">
+                Used to calculate percentage‑based auto‑saves
+              </p>
+            </div>
+            <input
+              v-model.number="preferences.monthlyIncome"
+              type="number"
+              min="0"
+              step="1000"
+              class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white w-full sm:w-auto"
+            />
+          </div>
         </div>
         <div class="mt-6">
           <BaseButton @click="savePreferences" :loading="saving"
@@ -395,6 +412,7 @@ const preferences = reactive({
   currency: "NGN",
   theme: "dark",
   autoSaveDefault: true,
+  monthlyIncome: 500000, // 👈 Default monthly income
 });
 
 // Load user data on mount
@@ -412,6 +430,7 @@ onMounted(() => {
       preferences.currency = prefs.currency || "NGN";
       preferences.theme = prefs.theme || "dark";
       preferences.autoSaveDefault = prefs.autoSaveDefault ?? true;
+      preferences.monthlyIncome = (prefs as any).monthlyIncome ?? 500000; // 👈 Load monthlyIncome
     }
   }
 });
@@ -494,6 +513,7 @@ const savePreferences = async () => {
     currency: preferences.currency,
     theme: preferences.theme,
     autoSaveDefault: preferences.autoSaveDefault,
+    monthlyIncome: preferences.monthlyIncome, // 👈 Save monthlyIncome
   });
   // Optionally apply theme immediately
   if (preferences.theme === "light") {
