@@ -20,6 +20,7 @@
     "apexcharts": "^5.5.0",
     "axios": "^1.13.5",
     "chart.js": "^4.5.1",
+    "driver.js": "^1.4.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7",
     "lodash": "^4.17.23",
