@@ -64,7 +64,7 @@ router.post("/", auth, async (req, res) => {
       userTarget,
       fee,
       target,
-      goalType: req.body.goalType || 'product',
+      goalType: req.body.goalType || "product",
       ...rest,
     });
 
@@ -209,7 +209,10 @@ router.post("/:id/add-funds", auth, async (req, res) => {
       await sendEmailToUser(
         req.user.id,
         "Goal Completed! 🎉",
-        `<h1>Congratulations!</h1><p>You've reached your goal: <strong>${goal.title}</strong></p>`,
+        `<h1>Congratulations!</h1>
+         <p>You've reached your goal: <strong>${goal.title}</strong></p>
+         <p>You can now withdraw your funds or request fulfillment.</p>
+         <a href="${process.env.FRONTEND_URL}/goals/${goal.id}" style="background-color:#3b82f6; color:white; padding:10px 20px; text-decoration:none; border-radius:8px;">View Goal</a>`,
       );
     }
 
@@ -257,6 +260,16 @@ router.post("/:id/share", auth, async (req, res) => {
     });
 
     await goal.save();
+
+    // Send invitation email
+    await sendEmailToUser(
+      userToShare.id,
+      `${req.user.name} shared a goal with you!`,
+      `<h2>Goal: ${goal.title}</h2>
+       <p>${req.user.name} has invited you to collaborate on this goal as a <strong>${role}</strong>.</p>
+       <a href="${process.env.FRONTEND_URL}/goals/${goal.id}" style="background-color:#3b82f6; color:white; padding:10px 20px; text-decoration:none; border-radius:8px;">View Goal</a>
+       <p>If you don't have an account yet, you'll need to register to view it.</p>`,
+    );
 
     // Record activity
     await recordGoalActivity(goal._id, req.user.id, "goal_shared", null, {

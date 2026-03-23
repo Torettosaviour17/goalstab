@@ -9,6 +9,7 @@ const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
 const LeftoverFunds = require("../models/LeftoverFunds");
 const { sendNotification } = require("./notifications");
+const { sendEmailToUser } = require("../services/emailService");
 
 // @route   POST api/admin/users
 // @desc    Create a new user (admin only)
@@ -184,6 +185,15 @@ router.put("/withdrawals/:id/approve", [auth, admin], async (req, res) => {
     withdrawal.processedBy = req.user.id;
     await withdrawal.save();
 
+    // Send approval email
+    await sendEmailToUser(
+      withdrawal.user,
+      "Withdrawal Approved",
+      `<p>Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been approved.</p>
+       <p>Funds will be transferred to your account within 1‑3 business days.</p>
+       <a href="${process.env.FRONTEND_URL}/transactions">View Transaction</a>`,
+    );
+
     // Update goal saved amount & withdrawn tracking
     const goal = await Goal.findById(withdrawal.goal);
     if (goal) {
@@ -263,6 +273,15 @@ router.put("/withdrawals/:id/reject", [auth, admin], async (req, res) => {
     withdrawal.processedBy = req.user.id;
     await withdrawal.save();
 
+    // Send rejection email
+    await sendEmailToUser(
+      withdrawal.user,
+      "Withdrawal Rejected",
+      `<p>Your withdrawal request was rejected.</p>
+       <p>Reason: ${adminNote || "Not specified"}</p>
+       <p>If you have questions, please contact support.</p>`,
+    );
+
     // Update transaction status to rejected
     const transaction = await Transaction.findOne({
       user: withdrawal.user,
@@ -293,26 +312,26 @@ router.put("/withdrawals/:id/reject", [auth, admin], async (req, res) => {
 
 // @route   GET api/admin/fulfillment/pending
 // @desc    Get goals pending fulfillment (completed, not yet fulfilled)
-router.get('/fulfillment/pending', [auth, admin], async (req, res) => {
+router.get("/fulfillment/pending", [auth, admin], async (req, res) => {
   try {
     const goals = await Goal.find({
       progress: 100,
-      fulfillmentStatus: 'pending',
-    }).populate('user', 'name email');
+      fulfillmentStatus: "pending",
+    }).populate("user", "name email");
     res.json(goals);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 });
 
 // @route   PUT api/admin/fulfillment/:id
 // @desc    Update fulfillment status for a goal
-router.put('/fulfillment/:id', [auth, admin], async (req, res) => {
+router.put("/fulfillment/:id", [auth, admin], async (req, res) => {
   const { status, details } = req.body;
   try {
     const goal = await Goal.findById(req.params.id);
-    if (!goal) return res.status(404).json({ msg: 'Goal not found' });
+    if (!goal) return res.status(404).json({ msg: "Goal not found" });
 
     goal.fulfillmentStatus = status;
     if (details) goal.fulfillmentDetails = details;
@@ -321,20 +340,20 @@ router.put('/fulfillment/:id', [auth, admin], async (req, res) => {
     res.json(goal);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 });
 
 // @route   GET api/admin/stats/goal-types
 // @desc    Get count of product vs service goals
-router.get('/stats/goal-types', [auth, admin], async (req, res) => {
+router.get("/stats/goal-types", [auth, admin], async (req, res) => {
   try {
-    const productCount = await Goal.countDocuments({ goalType: 'product' });
-    const serviceCount = await Goal.countDocuments({ goalType: 'service' });
+    const productCount = await Goal.countDocuments({ goalType: "product" });
+    const serviceCount = await Goal.countDocuments({ goalType: "service" });
     res.json({ product: productCount, service: serviceCount });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 });
 

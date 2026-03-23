@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
+const { sendEmailToUser } = require("../services/emailService");
 
 // @route   POST api/auth/register
 // @desc    Register a new user
@@ -35,6 +36,18 @@ router.post("/register", async (req, res) => {
     // Create new user
     user = new User({ name, email, password });
     await user.save();
+
+    // Send welcome email
+    await sendEmailToUser(
+      user.id,
+      "Welcome to GoalTabs! 🎉",
+      `<h1>Welcome, ${user.name}!</h1>
+       <p>We're excited to have you on board. Start by creating your first goal and begin your savings journey.</p>
+       <p>If you have any questions, feel free to reply to this email.</p>
+       <br/>
+       <p>Happy saving!</p>
+       <p>– The GoalTabs Team</p>`,
+    );
 
     // Generate JWT token
     const payload = { user: { id: user.id } };
