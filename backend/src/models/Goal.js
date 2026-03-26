@@ -117,18 +117,23 @@ const GoalSchema = new mongoose.Schema(
 
     goalType: {
       type: String,
-      enum: ['product', 'service'],
+      enum: ["product", "service"],
       required: true,
-      default: 'product',
+      default: "product",
     },
     fulfillmentStatus: {
       type: String,
-      enum: ['pending', 'processing', 'delivered', 'booked'],
-      default: 'pending',
+      enum: ["pending", "processing", "delivered", "booked"],
+      default: "pending",
     },
     fulfillmentDetails: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
+    },
+
+    usePlatformFulfillment: {
+      type: Boolean,
+      default: false,
     },
 
     // Auto‑save tracking fields

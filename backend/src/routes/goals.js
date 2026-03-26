@@ -214,6 +214,39 @@ router.post("/:id/add-funds", auth, async (req, res) => {
          <p>You can now withdraw your funds or request fulfillment.</p>
          <a href="${process.env.FRONTEND_URL}/goals/${goal.id}" style="background-color:#3b82f6; color:white; padding:10px 20px; text-decoration:none; border-radius:8px;">View Goal</a>`,
       );
+
+      // Auto‑fulfill if platform fulfillment is enabled
+      if (goal.usePlatformFulfillment) {
+        goal.fulfillmentStatus = "processing";
+        await goal.save();
+
+        // Record activity
+        await recordGoalActivity(
+          goal._id,
+          req.user.id,
+          "fulfillment_started",
+          null,
+          {
+            details: goal.fulfillmentDetails,
+          },
+        );
+
+        // Notify admin
+        const adminUsers = await User.find({ isAdmin: true });
+        for (const admin of adminUsers) {
+          await sendEmailToUser(
+            admin.id,
+            "New Fulfillment Request",
+            `<p>Goal "${goal.title}" (${goal._id}) by ${req.user.name} needs fulfillment.</p>
+             <p>Details: ${JSON.stringify(goal.fulfillmentDetails)}</p>
+             <a href="${process.env.FRONTEND_URL}/admin/fulfillment">Go to Admin Dashboard</a>`,
+          );
+        }
+
+        // Optionally, send an email to admin or trigger external API
+        // For now, just log
+        console.log(`Auto‑fulfillment triggered for goal ${goal._id}`);
+      }
     }
 
     res.json(goal.toObject ? goal.toObject() : goal);
@@ -312,6 +345,47 @@ router.delete("/:id/share/:userId", auth, async (req, res) => {
     await goal.populate("sharedWith.user", "name email");
 
     res.json(goal);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ================================
+// FULFILLMENT REQUEST
+// ================================
+
+// @route   POST api/goals/:id/fulfillment-request
+// @desc    User requests fulfillment for a completed goal
+router.post("/:id/fulfillment-request", auth, async (req, res) => {
+  const { details } = req.body;
+  try {
+    const goal = await Goal.findById(req.params.id);
+    if (!goal) return res.status(404).json({ msg: "Goal not found" });
+    if (goal.user.toString() !== req.user.id)
+      return res.status(401).json({ msg: "Not authorized" });
+    if (goal.progress < 100)
+      return res.status(400).json({ msg: "Goal not completed yet" });
+    if (goal.fulfillmentStatus !== "pending")
+      return res
+        .status(400)
+        .json({ msg: "Fulfillment already requested or completed" });
+
+    // Update fulfillment
+    goal.fulfillmentStatus = "processing";
+    if (details) goal.fulfillmentDetails = details;
+    await goal.save();
+
+    // Record activity
+    await recordGoalActivity(
+      goal._id,
+      req.user.id,
+      "fulfillment_requested",
+      null,
+      details,
+    );
+
+    res.json({ msg: "Fulfillment request submitted", goal });
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: "Server error" });

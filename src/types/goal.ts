@@ -20,9 +20,10 @@ export interface Goal {
   category?: string;
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
-  goalType?: 'product' | 'service';
-  fulfillmentStatus?: 'pending' | 'processing' | 'delivered' | 'booked';
+  goalType?: "product" | "service";
+  fulfillmentStatus?: "pending" | "processing" | "delivered" | "booked";
   fulfillmentDetails?: any;
+  usePlatformFulfillment?: boolean;
   sharedWith?: SharedUser[];
   createdAt: string;
 }
@@ -39,7 +40,8 @@ export interface GoalFormData {
   category?: string;
   accountId?: string;
   autoSaveEnabled?: boolean;
-  goalType?: 'product' | 'service';
+  goalType?: "product" | "service";
+  usePlatformFulfillment?: boolean;
 }
 
 export interface GoalStats {

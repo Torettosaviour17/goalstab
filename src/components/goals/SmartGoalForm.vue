@@ -98,6 +98,20 @@
           </div>
         </div>
 
+        <!-- Platform Fulfillment Toggle -->
+        <div class="flex items-center gap-2 pt-2">
+          <input
+            id="usePlatformFulfillment"
+            v-model="usePlatformFulfillment"
+            type="checkbox"
+            class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-primary-500 focus:ring-primary-500"
+          />
+          <label for="usePlatformFulfillment" class="text-xs text-gray-300">
+            I want GoalTabs to handle fulfillment (purchase/booking)
+            automatically when the goal is reached
+          </label>
+        </div>
+
         <!-- Title -->
         <div>
           <label class="block text-xs font-medium text-gray-300 mb-1"
@@ -167,7 +181,6 @@
               class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
         </template>
 
         <!-- Service-specific fields -->
@@ -493,6 +506,9 @@ const deadline = ref(props.initialData.deadline || "");
 const category = ref(props.initialData.category || "");
 const accountId = ref(props.initialData.accountId || "");
 const autoSaveEnabled = ref(props.initialData.autoSaveEnabled ?? true);
+const usePlatformFulfillment = ref(
+  props.initialData.usePlatformFulfillment ?? false,
+);
 const productLink = ref(props.initialData.productLink || "");
 const storeName = ref(props.initialData.storeName || "");
 const serviceDate = ref(props.initialData.serviceDate || "");
@@ -565,6 +581,7 @@ const handleSubmit = async () => {
     category: category.value || undefined,
     accountId: accountId.value,
     autoSaveEnabled: autoSaveEnabled.value,
+    usePlatformFulfillment: usePlatformFulfillment.value,
     productLink: productLink.value || undefined,
     storeName: storeName.value || undefined,
     serviceDate: serviceDate.value || undefined,

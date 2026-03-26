@@ -109,27 +109,74 @@
       </div>
 
       <!-- Actions -->
-      <div class="flex flex-col sm:flex-row gap-4">
+      <!-- If platform fulfillment is enabled -->
+      <template v-if="goal.usePlatformFulfillment">
+        <div v-if="goal.fulfillmentStatus === 'pending'">
+          <p class="text-gray-400 text-center py-2">
+            Goal completed! We'll process your fulfillment soon.
+          </p>
+        </div>
+        <div v-else-if="goal.fulfillmentStatus === 'processing'">
+          <p class="text-yellow-400 text-center py-2">
+            Fulfillment in progress...
+          </p>
+        </div>
+        <div
+          v-else-if="
+            goal.fulfillmentStatus === 'delivered' ||
+            goal.fulfillmentStatus === 'booked'
+          "
+        >
+          <p class="text-green-400 text-center py-2">
+            {{
+              goal.goalType === "product"
+                ? "Product delivered!"
+                : "Service booked!"
+            }}
+          </p>
+        </div>
+      </template>
+
+      <!-- Regular withdrawal buttons (if not using platform fulfillment) -->
+      <template v-else>
+        <div class="flex flex-col sm:flex-row gap-4">
+          <BaseButton
+            variant="primary"
+            size="lg"
+            class="flex-1"
+            @click="openAddFunds"
+          >
+            <template #icon>💰</template>
+            Add Funds
+          </BaseButton>
+          <BaseButton
+            :variant="goal.locked ? 'ghost' : 'primary'"
+            size="lg"
+            class="flex-1"
+            :disabled="goal.locked"
+            @click="handleWithdraw"
+          >
+            <template #icon>💸</template>
+            {{ goal.locked ? "Locked" : "Withdraw" }}
+          </BaseButton>
+        </div>
+
+        <!-- Fulfillment button (only when goal completed and not yet fulfilled) -->
         <BaseButton
-          variant="primary"
+          v-if="goal.progress >= 100 && goal.fulfillmentStatus === 'pending'"
+          variant="secondary"
           size="lg"
           class="flex-1"
-          @click="openAddFunds"
+          @click="requestFulfillment"
         >
-          <template #icon>💰</template>
-          Add Funds
+          <template #icon>{{
+            goal.goalType === "product" ? "🛒" : "📅"
+          }}</template>
+          {{
+            goal.goalType === "product" ? "Request Fulfillment" : "Book Service"
+          }}
         </BaseButton>
-        <BaseButton
-          :variant="goal.locked ? 'ghost' : 'primary'"
-          size="lg"
-          class="flex-1"
-          :disabled="goal.locked"
-          @click="handleWithdraw"
-        >
-          <template #icon>💸</template>
-          {{ goal.locked ? "Locked" : "Withdraw" }}
-        </BaseButton>
-      </div>
+      </template>
 
       <!-- Tabs -->
       <div class="flex gap-4 border-b border-gray-800">
@@ -176,6 +223,11 @@
       :goal="goal"
       @add="handleAddFunds"
     />
+
+    <ServiceBookingModal
+      v-model="showServiceModal"
+      @submit="submitServiceBooking"
+    />
   </div>
 </template>
 
@@ -190,6 +242,7 @@ import BaseButton from "@/components/shared/BaseButton.vue";
 import GoalProgress from "@/components/goals/GoalProgress.vue";
 import AddFundsModal from "@/components/goals/AddFundsModal.vue";
 import GoalActivityFeed from "@/components/goals/GoalActivityFeed.vue";
+import ServiceBookingModal from "@/components/goals/ServiceBookingModal.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -205,6 +258,8 @@ const goal = computed(() => {
 const activeDetailTab = ref("overview");
 
 const showAddFundsModal = ref(false);
+
+const showServiceModal = ref(false);
 
 const progressColor = computed(() => {
   const p = goal.value?.progress || 0;
@@ -250,6 +305,20 @@ const handleWithdraw = () => {
         message: "Complete the goal first!",
       });
     }
+  }
+};
+
+const requestFulfillment = () => {
+  if (goal.value?.goalType === "service") {
+    showServiceModal.value = true;
+  } else {
+    goalsStore.requestFulfillment(goal.value.id);
+  }
+};
+
+const submitServiceBooking = async (details: any) => {
+  if (goal.value) {
+    await goalsStore.requestFulfillment(goal.value.id, details);
   }
 };
 

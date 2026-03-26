@@ -31,8 +31,8 @@ export interface Goal {
   createdAt: string;
   category?: string;
   accountId?: string;
-  goalType?: 'product' | 'service';
-  fulfillmentStatus?: 'pending' | 'processing' | 'delivered' | 'booked';
+  goalType?: "product" | "service";
+  fulfillmentStatus?: "pending" | "processing" | "delivered" | "booked";
   fulfillmentDetails?: any;
   sharedWith: SharedUser[];
   autoSaveEnabled?: boolean;
@@ -51,7 +51,7 @@ export interface GoalFormData {
   category?: string;
   accountId?: string;
   autoSaveEnabled?: boolean;
-  goalType?: 'product' | 'service';
+  goalType?: "product" | "service";
 }
 
 export const useGoalsStore = defineStore("goals", () => {
@@ -128,6 +128,7 @@ export const useGoalsStore = defineStore("goals", () => {
         category: goalData.category || undefined,
         accountId: goalData.accountId || undefined,
         autoSaveEnabled: goalData.autoSaveEnabled ?? true,
+        usePlatformFulfillment: goalData.usePlatformFulfillment ?? false,
         goalType: goalData.goalType || "product",
       };
       const { data } = await api.post("/goals", payload);
@@ -233,6 +234,30 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
+  const requestFulfillment = async (goalId: string, details?: any) => {
+    try {
+      const { data } = await api.post(`/goals/${goalId}/fulfillment-request`, {
+        details,
+      });
+      const index = goals.value.findIndex((g) => g._id === goalId);
+      if (index !== -1) {
+        goals.value[index] = {
+          ...goals.value[index],
+          fulfillmentStatus: "processing",
+          fulfillmentDetails: details,
+        };
+      }
+      uiStore.addToast({ type: "success", message: data.msg });
+      return data;
+    } catch (err: any) {
+      uiStore.addToast({
+        type: "error",
+        message: err.response?.data?.msg || "Request failed",
+      });
+      throw err;
+    }
+  };
+
   const clearCompleted = () => {
     recentlyCompletedGoal.value = null;
   };
@@ -263,5 +288,6 @@ export const useGoalsStore = defineStore("goals", () => {
     addFunds,
     shareGoal,
     unshareGoal,
+    requestFulfillment,
   };
 });
