@@ -34,6 +34,7 @@ export interface Goal {
   goalType?: "product" | "service";
   fulfillmentStatus?: "pending" | "processing" | "delivered" | "booked";
   fulfillmentDetails?: any;
+  usePlatformFulfillment?: boolean;
   sharedWith: SharedUser[];
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
@@ -51,6 +52,7 @@ export interface GoalFormData {
   category?: string;
   accountId?: string;
   autoSaveEnabled?: boolean;
+  usePlatformFulfillment?: boolean;
   goalType?: "product" | "service";
 }
 
