@@ -245,7 +245,7 @@ export const useGoalsStore = defineStore("goals", () => {
           ...goals.value[index],
           fulfillmentStatus: "processing",
           fulfillmentDetails: details,
-        };
+        } as Goal;
       }
       uiStore.addToast({ type: "success", message: data.msg });
       return data;

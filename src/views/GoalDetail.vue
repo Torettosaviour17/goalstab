@@ -311,7 +311,7 @@ const handleWithdraw = () => {
 const requestFulfillment = () => {
   if (goal.value?.goalType === "service") {
     showServiceModal.value = true;
-  } else {
+  } else if (goal.value) {
     goalsStore.requestFulfillment(goal.value.id);
   }
 };

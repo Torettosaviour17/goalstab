@@ -463,6 +463,7 @@ const props = withDefaults(
       category?: string;
       accountId?: string;
       autoSaveEnabled?: boolean;
+      usePlatformFulfillment?: boolean;
       productLink?: string;
       storeName?: string;
       serviceDate?: string;
