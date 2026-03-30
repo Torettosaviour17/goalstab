@@ -7,9 +7,31 @@ const Goal = require("../models/Goal");
 const Withdrawal = require("../models/Withdrawal");
 const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
+const Account = require("../models/Account");
 const LeftoverFunds = require("../models/LeftoverFunds");
+const AdminLog = require("../models/AdminLog");
 const { sendNotification } = require("./notifications");
 const { sendEmailToUser } = require("../services/emailService");
+
+const logAdminAction = async (
+  userId,
+  action,
+  targetType,
+  targetId,
+  details = {},
+) => {
+  try {
+    await AdminLog.create({
+      user: userId,
+      action,
+      targetType,
+      targetId,
+      details,
+    });
+  } catch (err) {
+    console.error("Failed to log admin action:", err);
+  }
+};
 
 // @route   POST api/admin/users
 // @desc    Create a new user (admin only)
@@ -111,6 +133,11 @@ router.put("/users/:id/toggle-admin", [auth, admin], async (req, res) => {
         .json({ msg: "Cannot change your own admin status" });
     user.isAdmin = !user.isAdmin;
     await user.save();
+
+    await logAdminAction(req.user.id, "toggle_admin", "user", user._id, {
+      newStatus: user.isAdmin,
+    });
+
     res.json({
       msg: "Admin status updated",
       user: { id: user.id, isAdmin: user.isAdmin },
@@ -137,6 +164,11 @@ router.delete("/users/:id", [auth, admin], async (req, res) => {
     await Notification.deleteMany({ user: user.id });
     await Withdrawal.deleteMany({ user: user.id });
     await user.deleteOne();
+
+    await logAdminAction(req.user.id, "delete_user", "user", user._id, {
+      email: user.email,
+      name: user.name,
+    });
 
     res.json({ msg: "User and all associated data deleted" });
   } catch (err) {
@@ -251,6 +283,18 @@ router.put("/withdrawals/:id/approve", [auth, admin], async (req, res) => {
       message: `Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been approved.`,
     });
 
+    await logAdminAction(
+      req.user.id,
+      "approve_withdrawal",
+      "withdrawal",
+      withdrawal._id,
+      {
+        amount: withdrawal.amount,
+        goal: goal?.title || null,
+        adminNote,
+      },
+    );
+
     res.json(withdrawal);
   } catch (err) {
     console.error(err.message);
@@ -303,6 +347,18 @@ router.put("/withdrawals/:id/reject", [auth, admin], async (req, res) => {
       message: `Your withdrawal request was rejected. Reason: ${adminNote || "No reason provided"}`,
     });
 
+    await logAdminAction(
+      req.user.id,
+      "reject_withdrawal",
+      "withdrawal",
+      withdrawal._id,
+      {
+        amount: withdrawal.amount,
+        goal: withdrawal.goal,
+        adminNote,
+      },
+    );
+
     res.json(withdrawal);
   } catch (err) {
     console.error(err.message);
@@ -336,6 +392,11 @@ router.put("/fulfillment/:id", [auth, admin], async (req, res) => {
     goal.fulfillmentStatus = status;
     if (details) goal.fulfillmentDetails = details;
     await goal.save();
+
+    await logAdminAction(req.user.id, "update_fulfillment", "goal", goal._id, {
+      status,
+      details,
+    });
 
     res.json(goal);
   } catch (err) {
@@ -395,6 +456,96 @@ router.get("/leftover-funds", [auth, admin], async (req, res) => {
       .populate("goal", "title")
       .sort({ createdAt: -1 });
     res.json(funds);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// @route   GET api/admin/logs
+// @desc    Get admin activity logs (with pagination)
+router.get("/logs", [auth, admin], async (req, res) => {
+  const { page = 1, limit = 20 } = req.query;
+  try {
+    const logs = await AdminLog.find()
+      .populate("user", "name email")
+      .sort({ timestamp: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    const total = await AdminLog.countDocuments();
+    res.json({
+      logs,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server error");
+  }
+});
+
+// @route   GET api/admin/earnings
+// @desc    Get earnings over time (aggregated by day/week/month)
+router.get("/earnings", [auth, admin], async (req, res) => {
+  const { period = "day" } = req.query;
+  let groupFormat;
+  let startDate;
+
+  const now = new Date();
+  switch (period) {
+    case "week":
+      startDate = new Date(now.getTime());
+      startDate.setDate(startDate.getDate() - 7);
+      groupFormat = {
+        year: { $year: "$createdAt" },
+        week: { $week: "$createdAt" },
+      };
+      break;
+    case "month":
+      startDate = new Date(now.getTime());
+      startDate.setMonth(startDate.getMonth() - 1);
+      groupFormat = {
+        year: { $year: "$createdAt" },
+        month: { $month: "$createdAt" },
+      };
+      break;
+    case "year":
+      startDate = new Date(now.getTime());
+      startDate.setFullYear(startDate.getFullYear() - 1);
+      groupFormat = {
+        year: { $year: "$createdAt" },
+        month: { $month: "$createdAt" },
+      };
+      break;
+    default:
+      startDate = new Date(now.getTime());
+      startDate.setDate(startDate.getDate() - 30);
+      groupFormat = {
+        year: { $year: "$createdAt" },
+        month: { $month: "$createdAt" },
+        day: { $dayOfMonth: "$createdAt" },
+      };
+  }
+
+  try {
+    const earnings = await LeftoverFunds.aggregate([
+      { $match: { createdAt: { $gte: startDate } } },
+      { $group: { _id: groupFormat, total: { $sum: "$amount" } } },
+      { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1, "_id.week": 1 } },
+    ]);
+
+    const labels = earnings.map((item) => {
+      if (period === "week") return `Week ${item._id.week} ${item._id.year}`;
+      if (period === "month")
+        return `${item._id.year}-${String(item._id.month).padStart(2, "0")}`;
+      if (period === "day")
+        return `${item._id.year}-${String(item._id.month).padStart(2, "0")}-${String(item._id.day).padStart(2, "0")}`;
+      return `${item._id.year}`;
+    });
+    const data = earnings.map((item) => item.total);
+
+    res.json({ labels, data });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");

@@ -28,6 +28,21 @@ export interface Withdrawal {
   processedAt?: string;
 }
 
+export interface AdminLog {
+  _id: string;
+  user: { _id: string; name: string; email: string };
+  action: string;
+  targetType: string;
+  targetId: string;
+  details: any;
+  timestamp: string;
+}
+
+export interface EarningsData {
+  labels: string[];
+  data: number[];
+}
+
 export const useAdminStore = defineStore("admin", () => {
   const uiStore = useUIStore();
   const transactionsStore = useTransactionsStore();
@@ -48,6 +63,13 @@ export const useAdminStore = defineStore("admin", () => {
   const leftoverFunds = ref<any[]>([]);
   const pendingFulfillment = ref<any[]>([]);
   const goalTypeStats = ref({ product: 0, service: 0 });
+
+  const logs = ref<AdminLog[]>([]);
+  const logsTotal = ref(0);
+  const logsPage = ref(1);
+  const logsTotalPages = ref(1);
+  const earningsData = ref<EarningsData>({ labels: [], data: [] });
+  const earningsPeriod = ref("day");
 
   const fetchPendingFulfillment = async () => {
     try {
@@ -207,6 +229,35 @@ export const useAdminStore = defineStore("admin", () => {
     }
   };
 
+  const fetchLogs = async (page = 1) => {
+    loading.value = true;
+    try {
+      const res = await api.get("/admin/logs", {
+        params: { page, limit: 20 },
+      });
+      logs.value = res.data.logs;
+      logsTotal.value = res.data.total;
+      logsPage.value = res.data.page;
+      logsTotalPages.value = res.data.totalPages;
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to load logs" });
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchEarnings = async (period: string = earningsPeriod.value) => {
+    try {
+      const res = await api.get("/admin/earnings", {
+        params: { period },
+      });
+      earningsData.value = res.data;
+      earningsPeriod.value = period;
+    } catch (err) {
+      uiStore.addToast({ type: "error", message: "Failed to load earnings" });
+    }
+  };
+
   return {
     users,
     withdrawals,
@@ -230,5 +281,13 @@ export const useAdminStore = defineStore("admin", () => {
     fetchPendingFulfillment,
     updateFulfillmentStatus,
     fetchGoalTypeStats,
+    logs,
+    logsTotal,
+    logsPage,
+    logsTotalPages,
+    earningsData,
+    earningsPeriod,
+    fetchLogs,
+    fetchEarnings,
   };
 });

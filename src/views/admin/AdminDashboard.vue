@@ -387,6 +387,76 @@
       </div>
     </div>
 
+    <!-- Logs Tab -->
+    <div v-if="activeTab === 'Logs'">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">Admin Activity Log</h2>
+      </div>
+      <div class="glass-card overflow-x-auto">
+        <table class="w-full">
+          <thead>
+            <tr class="text-left text-sm text-gray-400 border-b border-gray-800">
+              <th class="p-4">Timestamp</th>
+              <th class="p-4">Admin</th>
+              <th class="p-4">Action</th>
+              <th class="p-4">Target</th>
+              <th class="p-4">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="log in logs" :key="log._id" class="border-b border-gray-800">
+              <td class="p-4 text-gray-300">{{ formatDateTime(log.timestamp) }}</td>
+              <td class="p-4 text-white">{{ log.user?.name || 'Unknown' }}</td>
+              <td class="p-4 capitalize">{{ log.action.replace(/_/g, ' ') }}</td>
+              <td class="p-4">{{ log.targetType }} ({{ log.targetId.slice(-6) }})</td>
+              <td class="p-4 text-gray-300"><pre class="text-xs">{{ JSON.stringify(log.details, null, 2) }}</pre></td>
+            </tr>
+            <tr v-if="logs.length === 0">
+              <td colspan="5" class="p-8 text-center text-gray-500">No logs found</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <Pagination
+        v-if="logsTotalPages > 1"
+        :current-page="logsPage"
+        :total-pages="logsTotalPages"
+        @page-change="changeLogsPage"
+      />
+    </div>
+
+    <!-- Earnings Tab -->
+    <div v-if="activeTab === 'Earnings'">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold text-white">Platform Earnings</h2>
+        <div class="flex gap-2">
+          <button
+            v-for="p in earningsPeriods"
+            :key="p.value"
+            @click="changeEarningsPeriod(p.value)"
+            :class="[
+              'px-3 py-1 rounded-lg text-sm transition',
+              earningsPeriod === p.value
+                ? 'bg-primary-500 text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white'
+            ]"
+          >
+            {{ p.label }}
+          </button>
+        </div>
+      </div>
+      <div class="glass-card p-6">
+        <apexchart
+          v-if="earningsData.labels.length"
+          type="line"
+          height="350"
+          :options="earningsChartOptions"
+          :series="earningsSeries"
+        />
+        <div v-else class="text-center py-12 text-gray-400">No earnings data yet</div>
+      </div>
+    </div>
+
     <!-- Action Modal -->
     <BaseModal
       v-model="showActionModal"
@@ -467,13 +537,34 @@ import debounce from "lodash/debounce";
 const adminStore = useAdminStore();
 const uiStore = useUIStore();
 
-const { users, withdrawals, stats, loading, totalPages, leftoverFunds, pendingFulfillment, goalTypeStats } =
-  storeToRefs(adminStore);
+const {
+  users,
+  withdrawals,
+  stats,
+  loading,
+  totalPages,
+  leftoverFunds,
+  pendingFulfillment,
+  goalTypeStats,
+  logs,
+  logsTotal,
+  logsPage,
+  logsTotalPages,
+  earningsData,
+  earningsPeriod,
+} = storeToRefs(adminStore);
 
 const activeTab = ref("Users");
-const tabs = ["Users", "Withdrawals", "Fulfillment", "Fees"];
+const tabs = ["Users", "Withdrawals", "Fulfillment", "Fees", "Logs", "Earnings"];
 const statuses = ["pending", "approved", "rejected", "all"];
 const selectedStatus = ref("pending");
+const earningsPeriods = [
+  { label: "Day", value: "day" },
+  { label: "Week", value: "week" },
+  { label: "Month", value: "month" },
+  { label: "Year", value: "year" },
+];
+
 const search = ref("");
 const currentPage = ref(1);
 
@@ -490,6 +581,8 @@ onMounted(() => {
   adminStore.fetchLeftoverFunds();
   adminStore.fetchPendingFulfillment();
   adminStore.fetchGoalTypeStats();
+  adminStore.fetchLogs();
+  adminStore.fetchEarnings();
 });
 
 const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
@@ -525,6 +618,55 @@ const changeStatus = (status: string) => {
   selectedStatus.value = status;
   currentPage.value = 1;
   adminStore.fetchWithdrawals(1, status);
+};
+
+const changeLogsPage = (page: number) => {
+  adminStore.fetchLogs(page);
+};
+
+const changeEarningsPeriod = (period: string) => {
+  adminStore.fetchEarnings(period);
+};
+
+const earningsSeries = computed(() => [
+  {
+    name: "Earnings",
+    data: earningsData.value.data,
+  },
+]);
+
+const earningsChartOptions = computed(() => ({
+  chart: {
+    background: "transparent",
+    toolbar: { show: false },
+    foreColor: "#9ca3af",
+  },
+  theme: { mode: "dark" },
+  xaxis: {
+    categories: earningsData.value.labels,
+    labels: { rotate: -45, style: { colors: "#9ca3af" } },
+  },
+  yaxis: {
+    labels: {
+      formatter: (val: number) => `₦${val.toLocaleString()}`,
+    },
+  },
+  stroke: { curve: "smooth", width: 3 },
+  fill: {
+    type: "gradient",
+    gradient: { shadeIntensity: 1, opacityFrom: 0.7, opacityTo: 0.3 },
+  },
+  colors: ["#10b981"],
+  tooltip: {
+    theme: "dark",
+    y: {
+      formatter: (val: number) => `₦${val.toLocaleString()}`,
+    },
+  },
+}));
+
+const formatDateTime = (date: string) => {
+  return new Date(date).toLocaleString();
 };
 
 const toggleAdmin = async (userId: string) => {

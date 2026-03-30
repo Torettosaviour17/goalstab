@@ -130,6 +130,17 @@
           />
         </div>
 
+        <!-- Find Product Button (for products only) -->
+        <div v-if="goalCategory === 'product'" class="flex justify-end">
+          <button
+            type="button"
+            @click="openProductSearch"
+            class="text-sm text-primary-400 hover:text-primary-300 transition"
+          >
+            🔍 Find a product
+          </button>
+        </div>
+
         <!-- Target Amount -->
         <div>
           <label class="block text-xs font-medium text-gray-300 mb-1"
@@ -439,12 +450,16 @@
       </div>
     </form>
   </div>
+
+  <!-- Product Search Modal -->
+  <ProductSearchModal v-model="showProductSearch" @select="onProductSelected" />
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from "vue";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import AccountSelector from "@/components/accounts/AccountSelector.vue";
+import ProductSearchModal from "@/components/goals/ProductSearchModal.vue";
 import { useAccountsStore } from "@/stores/accounts";
 
 const props = withDefaults(
@@ -517,6 +532,9 @@ const location = ref(props.initialData.location || "");
 const peopleCount = ref(props.initialData.peopleCount || 1);
 const instructions = ref(props.initialData.instructions || "");
 
+const showProductSearch = ref(false);
+const selectedProduct = ref<any>(null);
+
 const icons = ["💻", "🏝️", "🚗", "🏠", "🎓", "🛡️", "🎮", "📱", "👕", "🍔"];
 const colors = [
   {
@@ -565,6 +583,16 @@ const prevStep = () => {
   if (currentStep.value > 1) currentStep.value--;
 };
 
+const openProductSearch = () => {
+  showProductSearch.value = true;
+};
+
+const onProductSelected = (product: any) => {
+  title.value = product.name;
+  target.value = product.price;
+  selectedProduct.value = product;
+};
+
 const handleSubmit = async () => {
   loading.value = true;
   await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -583,6 +611,7 @@ const handleSubmit = async () => {
     accountId: accountId.value,
     autoSaveEnabled: autoSaveEnabled.value,
     usePlatformFulfillment: usePlatformFulfillment.value,
+    selectedProduct: selectedProduct.value || undefined,
     productLink: productLink.value || undefined,
     storeName: storeName.value || undefined,
     serviceDate: serviceDate.value || undefined,

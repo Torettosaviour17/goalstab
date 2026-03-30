@@ -136,6 +136,11 @@ const GoalSchema = new mongoose.Schema(
       default: false,
     },
 
+    selectedProduct: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
+
     // Auto‑save tracking fields
     autoSaveEnabled: {
       type: Boolean,

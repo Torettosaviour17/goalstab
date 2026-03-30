@@ -35,6 +35,7 @@ export interface Goal {
   fulfillmentStatus?: "pending" | "processing" | "delivered" | "booked";
   fulfillmentDetails?: any;
   usePlatformFulfillment?: boolean;
+  selectedProduct?: any;
   sharedWith: SharedUser[];
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
@@ -53,6 +54,7 @@ export interface GoalFormData {
   accountId?: string;
   autoSaveEnabled?: boolean;
   usePlatformFulfillment?: boolean;
+  selectedProduct?: any;
   goalType?: "product" | "service";
 }
 
@@ -131,6 +133,7 @@ export const useGoalsStore = defineStore("goals", () => {
         accountId: goalData.accountId || undefined,
         autoSaveEnabled: goalData.autoSaveEnabled ?? true,
         usePlatformFulfillment: goalData.usePlatformFulfillment ?? false,
+        selectedProduct: goalData.selectedProduct || undefined,
         goalType: goalData.goalType || "product",
       };
       const { data } = await api.post("/goals", payload);
