@@ -81,11 +81,11 @@ define(['./workbox-f9cef57a'], (function (workbox) { 'use strict';
     "url": "registerSW.js",
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
-    "url": "/offline.html",
-    "revision": "0.hqmsam4bmgg"
+    "url": "index.html",
+    "revision": "0.d3afeplg2io"
   }], {});
   workbox.cleanupOutdatedCaches();
-  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/offline.html"), {
+  workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/]
   }));
   workbox.registerRoute(/^https:\/\/goalstab\.onrender\.com\/api\/.*/i, new workbox.NetworkFirst({

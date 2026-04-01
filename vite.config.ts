@@ -56,7 +56,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallback: "/offline.html",
+        // navigateFallback: "/offline.html",
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/goalstab\.onrender\.com\/api\/.*/i,
@@ -73,7 +73,7 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: "module",
       },
     }),
