@@ -9,6 +9,7 @@ const User = require("../models/User"); // <-- ADD THIS
 const { sendNotification } = require("./notifications");
 const { runAutoSave } = require("../services/autoSave");
 const { sendEmailToUser } = require("../services/emailService");
+const shoppingService = require("../services/shoppingService");
 
 // Helper to record activity
 async function recordGoalActivity(
@@ -432,6 +433,77 @@ router.get("/:id/activities", auth, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(50);
     res.json(activities);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+module.exports = router;
+
+// ================================
+// SHOPPING INTEGRATION
+// ================================
+
+// @route   GET api/goals/shopping/search
+// @desc    Search products from e‑commerce API
+router.get("/shopping/search", auth, async (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.json([]);
+  try {
+    const results = await shoppingService.searchProducts(q);
+    res.json(results);
+  } catch (err) {
+    console.error("Shopping search error:", err);
+    res.status(500).json({ msg: "Search failed" });
+  }
+});
+
+// @route   POST api/goals/:id/shopping/purchase
+// @desc    Purchase product using saved funds
+router.post("/:id/shopping/purchase", auth, async (req, res) => {
+  const { productId, provider = "mock" } = req.body;
+  try {
+    const goal = await Goal.findById(req.params.id);
+    if (!goal) return res.status(404).json({ msg: "Goal not found" });
+    if (goal.user.toString() !== req.user.id)
+      return res.status(401).json({ msg: "Not authorized" });
+    if (goal.progress < 100)
+      return res.status(400).json({ msg: "Goal not completed" });
+    if (goal.saved < goal.target)
+      return res.status(400).json({ msg: "Insufficient funds" });
+
+    // For real integration, we'd need user's shipping address, etc.
+    const user = await User.findById(req.user.id);
+    const result = await shoppingService.purchaseProduct(
+      productId,
+      {
+        name: user.name,
+        email: user.email,
+        // address fields would be needed
+      },
+      provider,
+    );
+
+    if (result.success) {
+      // Mark goal as fulfilled
+      goal.fulfillmentStatus = "processing";
+      goal.fulfillmentDetails = { purchase: result };
+      await goal.save();
+
+      // Record activity
+      await recordGoalActivity(
+        goal._id,
+        req.user.id,
+        "fulfillment_requested",
+        null,
+        { purchase: result },
+      );
+
+      res.json(result);
+    } else {
+      res.status(400).json({ msg: "Purchase failed" });
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: "Server error" });

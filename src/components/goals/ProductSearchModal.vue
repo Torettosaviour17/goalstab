@@ -92,7 +92,7 @@ const performSearch = async () => {
   }
   searching.value = true;
   try {
-    const { data } = await api.get("/products/search", {
+    const { data } = await api.get("/goals/shopping/search", {
       params: { q: searchQuery.value },
     });
     results.value = data;

@@ -1,120 +1,136 @@
 <template>
   <div class="container mx-auto px-4 py-6 md:px-8 md:py-10">
-    <!-- Welcome Banner -->
-    <WelcomeBanner :user-name="userName" />
+    <!-- Welcome Banner (only when data loaded) -->
+    <WelcomeBanner v-if="!isLoading" :user-name="userName" />
 
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
-      <StatsCard
-        class="hover:scale-[1.02] transition-all duration-300"
-        title="Total Saved"
-        :value="formatCurrency(totalSaved)"
-        icon="💰"
-        trend="+12.5%"
-      />
+    <!-- Skeleton Loader -->
+    <SkeletonDashboard v-if="isLoading" />
 
-      <StatsCard
-        class="hover:scale-[1.02] transition-all duration-300"
-        title="Active Goals"
-        :value="activeGoalsCount"
-        icon="🎯"
-        trend="+2"
-      />
-
-      <StatsCard
-        class="hover:scale-[1.02] transition-all duration-300"
-        title="Progress"
-        :value="`${overallProgress}%`"
-        icon="📈"
-        trend="+8%"
-      />
-
-      <StatsCard
-        class="hover:scale-[1.02] transition-all duration-300"
-        title="Monthly Growth"
-        :value="formatCurrency(monthlyGrowth)"
-        icon="🚀"
-        trend="+15.3%"
-      />
-    </div>
-
-    <!-- No active goals but past activity -->
+    <!-- Real Content -->
     <div
-      v-if="activeGoalsCount === 0 && lifetime.totalSavedLifetime > 0"
-      class="mb-6 glass-card p-4 bg-primary-500/10 border border-primary-500/20"
+      v-else
+      v-motion
+      :initial="{ opacity: 0, y: 20 }"
+      :enter="{ opacity: 1, y: 0 }"
+      :duration="300"
     >
-      <div class="flex items-center gap-4">
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
         <div
-          class="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center"
+          v-for="(card, index) in statsData"
+          :key="card.title"
+          v-motion
+          :initial="{ opacity: 0, scale: 0.9 }"
+          :enter="{ opacity: 1, scale: 1, transition: { delay: index * 50 } }"
         >
-          <span class="text-2xl">🎉</span>
+          <StatsCard
+            class="hover:scale-[1.02] transition-all duration-300"
+            :title="card.title"
+            :value="card.value"
+            :icon="card.icon"
+            :trend="card.trend"
+          />
         </div>
-        <div>
-          <p class="text-white font-medium">
-            You've saved ₦{{ formatNumber(lifetime.totalSavedLifetime) }} in
-            total and completed {{ lifetime.goalsCompletedLifetime }} goals!
-          </p>
-          <p class="text-sm text-gray-300">
-            Ready to start a new savings journey?
-          </p>
-        </div>
-        <BaseButton
-          size="sm"
-          @click="uiStore.openCreateGoalModal"
-          class="ml-auto"
-        >
-          New Goal
-        </BaseButton>
       </div>
-    </div>
 
-    <!-- Goals Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div class="lg:col-span-2">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl font-semibold text-white">Your Goals</h2>
-
-          <BaseButton
-            @click="uiStore.openCreateGoalModal()"
-            size="sm"
-            class="shadow-lg hover:shadow-primary-500/30 transition-all new-goal-button"
+      <!-- No active goals but past activity -->
+      <div
+        v-if="activeGoalsCount === 0 && lifetime.totalSavedLifetime > 0"
+        class="mb-6 glass-card p-4 bg-primary-500/10 border border-primary-500/20"
+      >
+        <div class="flex items-center gap-4">
+          <div
+            class="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center"
           >
-            <template #icon>＋</template>
+            <span class="text-2xl">🎉</span>
+          </div>
+          <div>
+            <p class="text-white font-medium">
+              You've saved ₦{{ formatNumber(lifetime.totalSavedLifetime) }} in
+              total and completed {{ lifetime.goalsCompletedLifetime }} goals!
+            </p>
+            <p class="text-sm text-gray-300">
+              Ready to start a new savings journey?
+            </p>
+          </div>
+          <BaseButton
+            size="sm"
+            @click="uiStore.openCreateGoalModal"
+            class="ml-auto"
+          >
             New Goal
           </BaseButton>
         </div>
-
-        <!-- Goals Grid -->
-        <div v-if="goals.length" class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <GoalCard
-            v-for="goal in goals"
-            :key="goal.id || goal._id"
-            :goal="goal"
-            class="hover:-translate-y-1 transition-all duration-300"
-            @add-funds="openAddFunds(goal.id || goal._id)"
-            @withdraw="handleWithdraw(goal.id || goal._id)"
-            @share="openShareModal(goal)"
-          />
-        </div>
-
-        <!-- Empty -->
-        <div
-          v-else
-          class="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8"
-        >
-          <EmptyState
-            title="No goals yet"
-            description="Create your first savings goal to get started"
-            icon="🎯"
-            @action="uiStore.openCreateGoalModal"
-          />
-        </div>
       </div>
 
-      <!-- Sidebar -->
-      <div class="space-y-8">
-        <QuickActions />
-        <RecentActivity />
+      <!-- Goals Section -->
+      <div
+        class="grid grid-cols-1 lg:grid-cols-3 gap-8"
+        v-motion
+        :initial="{ opacity: 0, y: 30 }"
+        :enter="{ opacity: 1, y: 0, transition: { delay: 200 } }"
+        :duration="400"
+      >
+        <div class="lg:col-span-2">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-2xl font-semibold text-white">Your Goals</h2>
+
+            <BaseButton
+              @click="uiStore.openCreateGoalModal()"
+              size="sm"
+              class="shadow-lg hover:shadow-primary-500/30 transition-all new-goal-button"
+            >
+              <template #icon>＋</template>
+              New Goal
+            </BaseButton>
+          </div>
+
+          <!-- Goals Grid -->
+          <div
+            v-if="goals.length"
+            class="grid grid-cols-1 md:grid-cols-2 gap-5"
+          >
+            <div
+              v-for="(goal, index) in goals"
+              :key="goal.id || goal._id"
+              v-motion
+              :initial="{ opacity: 0, scale: 0.95 }"
+              :enter="{
+                opacity: 1,
+                scale: 1,
+                transition: { delay: 300 + index * 75 },
+              }"
+              :duration="300"
+            >
+              <GoalCard
+                :goal="goal"
+                class="hover:-translate-y-1 transition-all duration-300"
+                @add-funds="openAddFunds(goal.id || goal._id)"
+                @withdraw="handleWithdraw(goal.id || goal._id)"
+                @share="openShareModal(goal)"
+              />
+            </div>
+          </div>
+
+          <!-- Empty -->
+          <div
+            v-else
+            class="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8"
+          >
+            <EmptyState
+              title="No goals yet"
+              description="Create your first savings goal to get started"
+              icon="🎯"
+              @action="uiStore.openCreateGoalModal"
+            />
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-8">
+          <QuickActions />
+          <RecentActivity />
+        </div>
       </div>
     </div>
 
@@ -193,6 +209,7 @@ import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import EmptyState from "@/components/dashboard/EmptyState.vue";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner.vue";
+import SkeletonDashboard from "@/components/skeleton/SkeletonDashboard.vue";
 import { useOnboardingTour } from "@/composables/useOnboardingTour";
 
 // Stores
@@ -217,6 +234,48 @@ const { lifetime } = storeToRefs(analyticsStore);
 // Computed
 const userName = computed(() => user.value?.name || "User");
 const monthlyGrowth = computed(() => totalSaved.value * 0.153);
+const isLoading = computed(() => {
+  const loading =
+    goalsStore.loading || accountsStore.loading || transactionsStore.loading;
+  console.log(
+    "[Dashboard] isLoading:",
+    loading,
+    "goals:",
+    goalsStore.loading,
+    "accounts:",
+    accountsStore.loading,
+    "transactions:",
+    transactionsStore.loading,
+  );
+  return loading;
+});
+
+const statsData = computed(() => [
+  {
+    title: "Total Saved",
+    value: formatCurrency(totalSaved.value),
+    icon: "💰",
+    trend: "+12.5%",
+  },
+  {
+    title: "Active Goals",
+    value: activeGoalsCount.value,
+    icon: "🎯",
+    trend: "+2",
+  },
+  {
+    title: "Progress",
+    value: `${overallProgress.value}%`,
+    icon: "📈",
+    trend: "+8%",
+  },
+  {
+    title: "Monthly Growth",
+    value: formatCurrency(monthlyGrowth.value),
+    icon: "🚀",
+    trend: "+15.3%",
+  },
+]);
 
 // Add funds
 const showAddFundsModal = ref(false);
@@ -369,9 +428,42 @@ watch(showCompletedModal, (open) => {
   if (!open) goalsStore.clearCompleted();
 });
 
-// Load lifetime stats on mount
+// Lifecycle
 onMounted(async () => {
-  await analyticsStore.fetchLifetimeStats();
+  console.log(
+    "[Dashboard] onMounted, starting data fetch and lifetime stats...",
+  );
+
+  // Fallback timeout - force isLoading to false after 10 seconds
+  const loadingTimeout = setTimeout(() => {
+    console.warn(
+      "[Dashboard] Loading timeout reached (10s), forcing isLoading to false",
+    );
+    goalsStore.loading = false;
+    accountsStore.loading = false;
+    transactionsStore.loading = false;
+  }, 10000);
+
+  try {
+    await Promise.all([
+      goalsStore.fetchGoals(),
+      accountsStore.fetchAccounts(),
+      transactionsStore.fetchRecentTransactions(),
+      analyticsStore.fetchLifetimeStats(),
+    ]);
+    console.log("[Dashboard] Data fetch completed successfully");
+  } catch (error) {
+    console.error("[Dashboard] Data fetch failed:", error);
+  } finally {
+    clearTimeout(loadingTimeout);
+  }
+
+  if (shouldShowTour()) {
+    setTimeout(() => {
+      console.log("[Dashboard] Starting onboarding tour");
+      startTour();
+    }, 1000); // slight delay to ensure DOM is ready
+  }
 });
 
 // Share completed goal
@@ -386,28 +478,4 @@ const handleShare = () => {
     });
   }
 };
-
-// Lifecycle
-onMounted(async () => {
-  await Promise.all([
-    goalsStore.fetchGoals(),
-    accountsStore.fetchAccounts(),
-    transactionsStore.fetchRecentTransactions(),
-  ]);
-});
-
-// OnboardingTour
-onMounted(async () => {
-  await Promise.all([
-    goalsStore.fetchGoals(),
-    accountsStore.fetchAccounts(),
-    transactionsStore.fetchRecentTransactions(),
-  ]);
-
-  if (shouldShowTour()) {
-    setTimeout(() => {
-      startTour();
-    }, 1000); // slight delay to ensure DOM is ready
-  }
-});
 </script>

@@ -65,16 +65,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useTransactionsStore } from "@/stores/transactions";
 
 const transactionsStore = useTransactionsStore();
 const { transactions, loading } = storeToRefs(transactionsStore);
 
-onMounted(() => {
-  transactionsStore.fetchRecentTransactions(3); // limit to 3 for dashboard
-});
+// ✅ Removed: onMounted fetch - Dashboard already calls fetchRecentTransactions()
+// This prevents duplicate requests
 
 const displayedTransactions = computed(() => transactions.value.slice(0, 3));
 

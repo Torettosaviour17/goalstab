@@ -17,8 +17,17 @@ export const useTransactionsStore = defineStore("transactions", () => {
   const uiStore = useUIStore();
   const transactions = ref<Transaction[]>([]);
   const loading = ref(false);
+  let fetching = false; // Guard flag to prevent concurrent fetches
 
   const fetchRecentTransactions = async (limit = 10) => {
+    if (fetching) {
+      console.log(
+        "[Transactions] fetchRecentTransactions already in progress, skipping",
+      );
+      return;
+    }
+    console.trace("fetchRecentTransactions called");
+    fetching = true;
     loading.value = true;
     try {
       const { data } = await api.get(`/analytics/transactions?limit=${limit}`);
@@ -34,6 +43,7 @@ export const useTransactionsStore = defineStore("transactions", () => {
       // Keep empty array
     } finally {
       loading.value = false;
+      fetching = false;
     }
   };
 

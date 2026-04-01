@@ -37,11 +37,7 @@
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center py-12">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"
-      ></div>
-    </div>
+    <SkeletonAnalytics v-if="loading" />
 
     <div v-else class="space-y-6">
       <!-- Overview cards (using only data from backend) -->
@@ -225,6 +221,7 @@ import { useAnalyticsStore } from "@/stores/analytics";
 import { useGoalsStore } from "@/stores/goals";
 import { useUIStore } from "@/stores/ui";
 import { exportToCSV } from "@/utils/export";
+import SkeletonAnalytics from "@/components/skeleton/SkeletonAnalytics.vue";
 
 const analyticsStore = useAnalyticsStore();
 const goalsStore = useGoalsStore();

@@ -176,6 +176,20 @@
             goal.goalType === "product" ? "Request Fulfillment" : "Book Service"
           }}
         </BaseButton>
+
+        <!-- Purchase button for product goals -->
+        <BaseButton
+          v-if="
+            goal.progress >= 100 &&
+            goal.goalType === 'product' &&
+            goal.fulfillmentStatus === 'pending'
+          "
+          variant="primary"
+          size="lg"
+          @click="initiatePurchase"
+        >
+          🛒 Purchase with Goal Funds
+        </BaseButton>
       </template>
 
       <!-- Tabs -->
@@ -243,6 +257,7 @@ import GoalProgress from "@/components/goals/GoalProgress.vue";
 import AddFundsModal from "@/components/goals/AddFundsModal.vue";
 import GoalActivityFeed from "@/components/goals/GoalActivityFeed.vue";
 import ServiceBookingModal from "@/components/goals/ServiceBookingModal.vue";
+import api from "@/services/api";
 
 const route = useRoute();
 const router = useRouter();
@@ -319,6 +334,24 @@ const requestFulfillment = () => {
 const submitServiceBooking = async (details: any) => {
   if (goal.value) {
     await goalsStore.requestFulfillment(goal.value.id, details);
+  }
+};
+
+const initiatePurchase = async () => {
+  if (!goal.value) return;
+  try {
+    const response = await api.post(
+      `/goals/${goal.value.id}/shopping/purchase`,
+      {
+        productId: goal.value.selectedProduct?.id,
+        provider: "mock",
+      },
+    );
+    uiStore.addToast({ type: "success", message: response.data.message });
+    // Refresh goal to show updated fulfillment status
+    goalsStore.fetchGoals();
+  } catch (err) {
+    uiStore.addToast({ type: "error", message: "Purchase failed" });
   }
 };
 

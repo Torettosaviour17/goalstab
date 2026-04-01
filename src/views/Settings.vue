@@ -1,10 +1,15 @@
 <template>
   <div class="container mx-auto px-4 py-6 md:px-6 md:py-8 max-w-4xl">
-    <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
-    <p class="text-gray-400 mb-8">Manage your account preferences</p>
+    <!-- Loading skeleton -->
+    <SkeletonSettings v-if="loading" />
 
-    <!-- Mobile-friendly tabs with improved scrolling -->
-    <div class="relative mb-6">
+    <!-- Settings content -->
+    <template v-else>
+      <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
+      <p class="text-gray-400 mb-8">Manage your account preferences</p>
+
+      <!-- Mobile-friendly tabs with improved scrolling -->
+      <div class="relative mb-6">
       <div
         class="flex overflow-x-auto scrollbar-hide gap-2 pb-2 -mx-4 px-4 md:mx-0 md:px-0"
       >
@@ -273,7 +278,7 @@
           >
         </div>
       </div>
-    </transition>
+    </template>
 
     <!-- Delete Account Confirmation Modal -->
     <BaseModal
@@ -330,11 +335,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import AvatarUploader from "@/components/ui/AvatarUploader.vue";
+import SkeletonSettings from "@/components/skeleton/SkeletonSettings.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 
@@ -354,6 +360,7 @@ const activeTab = ref("profile");
 const saving = ref(false);
 const deleting = ref(false);
 const showDeleteModal = ref(false);
+const loading = ref(true);
 
 const tabs = [
   { id: "profile", name: "Profile" },
@@ -425,7 +432,12 @@ const preferences = reactive({
 });
 
 // Load user data on mount
-onMounted(() => {
+onMounted(async () => {
+  await nextTick();
+  setTimeout(() => {
+    loading.value = false;
+  }, 300);
+
   if (authStore.user) {
     profile.name = authStore.user.name || "";
     profile.email = authStore.user.email || "";

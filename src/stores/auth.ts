@@ -40,14 +40,20 @@ export const useAuthStore = defineStore("auth", {
   },
   actions: {
     async checkAuth() {
-      if (!this.token) return;
+      console.log("[Auth] checkAuth called, token:", !!this.token);
+      if (!this.token) {
+        console.log("[Auth] No token, skipping auth check");
+        return Promise.resolve();
+      }
       // Sync token to localStorage for axios interceptor
       localStorage.setItem("token", this.token);
       try {
+        console.log("[Auth] Making API call to /auth/me");
         const response = await api.get("/auth/me");
         this.user = response.data;
         console.log("[Auth] token valid, user updated");
       } catch (error: any) {
+        console.error("[Auth] API call failed:", error);
         if (error.response?.status === 401) {
           console.log("[Auth] token invalid, logging out");
           this.logout();

@@ -63,6 +63,7 @@ export const useGoalsStore = defineStore("goals", () => {
   const goals = ref<Goal[]>([]);
   const recentlyCompletedGoal = ref<Goal | null>(null);
   const loading = ref(false);
+  let fetching = false; // Guard flag to prevent concurrent fetches
 
   const generateId = () => crypto.randomUUID();
 
@@ -103,6 +104,12 @@ export const useGoalsStore = defineStore("goals", () => {
 
   // API actions
   const fetchGoals = async () => {
+    if (fetching) {
+      console.log("[Goals] fetchGoals already in progress, skipping");
+      return;
+    }
+    console.trace("fetchGoals called");
+    fetching = true;
     loading.value = true;
     try {
       const { data } = await api.get("/goals");
@@ -115,6 +122,7 @@ export const useGoalsStore = defineStore("goals", () => {
       uiStore.addToast({ type: "error", message: "Failed to load goals" });
     } finally {
       loading.value = false;
+      fetching = false;
     }
   };
 

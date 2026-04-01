@@ -16,6 +16,9 @@ export default {
         "slide-up": "var(--animate-slide-up)",
         "fade-in": "var(--animate-fade-in)",
       },
+      transitionProperty: {
+        height: "height",
+      },
       backdropBlur: {
         xl: "20px",
       },

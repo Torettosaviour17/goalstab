@@ -7,12 +7,8 @@
       <h1 class="text-3xl font-bold text-white">All Goals</h1>
     </div>
 
-    <!-- Loading state (optional) -->
-    <div v-if="goalsStore.loading" class="flex justify-center py-12">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"
-      ></div>
-    </div>
+    <!-- Loading state -->
+    <SkeletonGoals v-if="goalsStore.loading" />
 
     <!-- Goals grid -->
     <div
@@ -117,6 +113,7 @@ import { useUIStore } from "@/stores/ui";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import SmartGoalForm from "@/components/goals/SmartGoalForm.vue";
+import SkeletonGoals from "@/components/skeleton/SkeletonGoals.vue";
 
 const goalsStore = useGoalsStore();
 const uiStore = useUIStore();
