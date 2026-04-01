@@ -92,8 +92,10 @@ const performSearch = async () => {
   }
   searching.value = true;
   try {
+    const token = localStorage.getItem("token");
     const { data } = await api.get("/goals/shopping/search", {
       params: { q: searchQuery.value },
+      headers: { Authorization: `Bearer ${token}` },
     });
     results.value = data;
   } catch (err) {
