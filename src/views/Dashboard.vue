@@ -1,10 +1,10 @@
 <template>
   <div class="container mx-auto px-4 py-6 md:px-8 md:py-10">
     <!-- Welcome Banner (only when data loaded) -->
-    <WelcomeBanner v-if="!isLoading" :user-name="userName" />
+    <WelcomeBanner v-if="!showSkeleton" :user-name="userName" />
 
     <!-- Skeleton Loader -->
-    <SkeletonDashboard v-if="isLoading" />
+    <SkeletonDashboard v-if="showSkeleton" />
 
     <!-- Real Content -->
     <div
@@ -211,6 +211,7 @@ import EmptyState from "@/components/dashboard/EmptyState.vue";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner.vue";
 import SkeletonDashboard from "@/components/skeleton/SkeletonDashboard.vue";
 import { useOnboardingTour } from "@/composables/useOnboardingTour";
+import { useDebouncedLoading } from "@/composables/useDebouncedLoading";
 
 // Stores
 const goalsStore = useGoalsStore();
@@ -220,6 +221,7 @@ const accountsStore = useAccountsStore();
 const transactionsStore = useTransactionsStore();
 const analyticsStore = useAnalyticsStore();
 const { shouldShowTour, startTour } = useOnboardingTour();
+const { showSkeleton, startLoading, finishLoading } = useDebouncedLoading(200);
 
 const {
   goals,
@@ -234,21 +236,6 @@ const { lifetime } = storeToRefs(analyticsStore);
 // Computed
 const userName = computed(() => user.value?.name || "User");
 const monthlyGrowth = computed(() => totalSaved.value * 0.153);
-const isLoading = computed(() => {
-  const loading =
-    goalsStore.loading || accountsStore.loading || transactionsStore.loading;
-  console.log(
-    "[Dashboard] isLoading:",
-    loading,
-    "goals:",
-    goalsStore.loading,
-    "accounts:",
-    accountsStore.loading,
-    "transactions:",
-    transactionsStore.loading,
-  );
-  return loading;
-});
 
 const statsData = computed(() => [
   {
@@ -434,15 +421,7 @@ onMounted(async () => {
     "[Dashboard] onMounted, starting data fetch and lifetime stats...",
   );
 
-  // Fallback timeout - force isLoading to false after 10 seconds
-  const loadingTimeout = setTimeout(() => {
-    console.warn(
-      "[Dashboard] Loading timeout reached (10s), forcing isLoading to false",
-    );
-    goalsStore.loading = false;
-    accountsStore.loading = false;
-    transactionsStore.loading = false;
-  }, 10000);
+  startLoading();
 
   try {
     await Promise.all([
@@ -455,7 +434,7 @@ onMounted(async () => {
   } catch (error) {
     console.error("[Dashboard] Data fetch failed:", error);
   } finally {
-    clearTimeout(loadingTimeout);
+    finishLoading();
   }
 
   if (shouldShowTour()) {

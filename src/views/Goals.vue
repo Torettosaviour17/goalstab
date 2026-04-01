@@ -8,7 +8,7 @@
     </div>
 
     <!-- Loading state -->
-    <SkeletonGoals v-if="goalsStore.loading" />
+    <SkeletonGoals v-if="showSkeleton" />
 
     <!-- Goals grid -->
     <div
@@ -108,16 +108,19 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { useGoalsStore } from "@/stores/goals";
 import { useUIStore } from "@/stores/ui";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import SmartGoalForm from "@/components/goals/SmartGoalForm.vue";
 import SkeletonGoals from "@/components/skeleton/SkeletonGoals.vue";
+import { useDebouncedLoading } from "@/composables/useDebouncedLoading";
 
 const goalsStore = useGoalsStore();
 const uiStore = useUIStore();
 const goals = goalsStore.goals;
+const { showSkeleton, startLoading, finishLoading } = useDebouncedLoading(200);
 
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat().format(num);
@@ -138,4 +141,10 @@ const handleCreateGoal = (formData: any) => {
     message: "Goal created successfully!",
   });
 };
+
+onMounted(async () => {
+  startLoading();
+  await goalsStore.fetchGoals();
+  finishLoading();
+});
 </script>
