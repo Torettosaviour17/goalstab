@@ -1,10 +1,10 @@
 <template>
   <div class="container mx-auto px-4 py-6 md:px-8 md:py-10">
     <!-- Welcome Banner (only when data loaded) -->
-    <WelcomeBanner v-if="!showSkeleton" :user-name="userName" />
+    <WelcomeBanner v-if="!isLoading" :user-name="userName" />
 
     <!-- Skeleton Loader -->
-    <SkeletonDashboard v-if="showSkeleton" />
+    <SkeletonDashboard v-if="isLoading" />
 
     <!-- Real Content -->
     <div
@@ -211,7 +211,6 @@ import EmptyState from "@/components/dashboard/EmptyState.vue";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner.vue";
 import SkeletonDashboard from "@/components/skeleton/SkeletonDashboard.vue";
 import { useOnboardingTour } from "@/composables/useOnboardingTour";
-import { useDebouncedLoading } from "@/composables/useDebouncedLoading";
 
 // Stores
 const goalsStore = useGoalsStore();
@@ -221,7 +220,9 @@ const accountsStore = useAccountsStore();
 const transactionsStore = useTransactionsStore();
 const analyticsStore = useAnalyticsStore();
 const { shouldShowTour, startTour } = useOnboardingTour();
-const { showSkeleton, startLoading, finishLoading } = useDebouncedLoading(200);
+
+// Simple loading flag – shows skeleton until all data is fetched
+const isLoading = ref(true);
 
 const {
   goals,
@@ -421,8 +422,6 @@ onMounted(async () => {
     "[Dashboard] onMounted, starting data fetch and lifetime stats...",
   );
 
-  startLoading();
-
   try {
     await Promise.all([
       goalsStore.fetchGoals(),
@@ -434,7 +433,7 @@ onMounted(async () => {
   } catch (error) {
     console.error("[Dashboard] Data fetch failed:", error);
   } finally {
-    finishLoading();
+    isLoading.value = false;
   }
 
   if (shouldShowTour()) {

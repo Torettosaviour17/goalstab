@@ -11,7 +11,7 @@ export interface SharedUser {
 }
 
 export interface Goal {
-  _id: string;
+  _id: string;  
   id: string; // frontend alias
   title: string;
   userTarget: number;
