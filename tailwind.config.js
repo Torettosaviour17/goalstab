@@ -1,4 +1,5 @@
 export default {
+  darkMode: "class", // Add this for dark mode support
   content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
   theme: {
     extend: {
@@ -9,6 +10,10 @@ export default {
         success: "var(--color-success)",
         warning: "var(--color-warning)",
         danger: "var(--color-danger)",
+        "light-bg": "#f9f9f9",
+        "light-card": "#ffffff",
+        "light-text": "#111827",
+        "light-border": "#d1d5db",
       },
       animation: {
         float: "var(--animate-float)",
@@ -24,5 +29,9 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    function ({ addVariant }) {
+      addVariant("light", ":not(.dark) &");
+    },
+  ],
 };

@@ -36,20 +36,20 @@
       <!-- No active goals but past activity -->
       <div
         v-if="activeGoalsCount === 0 && lifetime.totalSavedLifetime > 0"
-        class="mb-6 glass-card p-4 bg-primary-500/10 border border-primary-500/20"
+        class="mb-6 glass-card p-4 bg-primary-500/10 border border-primary-500/20 light:bg-light-card light:border-light-border"
       >
         <div class="flex items-center gap-4">
           <div
-            class="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center"
+            class="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center light:bg-light-bg"
           >
             <span class="text-2xl">🎉</span>
           </div>
           <div>
-            <p class="text-white font-medium">
+            <p class="text-white font-medium light:text-gray-900">
               You've saved ₦{{ formatNumber(lifetime.totalSavedLifetime) }} in
               total and completed {{ lifetime.goalsCompletedLifetime }} goals!
             </p>
-            <p class="text-sm text-gray-300">
+            <p class="text-sm text-gray-300 light:text-gray-600">
               Ready to start a new savings journey?
             </p>
           </div>
@@ -73,12 +73,14 @@
       >
         <div class="lg:col-span-2">
           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-semibold text-white">Your Goals</h2>
+            <h2 class="text-2xl font-semibold text-white light:text-gray-900">
+              Your Goals
+            </h2>
 
             <BaseButton
               @click="uiStore.openCreateGoalModal()"
               size="sm"
-              class="shadow-lg hover:shadow-primary-500/30 transition-all new-goal-button"
+              class="shadow-lg hover:shadow-primary-500/30 transition-all new-goal-button light:shadow-gray-300"
             >
               <template #icon>＋</template>
               New Goal
@@ -115,7 +117,7 @@
           <!-- Empty -->
           <div
             v-else
-            class="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8"
+            class="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 light:bg-light-card light:border-light-border"
           >
             <EmptyState
               title="No goals yet"
@@ -134,26 +136,23 @@
       </div>
     </div>
 
-    <!-- Create Goal Modal -->
+    <!-- Modals -->
     <BaseModal v-model="uiStore.showCreateGoalModal" title="Create New Goal">
       <SmartGoalForm @submit="handleCreateGoal" />
     </BaseModal>
 
-    <!-- Add Funds -->
     <AddFundsModal
       v-model="showAddFundsModal"
       :goal="selectedGoal"
       @add="handleAddFunds"
     />
 
-    <!-- Withdraw -->
     <WithdrawModal
       v-model="showWithdrawModal"
       :goal="selectedWithdrawGoal"
       @submit="submitWithdrawRequest"
     />
 
-    <!-- Share Goal Modal -->
     <ShareGoalModal
       v-model="showShareModal"
       :goal-id="selectedShareGoal?._id || ''"
@@ -162,14 +161,12 @@
       @unshare="handleUnshare"
     />
 
-    <!-- Confetti -->
     <Confetti
       v-if="showConfetti"
       :duration="3000"
       @done="showConfetti = false"
     />
 
-    <!-- Goal Completed -->
     <GoalCompletedModal
       v-model="showCompletedModal"
       :goal="completedGoal"
@@ -189,6 +186,7 @@ import { useUIStore } from "@/stores/ui";
 import { useAccountsStore } from "@/stores/accounts";
 import { useTransactionsStore } from "@/stores/transactions";
 import { useAnalyticsStore } from "@/stores/analytics";
+import { useThemeStore } from "@/stores/theme";
 
 // API
 import api from "@/services/api";
@@ -219,9 +217,10 @@ const uiStore = useUIStore();
 const accountsStore = useAccountsStore();
 const transactionsStore = useTransactionsStore();
 const analyticsStore = useAnalyticsStore();
+const themeStore = useThemeStore();
 const { shouldShowTour, startTour } = useOnboardingTour();
 
-// Simple loading flag – shows skeleton until all data is fetched
+// Loading
 const isLoading = ref(true);
 
 const {
@@ -265,10 +264,9 @@ const statsData = computed(() => [
   },
 ]);
 
-// Add funds
+// Modals
 const showAddFundsModal = ref(false);
 const selectedGoalId = ref<string | null>(null);
-
 const selectedGoal = computed(
   () =>
     goals.value.find(
@@ -276,15 +274,12 @@ const selectedGoal = computed(
     ) || null,
 );
 
-// Withdraw
 const showWithdrawModal = ref(false);
 const selectedWithdrawGoal = ref<Goal | null>(null);
 
-// Share
 const showShareModal = ref(false);
 const selectedShareGoal = ref<Goal | null>(null);
 
-// Completion
 const showConfetti = ref(false);
 const showCompletedModal = ref(false);
 const completedGoal = ref<any>(null);
@@ -292,48 +287,32 @@ const completedGoal = ref<any>(null);
 // Helpers
 const formatCurrency = (value: number) =>
   `₦${new Intl.NumberFormat().format(value)}`;
-const formatNumber = (num: number): string => {
-  return new Intl.NumberFormat().format(num);
-};
+const formatNumber = (num: number) => new Intl.NumberFormat().format(num);
 
-// Open add funds
+// Actions
 const openAddFunds = (id: string | undefined) => {
   if (!id) return;
   selectedGoalId.value = id;
   showAddFundsModal.value = true;
 };
-
-// Add funds
 const handleAddFunds = (amount: number) => {
   if (!selectedGoal.value) return;
-
   const goalId = selectedGoal.value.id || selectedGoal.value._id;
   goalsStore.addFunds(goalId, amount);
-
   uiStore.addToast({
     type: "success",
     message: `₦${amount.toLocaleString()} added to ${selectedGoal.value.title}`,
   });
 };
-
-// Withdraw
 const handleWithdraw = (id: string | undefined) => {
   if (!id) return;
-
   const goal = goals.value.find((g) => g.id === id || g._id === id);
-
   if (goal && goal.progress >= 100) {
     selectedWithdrawGoal.value = goal;
     showWithdrawModal.value = true;
-  } else {
-    uiStore.addToast({
-      type: "warning",
-      message: "Complete the goal first!",
-    });
-  }
+  } else
+    uiStore.addToast({ type: "warning", message: "Complete the goal first!" });
 };
-
-// Submit withdrawal
 const submitWithdrawRequest = async (data: any) => {
   try {
     await api.post("/withdrawals", {
@@ -341,39 +320,24 @@ const submitWithdrawRequest = async (data: any) => {
       amount: data.amount,
       accountDetails: data,
     });
-
     uiStore.addToast({
       type: "success",
       message: "Withdrawal request submitted!",
     });
-
     showWithdrawModal.value = false;
   } catch {
-    uiStore.addToast({
-      type: "error",
-      message: "Failed to submit request",
-    });
+    uiStore.addToast({ type: "error", message: "Failed to submit request" });
   }
 };
-
-// Create goal
 const handleCreateGoal = (formData: any) => {
   goalsStore.addGoal(formData);
-
   uiStore.closeCreateGoalModal();
-
-  uiStore.addToast({
-    type: "success",
-    message: "Goal created successfully!",
-  });
+  uiStore.addToast({ type: "success", message: "Goal created successfully!" });
 };
-
-// Share goal
 const openShareModal = (goal: Goal) => {
   selectedShareGoal.value = goal;
   showShareModal.value = true;
 };
-
 const handleGoalShare = async ({
   email,
   role,
@@ -382,17 +346,14 @@ const handleGoalShare = async ({
   role: "viewer" | "contributor";
 }) => {
   if (!selectedShareGoal.value) return;
-
   try {
     await goalsStore.shareGoal(selectedShareGoal.value._id, email, role);
   } finally {
     showShareModal.value = false;
   }
 };
-
 const handleUnshare = async (userId: string) => {
   if (!selectedShareGoal.value) return;
-
   try {
     await goalsStore.unshareGoal(selectedShareGoal.value._id, userId);
   } finally {
@@ -405,23 +366,17 @@ watch(recentlyCompletedGoal, (newGoal) => {
   if (newGoal) {
     completedGoal.value = newGoal;
     showConfetti.value = true;
-
     setTimeout(() => {
       showCompletedModal.value = true;
     }, 500);
   }
 });
-
 watch(showCompletedModal, (open) => {
   if (!open) goalsStore.clearCompleted();
 });
 
 // Lifecycle
 onMounted(async () => {
-  console.log(
-    "[Dashboard] onMounted, starting data fetch and lifetime stats...",
-  );
-
   try {
     await Promise.all([
       goalsStore.fetchGoals(),
@@ -429,31 +384,22 @@ onMounted(async () => {
       transactionsStore.fetchRecentTransactions(),
       analyticsStore.fetchLifetimeStats(),
     ]);
-    console.log("[Dashboard] Data fetch completed successfully");
-  } catch (error) {
-    console.error("[Dashboard] Data fetch failed:", error);
   } finally {
     isLoading.value = false;
   }
 
-  if (shouldShowTour()) {
-    setTimeout(() => {
-      console.log("[Dashboard] Starting onboarding tour");
-      startTour();
-    }, 1000); // slight delay to ensure DOM is ready
-  }
+  if (shouldShowTour()) setTimeout(() => startTour(), 1000);
 });
 
 // Share completed goal
 const handleShare = () => {
   if (!completedGoal.value) return;
-
-  if (navigator.share) {
+  if (navigator.share)
     navigator.share({
       title: "Goal Completed!",
       text: `I just completed my goal: ${completedGoal.value.title}`,
       url: window.location.origin,
     });
-  }
 };
 </script>
+<style scoped></style>

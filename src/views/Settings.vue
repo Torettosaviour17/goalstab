@@ -225,14 +225,21 @@
                 <p class="font-medium text-white">Theme</p>
                 <p class="text-sm text-gray-400">Choose light or dark mode</p>
               </div>
-              <select
-                v-model="preferences.theme"
-                class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white w-full sm:w-auto"
-              >
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-                <option value="auto">Auto</option>
-              </select>
+              <div class="flex items-center gap-2">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    v-model="isDarkMode"
+                    class="sr-only peer"
+                  />
+                  <div
+                    class="w-14 h-7 bg-gray-700 rounded-full peer peer-checked:bg-primary-500 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-full"
+                  ></div>
+                </label>
+                <span class="text-gray-300">{{
+                  isDarkMode ? "Dark" : "Light"
+                }}</span>
+              </div>
             </div>
             <div
               class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
@@ -336,7 +343,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick } from "vue";
+import { ref, reactive, onMounted, nextTick, watch } from "vue";
 import { useRouter } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
@@ -344,6 +351,7 @@ import AvatarUploader from "@/components/ui/AvatarUploader.vue";
 import SkeletonSettings from "@/components/skeleton/SkeletonSettings.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
+import { useThemeStore } from "@/stores/theme";
 
 interface NotificationSettings {
   email: boolean;
@@ -356,11 +364,13 @@ interface NotificationSettings {
 const router = useRouter();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
+const themeStore = useThemeStore();
 
 const activeTab = ref("profile");
 const saving = ref(false);
 const deleting = ref(false);
 const showDeleteModal = ref(false);
+const isDarkMode = ref(themeStore.theme === "dark");
 const loading = ref(true);
 
 const tabs = [
@@ -449,8 +459,18 @@ onMounted(async () => {
       preferences.theme = prefs.theme || "dark";
       preferences.autoSaveDefault = prefs.autoSaveDefault ?? true;
       preferences.monthlyIncome = (prefs as any).monthlyIncome ?? 500000;
+      isDarkMode.value = prefs.theme === "dark";
     }
   }
+});
+
+// Watch toggle changes
+watch(isDarkMode, (val) => {
+  const newTheme = val ? "dark" : "light";
+  themeStore.setTheme(newTheme);
+  preferences.theme = newTheme;
+  // Optional: save preference to backend
+  authStore.updatePreferences({ theme: newTheme });
 });
 
 const saveProfile = async () => {
@@ -542,11 +562,6 @@ const savePreferences = async () => {
     autoSaveDefault: preferences.autoSaveDefault,
     monthlyIncome: preferences.monthlyIncome,
   });
-  if (preferences.theme === "light") {
-    document.documentElement.classList.remove("dark");
-  } else {
-    document.documentElement.classList.add("dark");
-  }
   uiStore.addToast({ type: "success", message: "Preferences saved" });
   saving.value = false;
 };

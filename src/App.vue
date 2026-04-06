@@ -55,7 +55,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { storeToRefs } from "pinia";
 import AppHeader from "@/components/layout/AppHeader.vue";
@@ -66,10 +66,12 @@ import ToastNotification from "@/components/shared/ToastNotification.vue";
 import Confetti from "@/components/shared/Confetti.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
+import { useThemeStore } from "@/stores/theme";
 
 const route = useRoute();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
+const themeStore = useThemeStore();
 const { isAuthenticated } = storeToRefs(authStore);
 
 // List of auth pages where header/sidebar/nav should be hidden
