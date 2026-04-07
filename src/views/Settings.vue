@@ -105,12 +105,13 @@
               <div class="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
                 <div
                   class="h-full bg-primary-500 transition-all duration-500"
-                  :style="{ width: `${levelStore.progress}%` }"
+                  :style="{ width: `${displayedProgress}%` }"
                 ></div>
               </div>
 
               <p class="text-xs mt-2 opacity-70">
-                {{ levelStore.xpToNextLevel }} XP to next level
+                {{ levelStore.xp }} / {{ levelStore.xpToNextLevel }} XP to next
+                level
               </p>
             </div>
 
@@ -599,6 +600,26 @@ const savePreferences = async () => {
   uiStore.addToast({ type: "success", message: "Preferences saved" });
   saving.value = false;
 };
+
+const displayedProgress = ref(levelStore.progress);
+
+watch(
+  () => levelStore.progress,
+  (newVal) => {
+    // Smoothly animate progress bar
+    const step = 1;
+    const interval = setInterval(() => {
+      if (displayedProgress.value < newVal) {
+        displayedProgress.value = Math.min(
+          displayedProgress.value + step,
+          newVal,
+        );
+      } else {
+        clearInterval(interval);
+      }
+    }, 8); // Adjust speed here
+  },
+);
 </script>
 
 <style scoped>
