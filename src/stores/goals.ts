@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import api from "@/services/api";
 import { useUIStore } from "./ui";
+import { useLevelStore } from "./level";
 
 export interface SharedUser {
   id: string;
@@ -11,7 +12,7 @@ export interface SharedUser {
 }
 
 export interface Goal {
-  _id: string;  
+  _id: string;
   id: string; // frontend alias
   title: string;
   userTarget: number;
@@ -60,6 +61,7 @@ export interface GoalFormData {
 
 export const useGoalsStore = defineStore("goals", () => {
   const uiStore = useUIStore();
+  const levelStore = useLevelStore();
   const goals = ref<Goal[]>([]);
   const recentlyCompletedGoal = ref<Goal | null>(null);
   const loading = ref(false);
@@ -158,22 +160,41 @@ export const useGoalsStore = defineStore("goals", () => {
       throw err;
     }
   };
-
   const addFunds = async (id: string, amount: number) => {
     try {
       const { data } = await api.post(`/goals/${id}/add-funds`, { amount });
+
       if (data._id && !data.id) data.id = data._id;
+
       const index = goals.value.findIndex((g) => g._id === id || g.id === id);
+
       if (index !== -1) goals.value[index] = data;
-      if (data.progress >= 100) recentlyCompletedGoal.value = data;
+
+      // 🔥 XP SYSTEM
+      const xpGained = Math.floor(amount / 100);
+      levelStore.addXP(xpGained);
+
+      // 🎉 BONUS XP IF COMPLETED
+      if (data.progress >= 100) {
+        recentlyCompletedGoal.value = data;
+        levelStore.addXP(200);
+      }
+
       uiStore.addToast({
         type: "success",
-        message: `₦${amount.toLocaleString()} added`,
+        message: `₦${amount.toLocaleString()} added (+${xpGained} XP 🔥)`,
       });
+
       return data;
     } catch (err) {
-      uiStore.addToast({ type: "error", message: "Failed to add funds" });
-      throw err;
+      console.error("Add funds error:", err);
+
+      uiStore.addToast({
+        type: "error",
+        message: "Failed to add funds",
+      });
+
+      throw err; // now VALID
     }
   };
 

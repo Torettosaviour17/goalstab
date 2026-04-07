@@ -6,54 +6,83 @@ import App from "./App.vue";
 import router from "./router";
 import { useAuthStore } from "./stores/auth";
 import { useUIStore } from "./stores/ui";
+import { useThemeStore } from "./stores/theme";
 import "./style.css";
 import VueApexCharts from "vue3-apexcharts";
 import clickOutside from "./directives/clickOutside";
 
 const app = createApp(App);
 const pinia = createPinia();
+
+// ✅ Persist ALL stores (including level + theme)
 pinia.use(piniaPluginPersistedstate);
 
+// Directives
 app.directive("click-outside", clickOutside);
+
+// Plugins
 app.use(pinia);
 app.use(router);
 app.use(MotionPlugin);
 app.use(VueApexCharts);
 
+// Global error handler
 app.config.errorHandler = (err, instance, info) => {
   console.error("Vue Error:", err, instance, info);
 };
 
-// ✅ Restore auth state before mounting
+// ✅ INIT STORES BEFORE MOUNT
 const authStore = useAuthStore(pinia);
 const uiStore = useUIStore(pinia);
+const themeStore = useThemeStore(pinia);
 
+// ✅ APPLY THEME IMMEDIATELY (VERY IMPORTANT)
+themeStore.setTheme(themeStore.theme);
+
+// ===============================
+// AUTH CHECK + PRELOADER CONTROL
+// ===============================
 console.log("[App] Starting auth check...");
 uiStore.setAuthChecking(true);
 
-// Ensure preloader disappears even if auth check fails
+// Failsafe timeout
 const timeout = setTimeout(() => {
-  console.log("[App] Auth check timeout, hiding preloader");
+  console.log("[App] Auth timeout → hiding loader");
   uiStore.setAuthChecking(false);
-}, 5000); // 5 second timeout
+}, 5000);
 
 authStore
   .checkAuth()
   .then(() => {
-    console.log("[App] Auth check completed successfully");
+    console.log("[App] Auth success");
   })
   .catch((error) => {
-    console.error("[App] Auth check failed:", error);
+    console.error("[App] Auth failed:", error);
   })
   .finally(() => {
-    console.log("[App] Hiding preloader");
     clearTimeout(timeout);
     uiStore.setAuthChecking(false);
+    console.log("[App] Loader removed");
   });
 
+// ===============================
+// MOUNT APP
+// ===============================
 app.mount("#app");
 
+// ===============================
+// DEV LOGS
+// ===============================
 if (import.meta.env.DEV) {
   console.log(`GoalTabs v${import.meta.env.PACKAGE_VERSION || "1.0.0"}`);
   console.log("Environment:", import.meta.env.MODE);
 }
+
+// ===============================
+// 🔥 TEST LIGHT/DARK MODE (KEEP THIS)
+// ===============================
+const testDiv = document.createElement("div");
+testDiv.className =
+  "p-6 bg-gray-900 text-white light:bg-white light:text-black";
+testDiv.innerText = "If this changes → you are HIM 🔥";
+document.body.prepend(testDiv);
