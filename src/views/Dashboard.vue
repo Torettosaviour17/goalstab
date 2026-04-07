@@ -244,9 +244,8 @@ import SkeletonDashboard from "@/components/skeleton/SkeletonDashboard.vue";
 import { useOnboardingTour } from "@/composables/useOnboardingTour";
 import { useLevelStore } from "@/stores/level";
 
-const levelStore = useLevelStore();
-
 // Stores
+const levelStore = useLevelStore();
 const goalsStore = useGoalsStore();
 const authStore = useAuthStore();
 const uiStore = useUIStore();

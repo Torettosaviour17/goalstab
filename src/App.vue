@@ -16,7 +16,7 @@
     <!-- Header – only shown on non‑auth pages when logged in -->
     <AppHeader v-if="showHeader" />
 
-    <div class="flex" :class="{ 'pt-16': showHeader }">
+    <div class="flex" :class="{ 'pt-1': showHeader }">
       <!-- Sidebar – only shown on desktop when logged in and not on auth pages -->
       <AppSidebar v-if="showSidebar" class="hidden md:block" />
 
