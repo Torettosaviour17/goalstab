@@ -91,6 +91,37 @@
               >
             </div>
           </div>
+          <div
+            class="mb-8 p-6 rounded-2xl bg-gray-900 text-white light:bg-white light:text-black"
+          >
+            <p class="text-sm opacity-70">Your Level</p>
+
+            <h2 class="text-2xl font-bold">
+              Level {{ levelStore.level }} — {{ levelStore.title }}
+            </h2>
+
+            <!-- PROGRESS BAR -->
+            <div class="mt-4">
+              <div class="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  class="h-full bg-primary-500 transition-all duration-500"
+                  :style="{ width: `${levelStore.progress}%` }"
+                ></div>
+              </div>
+
+              <p class="text-xs mt-2 opacity-70">
+                {{ levelStore.xpToNextLevel }} XP to next level
+              </p>
+            </div>
+
+            <!-- LEVEL UP FLASH -->
+            <div
+              v-if="levelStore.levelUp"
+              class="mt-3 text-green-400 font-semibold animate-pulse"
+            >
+              LEVEL UP! 🔥
+            </div>
+          </div>
         </div>
 
         <!-- Notifications -->
@@ -360,6 +391,9 @@ interface NotificationSettings {
   depositReceived: boolean;
   weeklyReport: boolean;
 }
+
+import { useLevelStore } from "@/stores/level";
+const levelStore = useLevelStore();
 
 const router = useRouter();
 const authStore = useAuthStore();
