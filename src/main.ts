@@ -77,12 +77,3 @@ if (import.meta.env.DEV) {
   console.log(`GoalTabs v${import.meta.env.PACKAGE_VERSION || "1.0.0"}`);
   console.log("Environment:", import.meta.env.MODE);
 }
-
-// ===============================
-// 🔥 TEST LIGHT/DARK MODE (KEEP THIS)
-// ===============================
-const testDiv = document.createElement("div");
-testDiv.className =
-  "p-6 bg-gray-900 text-white light:bg-white light:text-black";
-testDiv.innerText = "If this changes → you are HIM 🔥";
-document.body.prepend(testDiv);
