@@ -68,20 +68,31 @@
     </div>
 
     <!-- Tabs -->
-    <div class="flex gap-2 mb-6 border-b border-gray-800">
-      <button
-        v-for="tab in tabs"
-        :key="tab"
-        @click="activeTab = tab"
-        class="px-4 py-2 font-medium transition"
-        :class="
-          activeTab === tab
-            ? 'text-primary-400 border-b-2 border-primary-500'
-            : 'text-gray-400 hover:text-white'
-        "
+    <div class="relative mb-6">
+      <div
+        class="flex overflow-x-auto scrollbar-hide gap-2 pb-2 -mx-4 px-4 md:mx-0 md:px-0 border-b border-gray-800"
       >
-        {{ tab }}
-      </button>
+        <button
+          v-for="tab in tabs"
+          :key="tab"
+          @click="activeTab = tab"
+          class="px-4 py-2 font-medium whitespace-nowrap transition flex-shrink-0"
+          :class="
+            activeTab === tab
+              ? 'text-primary-400 border-b-2 border-primary-500'
+              : 'text-gray-400 hover:text-white'
+          "
+        >
+          {{ tab }}
+        </button>
+      </div>
+      <!-- Gradient fade indicators for mobile -->
+      <div
+        class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none md:hidden"
+      ></div>
+      <div
+        class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none md:hidden"
+      ></div>
     </div>
 
     <!-- Users Tab -->
@@ -92,7 +103,7 @@
           v-model="search"
           @input="debouncedSearch"
           placeholder="Search users..."
-          class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white"
+          class="px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white w-full sm:w-64"
         />
       </div>
       <div class="glass-card overflow-x-auto">
@@ -263,7 +274,9 @@
       <div class="glass-card overflow-x-auto">
         <table class="w-full">
           <thead>
-            <tr class="text-left text-sm text-gray-400 border-b border-gray-800">
+            <tr
+              class="text-left text-sm text-gray-400 border-b border-gray-800"
+            >
               <th class="p-4">User</th>
               <th class="p-4">Goal</th>
               <th class="p-4">Type</th>
@@ -280,12 +293,14 @@
               :key="goal._id"
               class="border-b border-gray-800"
             >
-              <td class="p-4 text-white">{{ goal.user?.name || 'Unknown' }}</td>
+              <td class="p-4 text-white">{{ goal.user?.name || "Unknown" }}</td>
               <td class="p-4 text-gray-300">{{ goal.title }}</td>
               <td class="p-4 capitalize">{{ goal.goalType }}</td>
               <td class="p-4 text-white">₦{{ formatNumber(goal.target) }}</td>
               <td class="p-4 text-white">₦{{ formatNumber(goal.saved) }}</td>
-              <td class="p-4 text-gray-300">{{ formatDate(goal.createdAt) }}</td>
+              <td class="p-4 text-gray-300">
+                {{ formatDate(goal.createdAt) }}
+              </td>
               <td class="p-4">
                 <span
                   class="px-2 py-1 rounded-full text-xs"
@@ -293,8 +308,8 @@
                     goal.fulfillmentStatus === 'pending'
                       ? 'bg-yellow-500/20 text-yellow-400'
                       : goal.fulfillmentStatus === 'delivered'
-                      ? 'bg-green-500/20 text-green-400'
-                      : 'bg-blue-500/20 text-blue-400'
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-blue-500/20 text-blue-400'
                   "
                 >
                   {{ goal.fulfillmentStatus }}
@@ -395,7 +410,9 @@
       <div class="glass-card overflow-x-auto">
         <table class="w-full">
           <thead>
-            <tr class="text-left text-sm text-gray-400 border-b border-gray-800">
+            <tr
+              class="text-left text-sm text-gray-400 border-b border-gray-800"
+            >
               <th class="p-4">Timestamp</th>
               <th class="p-4">Admin</th>
               <th class="p-4">Action</th>
@@ -404,15 +421,31 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="log in logs" :key="log._id" class="border-b border-gray-800">
-              <td class="p-4 text-gray-300">{{ formatDateTime(log.timestamp) }}</td>
-              <td class="p-4 text-white">{{ log.user?.name || 'Unknown' }}</td>
-              <td class="p-4 capitalize">{{ log.action.replace(/_/g, ' ') }}</td>
-              <td class="p-4">{{ log.targetType }} ({{ log.targetId.slice(-6) }})</td>
-              <td class="p-4 text-gray-300"><pre class="text-xs">{{ JSON.stringify(log.details, null, 2) }}</pre></td>
+            <tr
+              v-for="log in logs"
+              :key="log._id"
+              class="border-b border-gray-800"
+            >
+              <td class="p-4 text-gray-300">
+                {{ formatDateTime(log.timestamp) }}
+              </td>
+              <td class="p-4 text-white">{{ log.user?.name || "Unknown" }}</td>
+              <td class="p-4 capitalize">
+                {{ log.action.replace(/_/g, " ") }}
+              </td>
+              <td class="p-4">
+                {{ log.targetType }} ({{ log.targetId.slice(-6) }})
+              </td>
+              <td class="p-4 text-gray-300">
+                <pre class="text-xs">{{
+                  JSON.stringify(log.details, null, 2)
+                }}</pre>
+              </td>
             </tr>
             <tr v-if="logs.length === 0">
-              <td colspan="5" class="p-8 text-center text-gray-500">No logs found</td>
+              <td colspan="5" class="p-8 text-center text-gray-500">
+                No logs found
+              </td>
             </tr>
           </tbody>
         </table>
@@ -438,7 +471,7 @@
               'px-3 py-1 rounded-lg text-sm transition',
               earningsPeriod === p.value
                 ? 'bg-primary-500 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white',
             ]"
           >
             {{ p.label }}
@@ -453,7 +486,9 @@
           :options="earningsChartOptions"
           :series="earningsSeries"
         />
-        <div v-else class="text-center py-12 text-gray-400">No earnings data yet</div>
+        <div v-else class="text-center py-12 text-gray-400">
+          No earnings data yet
+        </div>
       </div>
     </div>
 
@@ -504,10 +539,13 @@
     <BaseModal v-model="showServiceModal" title="Book Service">
       <form @submit.prevent="submitServiceBooking">
         <p class="text-gray-300 mb-4">
-          Mark this service as booked. You can add notes (e.g., booking reference, confirmation number).
+          Mark this service as booked. You can add notes (e.g., booking
+          reference, confirmation number).
         </p>
         <div>
-          <label class="block text-sm font-medium text-gray-300 mb-1">Booking Details (optional)</label>
+          <label class="block text-sm font-medium text-gray-300 mb-1"
+            >Booking Details (optional)</label
+          >
           <textarea
             v-model="serviceDetails"
             rows="3"
@@ -516,8 +554,12 @@
           ></textarea>
         </div>
         <div class="flex gap-2 justify-end pt-4">
-          <BaseButton variant="secondary" @click="showServiceModal = false">Cancel</BaseButton>
-          <BaseButton type="submit" variant="primary">Confirm Booking</BaseButton>
+          <BaseButton variant="secondary" @click="showServiceModal = false"
+            >Cancel</BaseButton
+          >
+          <BaseButton type="submit" variant="primary"
+            >Confirm Booking</BaseButton
+          >
         </div>
       </form>
     </BaseModal>
@@ -555,7 +597,14 @@ const {
 } = storeToRefs(adminStore);
 
 const activeTab = ref("Users");
-const tabs = ["Users", "Withdrawals", "Fulfillment", "Fees", "Logs", "Earnings"];
+const tabs = [
+  "Users",
+  "Withdrawals",
+  "Fulfillment",
+  "Fees",
+  "Logs",
+  "Earnings",
+];
 const statuses = ["pending", "approved", "rejected", "all"];
 const selectedStatus = ref("pending");
 const earningsPeriods = [
@@ -702,26 +751,26 @@ const submitAction = async () => {
 };
 
 const markDelivered = async (goal: any) => {
-  await adminStore.updateFulfillmentStatus(goal._id, 'delivered', {
+  await adminStore.updateFulfillmentStatus(goal._id, "delivered", {
     deliveredAt: new Date(),
   });
 };
 
 const openServiceModal = (goal: any) => {
   selectedGoalForService.value = goal;
-  serviceDetails.value = '';
+  serviceDetails.value = "";
   showServiceModal.value = true;
 };
 
 const submitServiceBooking = async () => {
   await adminStore.updateFulfillmentStatus(
     selectedGoalForService.value._id,
-    'booked',
+    "booked",
     { bookingDetails: serviceDetails.value, bookedAt: new Date() },
   );
   showServiceModal.value = false;
 };
 
 const selectedGoalForService = ref<any>(null);
-const serviceDetails = ref('');
+const serviceDetails = ref("");
 </script>
