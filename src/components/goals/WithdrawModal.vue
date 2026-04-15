@@ -23,7 +23,9 @@
             step="1"
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <p v-if="amountError" class="mt-1 text-xs text-danger">{{ amountError }}</p>
+          <p v-if="amountError" class="mt-1 text-xs text-danger">
+            {{ amountError }}
+          </p>
         </div>
 
         <div>
@@ -40,7 +42,9 @@
               {{ bank }}
             </option>
           </select>
-          <p v-if="bankError" class="mt-1 text-xs text-danger">{{ bankError }}</p>
+          <p v-if="bankError" class="mt-1 text-xs text-danger">
+            {{ bankError }}
+          </p>
         </div>
 
         <div>
@@ -53,7 +57,9 @@
             required
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <p v-if="nameError" class="mt-1 text-xs text-danger">{{ nameError }}</p>
+          <p v-if="nameError" class="mt-1 text-xs text-danger">
+            {{ nameError }}
+          </p>
         </div>
 
         <div>
@@ -127,9 +133,11 @@ const form = ref({
   accountNumber: "",
 });
 
+// FIX: Allow withdrawal up to the full saved amount.
+// The backend will handle the platform fee deduction when the goal reaches its target.
 const maxAllowed = computed(() => {
   if (!props.goal) return 0;
-  return Math.min(props.goal.saved, (props.goal.userTarget || 0) - (props.goal.withdrawn || 0));
+  return props.goal.saved; // user can withdraw everything (fee is handled separately)
 });
 
 watch(
@@ -164,7 +172,7 @@ watch(
 const amountError = computed(() => {
   const amount = form.value.amount;
   if (amount <= 0) return "Amount must be positive";
-  if (amount > maxAllowed.value) return "Amount exceeds your available limit";
+  if (amount > maxAllowed.value) return "Amount exceeds your available balance";
   return null;
 });
 
