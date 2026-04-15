@@ -29,18 +29,19 @@ const GoalSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    // 👇 NEW: userTarget is the amount the user will receive (excluding fee)
+
     userTarget: {
       type: Number,
       required: true,
       min: 1,
     },
-    // 👇 NEW: fee charged by platform
+
     fee: {
       type: Number,
       default: 100,
       min: 0,
     },
+
     target: {
       type: Number,
       required: true,
@@ -52,11 +53,26 @@ const GoalSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
-    // 👇 NEW: total amount already withdrawn (tracked to enforce userTarget limit)
+
     withdrawn: {
       type: Number,
       default: 0,
       min: 0,
+    },
+
+    feeCharged: {
+      type: Boolean,
+      default: false,
+    },
+
+    lockedBalance: {
+      type: Number,
+      default: 0,
+    },
+
+    isClosed: {
+      type: Boolean,
+      default: false,
     },
 
     icon: {
@@ -87,9 +103,7 @@ const GoalSchema = new mongoose.Schema(
       default: "monthly",
     },
 
-    deadline: {
-      type: Date,
-    },
+    deadline: Date,
 
     locked: {
       type: Boolean,
@@ -103,10 +117,7 @@ const GoalSchema = new mongoose.Schema(
       max: 100,
     },
 
-    category: {
-      type: String,
-      trim: true,
-    },
+    category: String,
 
     accountId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -118,14 +129,15 @@ const GoalSchema = new mongoose.Schema(
     goalType: {
       type: String,
       enum: ["product", "service"],
-      required: true,
       default: "product",
     },
+
     fulfillmentStatus: {
       type: String,
       enum: ["pending", "processing", "delivered", "booked"],
       default: "pending",
     },
+
     fulfillmentDetails: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
@@ -141,50 +153,47 @@ const GoalSchema = new mongoose.Schema(
       default: null,
     },
 
-    // Auto‑save tracking fields
     autoSaveEnabled: {
       type: Boolean,
       default: true,
     },
 
-    lastAutoSave: {
-      type: Date,
-    },
-
-    nextAutoSave: {
-      type: Date,
-    },
+    lastAutoSave: Date,
+    nextAutoSave: Date,
   },
   {
-    timestamps: true, // automatically adds createdAt & updatedAt
+    timestamps: true,
   },
 );
 
-// 🔥 Auto-calculate progress before saving
+/**
+ * =========================
+ * PROGRESS CALCULATION
+ * =========================
+ */
 GoalSchema.pre("save", function () {
   if (this.target > 0) {
     this.progress = Math.min(100, Math.round((this.saved / this.target) * 100));
   } else {
     this.progress = 0;
   }
-});
 
-// 🔥 Recalculate progress when updating with findOneAndUpdate
-GoalSchema.pre("findOneAndUpdate", async function () {
-  const update = this.getUpdate();
-
-  if (update.saved !== undefined || update.target !== undefined) {
-    const doc = await this.model.findOne(this.getQuery());
-
-    const newSaved = update.saved !== undefined ? update.saved : doc.saved;
-
-    const newTarget = update.target !== undefined ? update.target : doc.target;
-
-    update.progress =
-      newTarget > 0
-        ? Math.min(100, Math.round((newSaved / newTarget) * 100))
-        : 0;
+  // 🔥 auto close logic
+  if (this.saved <= 0 && this.withdrawn > 0) {
+    this.isClosed = true;
   }
 });
+
+/**
+ * =========================
+ * VIRTUAL BALANCE (IMPORTANT)
+ * =========================
+ */
+GoalSchema.virtual("availableBalance").get(function () {
+  return Math.max(0, this.saved - this.withdrawn);
+});
+
+GoalSchema.set("toJSON", { virtuals: true });
+GoalSchema.set("toObject", { virtuals: true });
 
 module.exports = mongoose.model("Goal", GoalSchema);

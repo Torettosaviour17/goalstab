@@ -1,233 +1,233 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
+
 const Withdrawal = require("../models/Withdrawal");
 const Goal = require("../models/Goal");
 const Transaction = require("../models/Transaction");
+const AdminLog = require("../models/AdminLog");
+
 const { sendNotification } = require("./notifications");
 const { sendEmailToUser } = require("../services/emailService");
 
-// @route   POST api/withdrawals
-// @desc    Request a withdrawal from a completed goal
+const PLATFORM_FEE = 100;
+
+/**
+ * =========================
+ * CREATE WITHDRAWAL
+ * =========================
+ */
 router.post("/", auth, async (req, res) => {
   const { goalId, amount, accountDetails } = req.body;
+
   try {
     const goal = await Goal.findById(goalId);
     if (!goal) return res.status(404).json({ msg: "Goal not found" });
+
     if (goal.user.toString() !== req.user.id)
       return res.status(401).json({ msg: "Not authorized" });
-    if (goal.progress < 100)
-      return res.status(400).json({ msg: "Goal not completed yet" });
 
-    // Check if there's already a pending withdrawal for this goal
-    const pendingWithdrawal = await Withdrawal.findOne({
+    if (goal.progress < 100)
+      return res.status(400).json({ msg: "Goal not completed" });
+
+    const existing = await Withdrawal.findOne({
       goal: goalId,
       status: "pending",
     });
-    if (pendingWithdrawal) {
-      return res
-        .status(400)
-        .json({ msg: "A withdrawal request is already pending for this goal" });
+
+    if (existing)
+      return res.status(400).json({ msg: "Withdrawal already pending" });
+
+    const numAmount = Number(amount);
+    if (!numAmount || numAmount <= 0)
+      return res.status(400).json({ msg: "Invalid amount" });
+
+    if (numAmount > goal.saved)
+      return res.status(400).json({ msg: "Insufficient balance" });
+
+    const remaining = goal.saved - numAmount;
+    const isFinal = remaining <= PLATFORM_FEE;
+
+    if (isFinal && numAmount > goal.saved - PLATFORM_FEE) {
+      return res.status(400).json({
+        msg: `Leave at least ₦${PLATFORM_FEE} for platform fee`,
+      });
     }
 
-    // Calculate maximum withdrawable amount
-    const maxWithdrawable = Math.min(
-      goal.saved,
-      goal.userTarget - (goal.withdrawn || 0),
-    );
-
-    if (amount > maxWithdrawable) {
-      return res
-        .status(400)
-        .json({ msg: "Amount exceeds your available withdrawal limit" });
-    }
-    if (amount <= 0) {
-      return res.status(400).json({ msg: "Amount must be positive" });
-    }
-
-    // Create withdrawal request
-    const withdrawal = new Withdrawal({
+    const withdrawal = await Withdrawal.create({
       user: req.user.id,
       goal: goalId,
-      amount,
+      amount: numAmount,
+      fee: isFinal ? PLATFORM_FEE : 0,
       accountDetails,
+      status: "pending",
     });
-    await withdrawal.save();
 
-    // Create transaction record for withdrawal
-    const transaction = new Transaction({
+    await Transaction.create({
       user: req.user.id,
       goal: goalId,
       type: "withdrawal",
-      amount,
-      description: `Withdrawal request from ${goal.title}`,
+      amount: numAmount,
       status: "pending",
+      description: `Withdrawal request from ${goal.title}`,
     });
-    await transaction.save();
 
-    // Optionally lock the goal or mark that a withdrawal is pending
-    // goal.withdrawalPending = true; (if you add that field)
-    // await goal.save();
+    sendNotification(req.user.id, {
+      type: "withdrawal_requested",
+      message: `Withdrawal request of ₦${numAmount.toLocaleString()} submitted`,
+    });
+
+    await sendEmailToUser(
+      req.user.id,
+      "Withdrawal Request",
+      `<p>Your withdrawal request of ₦${numAmount.toLocaleString()} is pending.</p>`,
+    );
 
     res.json(withdrawal);
   } catch (err) {
-    console.error(err.message);
+    console.error(err);
     res.status(500).send("Server error");
   }
 });
 
-// @route   GET api/withdrawals/user
-// @desc    Get all withdrawals for the logged-in user
+/**
+ * =========================
+ * USER WITHDRAWALS
+ * =========================
+ */
 router.get("/user", auth, async (req, res) => {
   try {
-    const withdrawals = await Withdrawal.find({ user: req.user.id })
-      .populate("goal", "title")
-      .sort({ requestedAt: -1 });
-    res.json(withdrawals);
+    const data = await Withdrawal.find({ user: req.user.id })
+      .populate("goal", "title saved")
+      .sort({ createdAt: -1 });
+
+    res.json(data);
   } catch (err) {
-    console.error(err.message);
     res.status(500).send("Server error");
   }
 });
 
-// Admin routes (should be protected by admin middleware)
-// For simplicity, we'll add an isAdmin flag on user later, but for now we'll check via a secret or role.
-
-// @route   GET api/withdrawals/admin
-// @desc    Get all pending withdrawals (admin only)
-router.get("/admin", auth, async (req, res) => {
-  // TODO: Add admin check
+/**
+ * =========================
+ * ADMIN LIST
+ * =========================
+ */
+router.get("/admin", [auth, admin], async (req, res) => {
   try {
-    const withdrawals = await Withdrawal.find({ status: "pending" })
+    const data = await Withdrawal.find()
       .populate("user", "name email")
-      .populate("goal", "title")
-      .sort({ requestedAt: 1 });
-    res.json(withdrawals);
+      .populate("goal", "title saved")
+      .sort({ createdAt: -1 });
+
+    res.json(data);
   } catch (err) {
-    console.error(err.message);
     res.status(500).send("Server error");
   }
 });
 
-// @route   PUT api/withdrawals/:id/approve
-// @desc    Approve a withdrawal (admin) - MOVED TO ADMIN ROUTES
-/*
-router.put("/:id/approve", auth, async (req, res) => {
-  // TODO: Add admin check
-  const { adminNote } = req.body;
+/**
+ * =========================
+ * APPROVE WITHDRAWAL
+ * =========================
+ */
+router.put("/:id/approve", [auth, admin], async (req, res) => {
   try {
     const withdrawal = await Withdrawal.findById(req.params.id);
-    if (!withdrawal)
-      return res.status(404).json({ msg: "Withdrawal not found" });
+    if (!withdrawal) return res.status(404).json({ msg: "Not found" });
+
+    if (withdrawal.status !== "pending")
+      return res.status(400).json({ msg: "Already processed" });
+
+    const goal = await Goal.findById(withdrawal.goal);
+    if (!goal) return res.status(404).json({ msg: "Goal missing" });
+
+    goal.saved -= withdrawal.amount;
+    goal.withdrawn = (goal.withdrawn || 0) + withdrawal.amount;
+
+    if (goal.saved <= PLATFORM_FEE) {
+      goal.saved = 0;
+    }
+
+    await goal.save();
 
     withdrawal.status = "approved";
-    withdrawal.adminNote = adminNote;
     withdrawal.processedAt = new Date();
     withdrawal.processedBy = req.user.id;
     await withdrawal.save();
 
-    // Update goal saved amount
-    const goal = await Goal.findById(withdrawal.goal);
-    if (goal) {
-      goal.saved -= withdrawal.amount;
-      goal.locked = false; // unlock if needed
-      await goal.save();
+    await Transaction.updateOne(
+      { _id: withdrawal._id },
+      { status: "approved" },
+    );
 
-      // If goal saved becomes zero or negative, delete it and notify
-      if (goal.saved <= 0) {
-        const goalId = goal._id;
-        const goalTitle = goal.title;
-        await goal.deleteOne();
-        // Send SSE event for goal deletion
-        sendNotification(withdrawal.user.toString(), {
-          type: "goal_deleted",
-          goalId: goalId.toString(),
-          message: `Goal "${goalTitle}" was removed after full withdrawal.`,
-        });
-      }
-    }
+    await AdminLog.create({
+      user: req.user.id,
+      action: "approve_withdrawal",
+      targetType: "Withdrawal",
+      targetId: withdrawal._id,
+      details: { amount: withdrawal.amount },
+    });
 
-    // Update transaction status when withdrawal is approved
-    const transaction = await Transaction.findOne({
-      user: withdrawal.user,
-      goal: withdrawal.goal,
-      type: "withdrawal",
-      amount: withdrawal.amount,
-    }).sort({ createdAt: -1 });
-    if (transaction) {
-      transaction.status = "approved";
-      transaction.description = `Withdrawal approved from ${goal?.title || "goal"}`;
-      await transaction.save();
-    }
-
-    // Notify user
     sendNotification(withdrawal.user.toString(), {
-      type: "withdrawal_processed",
-      message: `Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been approved.`,
+      type: "withdrawal_approved",
+      message: `₦${withdrawal.amount.toLocaleString()} approved`,
     });
 
     await sendEmailToUser(
       withdrawal.user,
       "Withdrawal Approved",
-      `<p>Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been approved.</p>`,
+      `<p>Your withdrawal was approved.</p>`,
     );
 
     res.json(withdrawal);
   } catch (err) {
-    console.error(err.message);
     res.status(500).send("Server error");
   }
 });
-*/
 
-// @route   PUT api/withdrawals/:id/reject
-// @desc    Reject a withdrawal (admin) - MOVED TO ADMIN ROUTES
-/*
-router.put("/:id/reject", auth, async (req, res) => {
-  // TODO: Add admin check
+/**
+ * =========================
+ * REJECT WITHDRAWAL
+ * =========================
+ */
+router.put("/:id/reject", [auth, admin], async (req, res) => {
   const { adminNote } = req.body;
+
   try {
     const withdrawal = await Withdrawal.findById(req.params.id);
-    if (!withdrawal)
-      return res.status(404).json({ msg: "Withdrawal not found" });
+    if (!withdrawal) return res.status(404).json({ msg: "Not found" });
 
     withdrawal.status = "rejected";
     withdrawal.adminNote = adminNote;
     withdrawal.processedAt = new Date();
     withdrawal.processedBy = req.user.id;
+
     await withdrawal.save();
 
-    // Update transaction status when withdrawal is rejected
-    const transaction = await Transaction.findOne({
-      user: withdrawal.user,
-      goal: withdrawal.goal,
-      type: "withdrawal",
-      amount: withdrawal.amount,
-    }).sort({ createdAt: -1 });
-    if (transaction) {
-      transaction.status = "rejected";
-      transaction.description = `Withdrawal rejected: ${adminNote || "No reason"}`;
-      await transaction.save();
-    }
+    await AdminLog.create({
+      user: req.user.id,
+      action: "reject_withdrawal",
+      targetType: "Withdrawal",
+      targetId: withdrawal._id,
+      details: { adminNote },
+    });
 
-    // Notify user
     sendNotification(withdrawal.user.toString(), {
-      type: "withdrawal_processed",
-      message: `Your withdrawal request was rejected. Reason: ${adminNote || "No reason provided"}`,
+      type: "withdrawal_rejected",
+      message: `Withdrawal rejected`,
     });
 
     await sendEmailToUser(
       withdrawal.user,
       "Withdrawal Rejected",
-      `<p>Your withdrawal request was rejected. Reason: ${adminNote || "Not specified"}</p>`,
+      `<p>${adminNote || "No reason"}</p>`,
     );
 
     res.json(withdrawal);
   } catch (err) {
-    console.error(err.message);
     res.status(500).send("Server error");
   }
 });
-*/
 
 module.exports = router;
