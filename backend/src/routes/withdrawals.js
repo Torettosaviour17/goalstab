@@ -44,16 +44,16 @@ router.post("/", auth, async (req, res) => {
     if (!numAmount || numAmount <= 0)
       return res.status(400).json({ msg: "Invalid amount" });
 
-    // FIX: Allow withdrawal up to full saved balance.
-    // Platform fee was already deducted in Goal pre-save hook when goal was funded.
-    if (numAmount > goal.saved)
-      return res.status(400).json({ msg: "Insufficient balance" });
+    // ✅ Use available balance (saved - withdrawn) instead of raw saved
+    const availableBalance = goal.saved - goal.withdrawn;
+    if (numAmount > availableBalance)
+      return res.status(400).json({ msg: "Insufficient available balance" });
 
     const withdrawal = await Withdrawal.create({
       user: req.user.id,
       goal: goalId,
       amount: numAmount,
-      fee: 0, // FIX: fee is handled by pre-save hook, not here
+      fee: 0, // fee handled entirely by Goal pre-save hook
       accountDetails,
       status: "pending",
     });
@@ -94,10 +94,17 @@ router.post("/", auth, async (req, res) => {
 router.get("/user", auth, async (req, res) => {
   try {
     const data = await Withdrawal.find({ user: req.user.id })
-      .populate("goal", "title saved isClosed lockedBalance availableBalance")
+      .populate("goal", "title saved withdrawn isClosed lockedBalance")
       .sort({ createdAt: -1 });
 
-    res.json(data);
+    // Manually attach availableBalance for each goal (virtual not populated)
+    const enriched = data.map((w) => {
+      if (w.goal) {
+        w.goal.availableBalance = w.goal.saved - w.goal.withdrawn;
+      }
+      return w;
+    });
+    res.json(enriched);
   } catch (err) {
     res.status(500).send("Server error");
   }
@@ -112,10 +119,17 @@ router.get("/admin", [auth, admin], async (req, res) => {
   try {
     const data = await Withdrawal.find()
       .populate("user", "name email")
-      .populate("goal", "title saved")
+      .populate("goal", "title saved withdrawn")
       .sort({ createdAt: -1 });
 
-    res.json(data);
+    // Add virtual availableBalance
+    const enriched = data.map((w) => {
+      if (w.goal) {
+        w.goal.availableBalance = w.goal.saved - w.goal.withdrawn;
+      }
+      return w;
+    });
+    res.json(enriched);
   } catch (err) {
     res.status(500).send("Server error");
   }
@@ -128,7 +142,6 @@ router.get("/admin", [auth, admin], async (req, res) => {
  */
 router.put("/:id/approve", [auth, admin], async (req, res) => {
   try {
-    // Atomic update — prevents duplicate approvals even if button is clicked multiple times
     const withdrawal = await Withdrawal.findOneAndUpdate(
       { _id: req.params.id, status: "pending" },
       {
@@ -145,12 +158,11 @@ router.put("/:id/approve", [auth, admin], async (req, res) => {
     const goal = await Goal.findById(withdrawal.goal);
     if (!goal) return res.status(404).json({ msg: "Goal not found" });
 
-    // FIX: Just deduct the withdrawal amount from saved and track withdrawn.
-    // Do NOT touch fee here — it was already handled by Goal pre-save hook.
+    // ✅ Deduct only from saved, track withdrawn. Fee already deducted in pre-save.
     goal.saved -= withdrawal.amount;
     goal.withdrawn += withdrawal.amount;
 
-    // Goal pre-save hook will handle auto-closing if saved hits 0
+    // Goal pre-save hook will recalc progress and possibly auto-close
     await goal.save();
 
     // Update related transaction
@@ -159,7 +171,6 @@ router.put("/:id/approve", [auth, admin], async (req, res) => {
       { status: "approved" },
     );
 
-    // Log admin action (atomic update above ensures this only runs once)
     await AdminLog.create({
       user: req.user.id,
       action: "approve_withdrawal",

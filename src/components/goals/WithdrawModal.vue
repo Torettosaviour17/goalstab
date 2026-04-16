@@ -4,11 +4,8 @@
       <div v-if="goal" class="p-4 bg-gray-800/50 rounded-xl">
         <p class="text-sm text-gray-400">Requesting withdrawal from:</p>
         <p class="font-medium text-white">{{ goal.title }}</p>
-        <!-- FIX: Use availableBalance virtual from backend, fallback to saved -->
         <p class="text-sm text-gray-300 mt-1">
-          Available balance: ₦{{
-            formatNumber(goal.availableBalance ?? goal.saved)
-          }}
+          Available balance: ₦{{ formatNumber(goal.availableBalance ?? goal.saved) }}
         </p>
       </div>
 
@@ -26,9 +23,7 @@
             step="1"
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <p v-if="amountError" class="mt-1 text-xs text-danger">
-            {{ amountError }}
-          </p>
+          <p v-if="amountError" class="mt-1 text-xs text-danger">{{ amountError }}</p>
         </div>
 
         <div>
@@ -41,13 +36,9 @@
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             <option value="" disabled>Select bank</option>
-            <option v-for="bank in banks" :key="bank" :value="bank">
-              {{ bank }}
-            </option>
+            <option v-for="bank in banks" :key="bank" :value="bank">{{ bank }}</option>
           </select>
-          <p v-if="bankError" class="mt-1 text-xs text-danger">
-            {{ bankError }}
-          </p>
+          <p v-if="bankError" class="mt-1 text-xs text-danger">{{ bankError }}</p>
         </div>
 
         <div>
@@ -60,9 +51,7 @@
             required
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <p v-if="nameError" class="mt-1 text-xs text-danger">
-            {{ nameError }}
-          </p>
+          <p v-if="nameError" class="mt-1 text-xs text-danger">{{ nameError }}</p>
         </div>
 
         <div>
@@ -76,9 +65,7 @@
             maxlength="11"
             class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
-          <p v-if="accountNumberError" class="mt-1 text-xs text-danger">
-            {{ accountNumberError }}
-          </p>
+          <p v-if="accountNumberError" class="mt-1 text-xs text-danger">{{ accountNumberError }}</p>
         </div>
 
         <div class="flex gap-2 justify-end pt-4">
@@ -112,19 +99,9 @@ const show = ref(props.modelValue);
 const loading = ref(false);
 
 const banks = [
-  "Access Bank",
-  "FCMB",
-  "Fidelity Bank",
-  "First Bank",
-  "Guaranty Trust Bank",
-  "United Bank for Africa",
-  "Zenith Bank",
-  "Standard Chartered",
-  "Sterling Bank",
-  "Union Bank",
-  "Polaris Bank",
-  "Wema Bank",
-  "EcoBank",
+  "Access Bank", "FCMB", "Fidelity Bank", "First Bank", "Guaranty Trust Bank",
+  "United Bank for Africa", "Zenith Bank", "Standard Chartered", "Sterling Bank",
+  "Union Bank", "Polaris Bank", "Wema Bank", "EcoBank",
 ];
 
 const form = ref({
@@ -134,7 +111,6 @@ const form = ref({
   accountNumber: "",
 });
 
-// FIX: Use availableBalance from backend virtual, fallback to saved
 const maxAllowed = computed(() => {
   if (!props.goal) return 0;
   return props.goal.availableBalance ?? props.goal.saved;
@@ -143,31 +119,19 @@ const maxAllowed = computed(() => {
 watch(
   () => props.goal,
   (goal) => {
-    if (goal) {
-      form.value.amount = maxAllowed.value;
-    }
+    if (goal) form.value.amount = maxAllowed.value;
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 watch(show, (val) => {
   emit("update:modelValue", val);
   if (!val) {
-    form.value = {
-      amount: 0,
-      bankName: "",
-      accountName: "",
-      accountNumber: "",
-    };
+    form.value = { amount: 0, bankName: "", accountName: "", accountNumber: "" };
   }
 });
 
-watch(
-  () => props.modelValue,
-  (val) => {
-    show.value = val;
-  },
-);
+watch(() => props.modelValue, (val) => { show.value = val; });
 
 const amountError = computed(() => {
   const amount = form.value.amount;
@@ -197,17 +161,10 @@ const accountNumberError = computed(() => {
 });
 
 const isValid = computed(() => {
-  return (
-    !amountError.value &&
-    !bankError.value &&
-    !nameError.value &&
-    !accountNumberError.value
-  );
+  return !amountError.value && !bankError.value && !nameError.value && !accountNumberError.value;
 });
 
-const close = () => {
-  show.value = false;
-};
+const close = () => { show.value = false; };
 
 const handleSubmit = async () => {
   if (!isValid.value) return;
