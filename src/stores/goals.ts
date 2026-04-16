@@ -117,10 +117,15 @@ export const useGoalsStore = defineStore("goals", () => {
     loading.value = true;
     try {
       const { data } = await api.get("/goals");
-      // Ensure id field is set for compatibility
+      // Ensure id and availableBalance are set
       goals.value = data.map((g: any) => ({
         ...g,
         id: g.id || g._id,
+        // ✅ Force availableBalance to be a number (backend provides it, but safe fallback)
+        availableBalance:
+          typeof g.availableBalance === "number"
+            ? g.availableBalance
+            : g.saved - g.withdrawn,
       }));
     } catch (err) {
       uiStore.addToast({ type: "error", message: "Failed to load goals" });
