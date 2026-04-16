@@ -121,7 +121,7 @@ export const useGoalsStore = defineStore("goals", () => {
       goals.value = data.map((g: any) => ({
         ...g,
         id: g.id || g._id,
-        // ✅ Force availableBalance to be a number (backend provides it, but safe fallback)
+        // ✅ Force availableBalance to be a number
         availableBalance:
           typeof g.availableBalance === "number"
             ? g.availableBalance
