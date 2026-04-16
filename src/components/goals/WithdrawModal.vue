@@ -4,8 +4,11 @@
       <div v-if="goal" class="p-4 bg-gray-800/50 rounded-xl">
         <p class="text-sm text-gray-400">Requesting withdrawal from:</p>
         <p class="font-medium text-white">{{ goal.title }}</p>
+        <!-- FIX: Use availableBalance virtual from backend, fallback to saved -->
         <p class="text-sm text-gray-300 mt-1">
-          Available balance: ₦{{ formatNumber(goal.saved) }}
+          Available balance: ₦{{
+            formatNumber(goal.availableBalance ?? goal.saved)
+          }}
         </p>
       </div>
 
@@ -105,8 +108,6 @@ const emit = defineEmits<{
   (e: "submit", data: any): void;
 }>();
 
-console.log("WithdrawModal created, initial modelValue:", props.modelValue);
-
 const show = ref(props.modelValue);
 const loading = ref(false);
 
@@ -133,18 +134,17 @@ const form = ref({
   accountNumber: "",
 });
 
-// FIX: Allow withdrawal up to the full saved amount.
-// The backend will handle the platform fee deduction when the goal reaches its target.
+// FIX: Use availableBalance from backend virtual, fallback to saved
 const maxAllowed = computed(() => {
   if (!props.goal) return 0;
-  return props.goal.saved; // user can withdraw everything (fee is handled separately)
+  return props.goal.availableBalance ?? props.goal.saved;
 });
 
 watch(
   () => props.goal,
   (goal) => {
     if (goal) {
-      form.value.amount = maxAllowed.value; // default to max allowed
+      form.value.amount = maxAllowed.value;
     }
   },
   { immediate: true },

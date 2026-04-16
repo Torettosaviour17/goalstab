@@ -40,6 +40,7 @@ export interface Goal {
   sharedWith: SharedUser[];
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
+  availableBalance?: number;
 }
 
 export interface GoalFormData {

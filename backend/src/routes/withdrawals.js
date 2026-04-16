@@ -11,8 +11,6 @@ const AdminLog = require("../models/AdminLog");
 const { sendNotification } = require("./notifications");
 const { sendEmailToUser } = require("../services/emailService");
 
-const PLATFORM_FEE = 100;
-
 /**
  * =========================
  * CREATE WITHDRAWAL
@@ -46,24 +44,16 @@ router.post("/", auth, async (req, res) => {
     if (!numAmount || numAmount <= 0)
       return res.status(400).json({ msg: "Invalid amount" });
 
+    // FIX: Allow withdrawal up to full saved balance.
+    // Platform fee was already deducted in Goal pre-save hook when goal was funded.
     if (numAmount > goal.saved)
       return res.status(400).json({ msg: "Insufficient balance" });
-
-    // Determine if this is the final withdrawal
-    const remainingAfter = goal.saved - numAmount;
-    const isFinal = remainingAfter <= PLATFORM_FEE;
-
-    if (isFinal && numAmount > goal.saved - PLATFORM_FEE) {
-      return res.status(400).json({
-        msg: `You must leave at least ₦${PLATFORM_FEE} as platform fee.`,
-      });
-    }
 
     const withdrawal = await Withdrawal.create({
       user: req.user.id,
       goal: goalId,
       amount: numAmount,
-      fee: isFinal ? PLATFORM_FEE : 0,
+      fee: 0, // FIX: fee is handled by pre-save hook, not here
       accountDetails,
       status: "pending",
     });
@@ -75,7 +65,7 @@ router.post("/", auth, async (req, res) => {
       amount: numAmount,
       status: "pending",
       description: `Withdrawal request from ${goal.title}`,
-      reference: withdrawal._id, // link transaction to withdrawal
+      reference: withdrawal._id,
     });
 
     sendNotification(req.user.id, {
@@ -104,7 +94,7 @@ router.post("/", auth, async (req, res) => {
 router.get("/user", auth, async (req, res) => {
   try {
     const data = await Withdrawal.find({ user: req.user.id })
-      .populate("goal", "title saved isClosed lockedBalance")
+      .populate("goal", "title saved isClosed lockedBalance availableBalance")
       .sort({ createdAt: -1 });
 
     res.json(data);
@@ -138,7 +128,7 @@ router.get("/admin", [auth, admin], async (req, res) => {
  */
 router.put("/:id/approve", [auth, admin], async (req, res) => {
   try {
-    // Atomic update to prevent multiple approvals
+    // Atomic update — prevents duplicate approvals even if button is clicked multiple times
     const withdrawal = await Withdrawal.findOneAndUpdate(
       { _id: req.params.id, status: "pending" },
       {
@@ -155,30 +145,21 @@ router.put("/:id/approve", [auth, admin], async (req, res) => {
     const goal = await Goal.findById(withdrawal.goal);
     if (!goal) return res.status(404).json({ msg: "Goal not found" });
 
-    // Deduct withdrawal
+    // FIX: Just deduct the withdrawal amount from saved and track withdrawn.
+    // Do NOT touch fee here — it was already handled by Goal pre-save hook.
     goal.saved -= withdrawal.amount;
     goal.withdrawn += withdrawal.amount;
 
-    // Handle final withdrawal and fee
-    if (withdrawal.fee > 0 && !goal.feeCharged) {
-      goal.lockedBalance = withdrawal.fee;
-      goal.saved = Math.max(0, goal.saved - withdrawal.fee);
-      goal.feeCharged = true;
-      goal.isClosed = true;
-    }
-
+    // Goal pre-save hook will handle auto-closing if saved hits 0
     await goal.save();
 
     // Update related transaction
     await Transaction.findOneAndUpdate(
-      {
-        reference: withdrawal._id,
-        type: "withdrawal",
-      },
+      { reference: withdrawal._id, type: "withdrawal" },
       { status: "approved" },
     );
 
-    // Log admin action
+    // Log admin action (atomic update above ensures this only runs once)
     await AdminLog.create({
       user: req.user.id,
       action: "approve_withdrawal",
@@ -186,7 +167,6 @@ router.put("/:id/approve", [auth, admin], async (req, res) => {
       targetId: withdrawal._id,
       details: {
         amount: withdrawal.amount,
-        fee: withdrawal.fee,
         goalId: goal._id,
       },
     });
@@ -237,15 +217,10 @@ router.put("/:id/reject", [auth, admin], async (req, res) => {
       return res.status(400).json({ msg: "Already processed or not found" });
 
     await Transaction.findOneAndUpdate(
-      {
-        reference: withdrawal._id,
-        type: "withdrawal",
-      },
+      { reference: withdrawal._id, type: "withdrawal" },
       {
         status: "rejected",
-        description: `Withdrawal rejected: ${
-          adminNote || "No reason provided"
-        }`,
+        description: `Withdrawal rejected: ${adminNote || "No reason provided"}`,
       },
     );
 

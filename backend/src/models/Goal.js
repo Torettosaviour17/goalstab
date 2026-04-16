@@ -157,24 +157,17 @@ GoalSchema.pre("save", function (next) {
 
   // 2. Charge platform fee when target is reached (only once)
   if (!this.feeCharged && this.saved >= this.target && this.fee > 0) {
-    // Deduct fee from saved balance (or you can move to lockedBalance)
     const feeToDeduct = Math.min(this.fee, this.saved);
     this.saved -= feeToDeduct;
     this.platformFeeDeducted = feeToDeduct;
     this.feeCharged = true;
-
-    // Optional: if you want to keep the fee separate until platform collects
-    // this.lockedBalance += feeToDeduct;
   }
 
-  // 3. Auto-close conditions
+  // 3. Auto-close ONLY when balance hits zero after withdrawals
+  // FIX: Removed early closure on target reached — user hasn't withdrawn yet at that point.
   if (!this.isClosed) {
-    // Close when target reached AND fee charged (if fee exists)
-    const targetReached = this.saved >= this.target;
-    const feeCondition = this.fee > 0 ? this.feeCharged : true;
     const zeroBalanceAfterWithdrawals = this.saved <= 0 && this.withdrawn > 0;
-
-    if ((targetReached && feeCondition) || zeroBalanceAfterWithdrawals) {
+    if (zeroBalanceAfterWithdrawals) {
       this.isClosed = true;
     }
   }
@@ -186,8 +179,9 @@ GoalSchema.pre("save", function (next) {
 // VIRTUAL: Available balance (what user can withdraw)
 // =========================
 GoalSchema.virtual("availableBalance").get(function () {
-  // Available = saved - withdrawn (fee already deducted from saved)
-  return Math.max(0, this.saved - this.withdrawn);
+  // FIX: `withdrawn` is already reflected in `saved` during approval,
+  // so we just return saved directly to avoid double-subtracting.
+  return Math.max(0, this.saved);
 });
 
 // =========================
@@ -195,9 +189,7 @@ GoalSchema.virtual("availableBalance").get(function () {
 // =========================
 GoalSchema.virtual("pendingPlatformFee").get(function () {
   if (this.feeCharged) return 0;
-  // If target not reached, full fee is pending
   if (this.saved < this.target) return this.fee;
-  // Target reached but fee not yet charged (shouldn't happen due to pre-save, but safe)
   return this.fee;
 });
 
