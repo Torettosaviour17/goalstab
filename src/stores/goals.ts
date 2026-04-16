@@ -40,8 +40,6 @@ export interface Goal {
   sharedWith: SharedUser[];
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
-  // ✅ Virtuals from backend
-
   availableBalance?: number;
   pendingPlatformFee?: number;
 }

@@ -1,4 +1,5 @@
 export interface Goal {
+  availableBalance: number;
   id: string;
   _id: string;
   title: string;
@@ -26,6 +27,7 @@ export interface Goal {
   usePlatformFulfillment?: boolean;
   sharedWith?: SharedUser[];
   createdAt: string;
+  // availableBalance?: number;
 }
 
 export interface GoalFormData {
