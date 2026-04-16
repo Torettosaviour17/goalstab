@@ -13,7 +13,7 @@ export interface SharedUser {
 
 export interface Goal {
   _id: string;
-  id: string; // frontend alias
+  id: string;
   title: string;
   userTarget: number;
   fee: number;
@@ -40,7 +40,7 @@ export interface Goal {
   sharedWith: SharedUser[];
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
-  availableBalance?: number;
+  availableBalance: number; // ✅ required
   pendingPlatformFee?: number;
 }
 
@@ -61,15 +61,25 @@ export interface GoalFormData {
   goalType?: "product" | "service";
 }
 
+// Helper to normalize any goal object from the API
+const normalizeGoal = (goal: any): Goal => {
+  return {
+    ...goal,
+    id: goal.id || goal._id,
+    availableBalance:
+      typeof goal.availableBalance === "number"
+        ? goal.availableBalance
+        : goal.saved - goal.withdrawn,
+  };
+};
+
 export const useGoalsStore = defineStore("goals", () => {
   const uiStore = useUIStore();
   const levelStore = useLevelStore();
   const goals = ref<Goal[]>([]);
   const recentlyCompletedGoal = ref<Goal | null>(null);
   const loading = ref(false);
-  let fetching = false; // Guard flag to prevent concurrent fetches
-
-  const generateId = () => crypto.randomUUID();
+  let fetching = false;
 
   const recalculateProgress = (goal: Goal) => {
     if (goal.target <= 0) {
@@ -112,21 +122,11 @@ export const useGoalsStore = defineStore("goals", () => {
       console.log("[Goals] fetchGoals already in progress, skipping");
       return;
     }
-    console.trace("fetchGoals called");
     fetching = true;
     loading.value = true;
     try {
       const { data } = await api.get("/goals");
-      // Ensure id and availableBalance are set
-      goals.value = data.map((g: any) => ({
-        ...g,
-        id: g.id || g._id,
-        // ✅ Force availableBalance to be a number
-        availableBalance:
-          typeof g.availableBalance === "number"
-            ? g.availableBalance
-            : g.saved - g.withdrawn,
-      }));
+      goals.value = data.map((g: any) => normalizeGoal(g));
     } catch (err) {
       uiStore.addToast({ type: "error", message: "Failed to load goals" });
     } finally {
@@ -154,10 +154,10 @@ export const useGoalsStore = defineStore("goals", () => {
         goalType: goalData.goalType || "product",
       };
       const { data } = await api.post("/goals", payload);
-      if (data._id && !data.id) data.id = data._id;
-      goals.value.unshift(data);
+      const normalized = normalizeGoal(data);
+      goals.value.unshift(normalized);
       uiStore.addToast({ type: "success", message: "Goal created!" });
-      return data;
+      return normalized;
     } catch (err: any) {
       console.error("Add goal error:", err.response?.data || err.message);
       uiStore.addToast({
@@ -167,23 +167,19 @@ export const useGoalsStore = defineStore("goals", () => {
       throw err;
     }
   };
+
   const addFunds = async (id: string, amount: number) => {
     try {
       const { data } = await api.post(`/goals/${id}/add-funds`, { amount });
-
-      if (data._id && !data.id) data.id = data._id;
-
+      const normalized = normalizeGoal(data);
       const index = goals.value.findIndex((g) => g._id === id || g.id === id);
+      if (index !== -1) goals.value[index] = normalized;
 
-      if (index !== -1) goals.value[index] = data;
-
-      // 🔥 XP SYSTEM
       const xpGained = Math.floor(amount / 100);
       levelStore.addXP(xpGained);
 
-      // 🎉 BONUS XP IF COMPLETED
-      if (data.progress >= 100) {
-        recentlyCompletedGoal.value = data;
+      if (normalized.progress >= 100) {
+        recentlyCompletedGoal.value = normalized;
         levelStore.addXP(200);
       }
 
@@ -192,27 +188,25 @@ export const useGoalsStore = defineStore("goals", () => {
         message: `₦${amount.toLocaleString()} added (+${xpGained} XP 🔥)`,
       });
 
-      return data;
+      return normalized;
     } catch (err) {
       console.error("Add funds error:", err);
-
       uiStore.addToast({
         type: "error",
         message: "Failed to add funds",
       });
-
-      throw err; // now VALID
+      throw err;
     }
   };
 
   const updateGoal = async (id: string, updates: Partial<GoalFormData>) => {
     try {
       const { data } = await api.put(`/goals/${id}`, updates);
-      if (data._id && !data.id) data.id = data._id;
+      const normalized = normalizeGoal(data);
       const index = goals.value.findIndex((g) => g._id === id || g.id === id);
-      if (index !== -1) goals.value[index] = data;
+      if (index !== -1) goals.value[index] = normalized;
       uiStore.addToast({ type: "success", message: "Goal updated" });
-      return data;
+      return normalized;
     } catch (err) {
       uiStore.addToast({ type: "error", message: "Failed to update goal" });
       throw err;
@@ -230,7 +224,6 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
-  // 🔥 New share actions
   const shareGoal = async (
     goalId: string,
     email: string,
@@ -241,14 +234,14 @@ export const useGoalsStore = defineStore("goals", () => {
         email,
         role,
       });
-      if (data._id && !data.id) data.id = data._id;
+      const normalized = normalizeGoal(data);
       const index = goals.value.findIndex((g) => g._id === goalId);
-      if (index !== -1) goals.value[index] = data;
+      if (index !== -1) goals.value[index] = normalized;
       uiStore.addToast({
         type: "success",
         message: `Goal shared with ${email}`,
       });
-      return data;
+      return normalized;
     } catch (err: any) {
       uiStore.addToast({
         type: "error",
@@ -261,11 +254,11 @@ export const useGoalsStore = defineStore("goals", () => {
   const unshareGoal = async (goalId: string, userId: string) => {
     try {
       const { data } = await api.delete(`/goals/${goalId}/share/${userId}`);
-      if (data._id && !data.id) data.id = data._id;
+      const normalized = normalizeGoal(data);
       const index = goals.value.findIndex((g) => g._id === goalId);
-      if (index !== -1) goals.value[index] = data;
+      if (index !== -1) goals.value[index] = normalized;
       uiStore.addToast({ type: "success", message: "User removed from goal" });
-      return data;
+      return normalized;
     } catch (err: any) {
       uiStore.addToast({
         type: "error",
