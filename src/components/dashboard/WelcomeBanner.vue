@@ -10,13 +10,16 @@
       >
         <span class="text-xl">👋</span>
       </div>
+
       <div>
         <h3 class="font-semibold text-white">Welcome back, {{ userName }}!</h3>
+
         <p class="text-sm text-gray-300">
-          Ready to continue your savings journey✨?
+          Ready to continue your savings journey ✨?
         </p>
       </div>
     </div>
+
     <button
       @click="dismiss"
       class="p-2 hover:bg-gray-700 rounded-lg transition"
@@ -36,7 +39,30 @@ const props = defineProps<{
 }>();
 
 const uiStore = useUIStore();
-const visible = ref(!uiStore.welcomeBannerShown);
+const visible = ref(false);
+
+const STORAGE_KEY = "goaltabs_welcome_banner_last_shown";
+
+const getToday = () => new Date().toDateString();
+
+/**
+ * Check if banner was already shown today
+ */
+const shouldShowBanner = () => {
+  const lastShown = localStorage.getItem(STORAGE_KEY);
+  const today = getToday();
+
+  if (!lastShown) return true;
+
+  return lastShown !== today;
+};
+
+/**
+ * Save today's date so it doesn't show again
+ */
+const markAsShown = () => {
+  localStorage.setItem(STORAGE_KEY, getToday());
+};
 
 const dismiss = () => {
   visible.value = false;
@@ -44,10 +70,16 @@ const dismiss = () => {
 };
 
 onMounted(() => {
+  // global UI block (optional safety)
+  if (uiStore.welcomeBannerShown) return;
+
+  if (!shouldShowBanner()) return;
+
+  visible.value = true;
+  markAsShown();
+
   const timer = setTimeout(() => {
-    if (visible.value) {
-      dismiss();
-    }
+    if (visible.value) dismiss();
   }, 5000);
 
   return () => clearTimeout(timer);
@@ -58,6 +90,7 @@ onMounted(() => {
 .animate-slide-down {
   animation: slideDown 0.3s ease-out;
 }
+
 @keyframes slideDown {
   from {
     opacity: 0;
