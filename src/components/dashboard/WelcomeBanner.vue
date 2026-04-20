@@ -12,10 +12,12 @@
       </div>
 
       <div>
-        <h3 class="font-semibold text-white">Welcome back, {{ userName }}!</h3>
+        <h3 class="font-semibold text-white">
+          {{ greeting }}, {{ userName }}!
+        </h3>
 
         <p class="text-sm text-gray-300">
-          Ready to continue your savings journey ✨?
+          {{ message }}
         </p>
       </div>
     </div>
@@ -31,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useUIStore } from "@/stores/ui";
 
 const props = defineProps<{
@@ -42,42 +44,86 @@ const uiStore = useUIStore();
 const visible = ref(false);
 
 const STORAGE_KEY = "goaltabs_welcome_banner_last_shown";
+const FIRST_VISIT_KEY = "goaltabs_first_visit";
 
-const getToday = () => new Date().toDateString();
+/* -----------------------------
+   TIME BASED GREETING
+------------------------------*/
+const getGreeting = () => {
+  const hour = new Date().getHours();
 
-/**
- * Check if banner was already shown today
- */
-const shouldShowBanner = () => {
-  const lastShown = localStorage.getItem(STORAGE_KEY);
-  const today = getToday();
-
-  if (!lastShown) return true;
-
-  return lastShown !== today;
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
 };
 
-/**
- * Save today's date so it doesn't show again
- */
-const markAsShown = () => {
+const greeting = computed(() => getGreeting());
+
+/* -----------------------------
+   FIRST TIME CHECK
+------------------------------*/
+const isFirstVisit = () => {
+  return !localStorage.getItem(FIRST_VISIT_KEY);
+};
+
+/* -----------------------------
+   DAILY CHECK
+------------------------------*/
+const getToday = () => new Date().toDateString();
+
+const hasSeenToday = () => {
+  const last = localStorage.getItem(STORAGE_KEY);
+  return last === getToday();
+};
+
+const markSeenToday = () => {
   localStorage.setItem(STORAGE_KEY, getToday());
 };
 
+const markFirstVisit = () => {
+  localStorage.setItem(FIRST_VISIT_KEY, "true");
+};
+
+/* -----------------------------
+   MESSAGE LOGIC
+------------------------------*/
+const message = computed(() => {
+  if (isFirstVisit()) {
+    return "Welcome to GoalTabs 🚀 Let’s build your first savings goal!";
+  }
+
+  return "Ready to continue your savings journey ✨";
+});
+
+/* -----------------------------
+   DISMISS
+------------------------------*/
 const dismiss = () => {
   visible.value = false;
   uiStore.welcomeBannerShown = true;
+  markSeenToday();
 };
 
+/* -----------------------------
+   INIT
+------------------------------*/
 onMounted(() => {
-  // global UI block (optional safety)
   if (uiStore.welcomeBannerShown) return;
 
-  if (!shouldShowBanner()) return;
+  const firstVisit = isFirstVisit();
+  const todaySeen = hasSeenToday();
 
-  visible.value = true;
-  markAsShown();
+  // show if:
+  // - first time user OR
+  // - not seen today
+  if (firstVisit || !todaySeen) {
+    visible.value = true;
 
+    markSeenToday();
+    if (firstVisit) markFirstVisit();
+  }
+
+  // auto close after 5s
   const timer = setTimeout(() => {
     if (visible.value) dismiss();
   }, 5000);
