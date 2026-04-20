@@ -57,7 +57,7 @@
           <div
             class="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center light:bg-light-bg"
           >
-            <span class="text-2xl">🎉</span>
+            <span class="text-2xl">🎉✨</span>
           </div>
           <div>
             <p class="text-white font-medium light:text-gray-900">
