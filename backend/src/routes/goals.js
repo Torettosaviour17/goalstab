@@ -56,7 +56,7 @@ router.get("/", auth, async (req, res) => {
 
 // @route   POST api/goals
 // @desc    Create a goal
-router.post("/", auth, async (req, res) => {
+const createGoal = async (req, res) => {
   try {
     if (req.body.accountId === "") {
       req.body.accountId = undefined;
@@ -64,11 +64,11 @@ router.post("/", auth, async (req, res) => {
 
     const { userTarget, ...rest } = req.body;
     const fee = 100;
-    const target = userTarget + fee;
+    const target = Number(userTarget) + fee;
 
     const newGoal = new Goal({
       user: req.user.id,
-      userTarget,
+      userTarget: Number(userTarget),
       fee,
       target,
       goalType: req.body.goalType || "product",
@@ -78,11 +78,11 @@ router.post("/", auth, async (req, res) => {
     if (newGoal.autoSaveEnabled) {
       const now = new Date();
       if (newGoal.frequency === "daily")
-        newGoal.nextAutoSave = new Date(now.setDate(now.getDate() + 1));
+        newGoal.nextAutoSave = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       else if (newGoal.frequency === "weekly")
-        newGoal.nextAutoSave = new Date(now.setDate(now.getDate() + 7));
+        newGoal.nextAutoSave = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
       else if (newGoal.frequency === "monthly")
-        newGoal.nextAutoSave = new Date(now.setMonth(now.getMonth() + 1));
+        newGoal.nextAutoSave = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
     }
 
     const goal = await newGoal.save();
@@ -94,7 +94,9 @@ router.post("/", auth, async (req, res) => {
     console.error("POST goal error:", err);
     res.status(500).json({ msg: "Server error", error: err.message });
   }
-});
+};
+
+router.post("/", auth, createGoal);
 
 // @route   PUT api/goals/:id
 // @desc    Update a goal

@@ -147,7 +147,7 @@ const GoalSchema = new mongoose.Schema(
 // =========================
 // PRE-SAVE HOOK – Progress, Fee Deduction, Closure
 // =========================
-GoalSchema.pre("save", function (next) {
+GoalSchema.pre("save", async function () {
   // 1. Update progress
   if (this.target > 0) {
     this.progress = Math.min(100, Math.round((this.saved / this.target) * 100));
@@ -171,8 +171,6 @@ GoalSchema.pre("save", function (next) {
       this.isClosed = true;
     }
   }
-
-  next();
 });
 
 // =========================
