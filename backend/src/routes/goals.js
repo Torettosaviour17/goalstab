@@ -5,13 +5,16 @@ const Goal = require("../models/Goal");
 const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
 const GoalActivity = require("../models/GoalActivity");
-const User = require("../models/User"); // <-- ADD THIS
+const User = require("../models/User");
 const { sendNotification } = require("./notifications");
 const { runAutoSave } = require("../services/autoSave");
 const { sendEmailToUser } = require("../services/emailService");
 const shoppingService = require("../services/shoppingService");
 
-// Helper to record activity
+// ================================
+// HELPER
+// ================================
+
 async function recordGoalActivity(
   goalId,
   userId,
@@ -31,6 +34,10 @@ async function recordGoalActivity(
     console.error("Failed to record activity:", err);
   }
 }
+
+// ================================
+// GOALS CRUD
+// ================================
 
 // @route   GET api/goals
 // @desc    Get all goals for user
@@ -55,9 +62,8 @@ router.post("/", auth, async (req, res) => {
       req.body.accountId = undefined;
     }
 
-    // New fields
     const { userTarget, ...rest } = req.body;
-    const fee = 100; // fixed fee
+    const fee = 100;
     const target = userTarget + fee;
 
     const newGoal = new Goal({
@@ -71,7 +77,6 @@ router.post("/", auth, async (req, res) => {
 
     if (newGoal.autoSaveEnabled) {
       const now = new Date();
-
       if (newGoal.frequency === "daily")
         newGoal.nextAutoSave = new Date(now.setDate(now.getDate() + 1));
       else if (newGoal.frequency === "weekly")
@@ -82,7 +87,6 @@ router.post("/", auth, async (req, res) => {
 
     const goal = await newGoal.save();
 
-    // Record activity
     await recordGoalActivity(goal._id, req.user.id, "goal_created");
 
     res.json(goal.toObject ? goal.toObject() : goal);
@@ -136,8 +140,11 @@ router.delete("/:id", auth, async (req, res) => {
   }
 });
 
+// ================================
+// ADD FUNDS
+// ================================
+
 // @route   POST api/goals/:id/add-funds
-// @desc    Add funds to a goal
 router.post("/:id/add-funds", auth, async (req, res) => {
   try {
     let { amount } = req.body;
@@ -159,7 +166,6 @@ router.post("/:id/add-funds", auth, async (req, res) => {
 
     await goal.save();
 
-    // Record activity
     await recordGoalActivity(goal._id, req.user.id, "funds_added", amount);
 
     await Transaction.create({
@@ -183,7 +189,6 @@ router.post("/:id/add-funds", auth, async (req, res) => {
       message: `Funds added to ${goal.title}`,
     });
 
-    // After adding funds
     await sendEmailToUser(
       req.user.id,
       "Funds Added",
@@ -191,7 +196,6 @@ router.post("/:id/add-funds", auth, async (req, res) => {
     );
 
     if (goal.saved >= goal.target) {
-      // Record activity
       await recordGoalActivity(goal._id, req.user.id, "goal_completed");
 
       await Notification.create({
@@ -216,37 +220,30 @@ router.post("/:id/add-funds", auth, async (req, res) => {
          <a href="${process.env.FRONTEND_URL}/goals/${goal.id}" style="background-color:#3b82f6; color:white; padding:10px 20px; text-decoration:none; border-radius:8px;">View Goal</a>`,
       );
 
-      // Auto‑fulfill if platform fulfillment is enabled
       if (goal.usePlatformFulfillment) {
         goal.fulfillmentStatus = "processing";
         await goal.save();
 
-        // Record activity
         await recordGoalActivity(
           goal._id,
           req.user.id,
           "fulfillment_started",
           null,
-          {
-            details: goal.fulfillmentDetails,
-          },
+          { details: goal.fulfillmentDetails },
         );
 
-        // Notify admin
         const adminUsers = await User.find({ isAdmin: true });
         for (const admin of adminUsers) {
           await sendEmailToUser(
             admin.id,
             "New Fulfillment Request",
-            `<p>Goal "${goal.title}" (${goal._id}) by ${req.user.name} needs fulfillment.</p>
+            `<p>Goal "${goal.title}" (${goal._id}) needs fulfillment.</p>
              <p>Details: ${JSON.stringify(goal.fulfillmentDetails)}</p>
              <a href="${process.env.FRONTEND_URL}/admin/fulfillment">Go to Admin Dashboard</a>`,
           );
         }
 
-        // Optionally, send an email to admin or trigger external API
-        // For now, just log
-        console.log(`Auto‑fulfillment triggered for goal ${goal._id}`);
+        console.log(`Auto-fulfillment triggered for goal ${goal._id}`);
       }
     }
 
@@ -258,11 +255,10 @@ router.post("/:id/add-funds", auth, async (req, res) => {
 });
 
 // ================================
-// SHARE GOAL FEATURE
+// SHARE GOAL
 // ================================
 
 // @route   POST api/goals/:id/share
-// @desc    Share goal with another user
 router.post("/:id/share", auth, async (req, res) => {
   const { email, role } = req.body;
 
@@ -280,22 +276,16 @@ router.post("/:id/share", auth, async (req, res) => {
 
     const userToShare = await User.findOne({ email });
 
-    if (!userToShare) {
-      return res.status(404).json({ msg: "User not found" });
-    }
+    if (!userToShare) return res.status(404).json({ msg: "User not found" });
 
     if (goal.sharedWith.some((u) => u.user.toString() === userToShare.id)) {
       return res.status(400).json({ msg: "User already has access" });
     }
 
-    goal.sharedWith.push({
-      user: userToShare.id,
-      role,
-    });
+    goal.sharedWith.push({ user: userToShare.id, role });
 
     await goal.save();
 
-    // Send invitation email
     await sendEmailToUser(
       userToShare.id,
       `${req.user.name} shared a goal with you!`,
@@ -305,7 +295,6 @@ router.post("/:id/share", auth, async (req, res) => {
        <p>If you don't have an account yet, you'll need to register to view it.</p>`,
     );
 
-    // Record activity
     await recordGoalActivity(goal._id, req.user.id, "goal_shared", null, {
       email,
       role,
@@ -322,7 +311,6 @@ router.post("/:id/share", auth, async (req, res) => {
 });
 
 // @route   DELETE api/goals/:id/share/:userId
-// @desc    Remove shared user
 router.delete("/:id/share/:userId", auth, async (req, res) => {
   try {
     const goal = await Goal.findById(req.params.id);
@@ -338,7 +326,6 @@ router.delete("/:id/share/:userId", auth, async (req, res) => {
 
     await goal.save();
 
-    // Record activity
     await recordGoalActivity(goal._id, req.user.id, "user_removed", null, {
       userId: req.params.userId,
     });
@@ -353,11 +340,10 @@ router.delete("/:id/share/:userId", auth, async (req, res) => {
 });
 
 // ================================
-// FULFILLMENT REQUEST
+// FULFILLMENT
 // ================================
 
 // @route   POST api/goals/:id/fulfillment-request
-// @desc    User requests fulfillment for a completed goal
 router.post("/:id/fulfillment-request", auth, async (req, res) => {
   const { details } = req.body;
   try {
@@ -372,12 +358,10 @@ router.post("/:id/fulfillment-request", auth, async (req, res) => {
         .status(400)
         .json({ msg: "Fulfillment already requested or completed" });
 
-    // Update fulfillment
     goal.fulfillmentStatus = "processing";
     if (details) goal.fulfillmentDetails = details;
     await goal.save();
 
-    // Record activity
     await recordGoalActivity(
       goal._id,
       req.user.id,
@@ -398,15 +382,12 @@ router.post("/:id/fulfillment-request", auth, async (req, res) => {
 // ================================
 
 // @route   POST api/goals/auto-save/trigger
-// @desc    Manually trigger auto-save
 router.post("/auto-save/trigger", auth, async (req, res) => {
   try {
     await runAutoSave();
-
     res.json({ msg: "Auto-save triggered successfully" });
   } catch (err) {
     console.error("Auto-save trigger error:", err);
-
     res.status(500).json({ msg: "Auto-save failed" });
   }
 });
@@ -416,13 +397,11 @@ router.post("/auto-save/trigger", auth, async (req, res) => {
 // ================================
 
 // @route   GET api/goals/:id/activities
-// @desc    Get activity feed for a goal
 router.get("/:id/activities", auth, async (req, res) => {
   try {
     const goal = await Goal.findById(req.params.id);
     if (!goal) return res.status(404).json({ msg: "Goal not found" });
 
-    // Check if user has access (owner or shared)
     const hasAccess =
       goal.user.toString() === req.user.id ||
       goal.sharedWith.some((u) => u.user.toString() === req.user.id);
@@ -432,6 +411,7 @@ router.get("/:id/activities", auth, async (req, res) => {
       .populate("user", "name email")
       .sort({ createdAt: -1 })
       .limit(50);
+
     res.json(activities);
   } catch (err) {
     console.error(err);
@@ -439,14 +419,12 @@ router.get("/:id/activities", auth, async (req, res) => {
   }
 });
 
-module.exports = router;
-
 // ================================
 // SHOPPING INTEGRATION
 // ================================
 
 // @route   GET api/goals/shopping/search
-// @desc    Search products from e‑commerce API
+// NOTE: must be defined BEFORE /:id routes to avoid conflict
 router.get("/shopping/search", auth, async (req, res) => {
   const { q } = req.query;
   if (!q) return res.json([]);
@@ -460,7 +438,6 @@ router.get("/shopping/search", auth, async (req, res) => {
 });
 
 // @route   POST api/goals/:id/shopping/purchase
-// @desc    Purchase product using saved funds
 router.post("/:id/shopping/purchase", auth, async (req, res) => {
   const { productId, provider = "mock" } = req.body;
   try {
@@ -473,25 +450,18 @@ router.post("/:id/shopping/purchase", auth, async (req, res) => {
     if (goal.saved < goal.target)
       return res.status(400).json({ msg: "Insufficient funds" });
 
-    // For real integration, we'd need user's shipping address, etc.
     const user = await User.findById(req.user.id);
     const result = await shoppingService.purchaseProduct(
       productId,
-      {
-        name: user.name,
-        email: user.email,
-        // address fields would be needed
-      },
+      { name: user.name, email: user.email },
       provider,
     );
 
     if (result.success) {
-      // Mark goal as fulfilled
       goal.fulfillmentStatus = "processing";
       goal.fulfillmentDetails = { purchase: result };
       await goal.save();
 
-      // Record activity
       await recordGoalActivity(
         goal._id,
         req.user.id,
@@ -510,4 +480,7 @@ router.post("/:id/shopping/purchase", auth, async (req, res) => {
   }
 });
 
+// ================================
+// SINGLE EXPORT AT THE BOTTOM
+// ================================
 module.exports = router;

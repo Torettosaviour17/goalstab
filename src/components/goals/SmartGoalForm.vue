@@ -1,150 +1,198 @@
 <template>
-  <div class="space-y-5">
-    <!-- Step Progress – scrollable on small screens, more compact -->
-    <div class="relative mb-5">
+  <div class="space-y-6">
+    <!-- Step Progress -->
+    <div class="relative">
       <div
         class="flex overflow-x-auto scrollbar-hide gap-2 pb-2 -mx-4 px-4 md:mx-0 md:px-0"
       >
         <div
-          v-for="(step, index) in steps"
-          :key="step.key"
+          v-for="(step, i) in steps"
+          :key="i"
           class="flex items-center flex-shrink-0"
         >
           <div class="flex items-center">
             <div
               class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
               :class="[
-                currentStep > index + 1
+                currentStep > i + 1
                   ? 'bg-primary-500 text-white'
-                  : currentStep === index + 1
+                  : currentStep === i + 1
                     ? 'bg-primary-500 text-white ring-4 ring-primary-500/30'
                     : 'bg-gray-700 text-gray-400',
               ]"
             >
-              {{ currentStep > index + 1 ? "✓" : index + 1 }}
+              {{ currentStep > i + 1 ? "✓" : i + 1 }}
             </div>
             <span
               class="ml-2 text-xs whitespace-nowrap"
-              :class="[
-                currentStep === index + 1
+              :class="
+                currentStep === i + 1
                   ? 'text-white font-medium'
-                  : 'text-gray-500',
-              ]"
+                  : 'text-gray-500'
+              "
             >
               {{ step.label }}
             </span>
           </div>
           <div
-            v-if="index < steps.length - 1"
+            v-if="i < steps.length - 1"
             class="w-10 h-0.5 mx-3"
-            :class="currentStep > index + 1 ? 'bg-primary-500' : 'bg-gray-700'"
-          ></div>
+            :class="currentStep > i + 1 ? 'bg-primary-500' : 'bg-gray-700'"
+          />
         </div>
       </div>
-      <!-- Gradient edges for scroll hint -->
       <div
         class="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900 to-transparent pointer-events-none md:hidden"
-      ></div>
+      />
       <div
         class="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900 to-transparent pointer-events-none md:hidden"
-      ></div>
+      />
     </div>
 
     <form @submit.prevent="handleSubmit" class="space-y-5">
-      <!-- Step 1: Basic Info -->
+      <!-- ───── STEP 1: What do you want? ───── -->
       <div v-if="currentStep === 1" class="space-y-4 animate-fade-in">
-        <h3 class="text-lg font-bold text-white mb-3">
-          Let's start with the basics
-        </h3>
-
-        <!-- Goal Type Selection -->
         <div>
-          <label class="block text-xs font-medium text-gray-300 mb-2"
-            >What are you saving for?</label
+          <h3 class="text-lg font-bold text-white">What are you saving for?</h3>
+          <p class="text-xs text-gray-400 mt-0.5">
+            Search for a product and we'll fill in the price for you.
+          </p>
+        </div>
+
+        <!-- Category pills -->
+        <div class="flex gap-2 flex-wrap">
+          <button
+            v-for="cat in categories"
+            :key="cat.value"
+            type="button"
+            @click="goalCategory = cat.value"
+            class="px-3 py-1.5 rounded-full text-xs font-medium border-2 transition-all"
+            :class="
+              goalCategory === cat.value
+                ? 'border-primary-500 bg-primary-500/10 text-white'
+                : 'border-gray-700 text-gray-400 hover:border-gray-600'
+            "
           >
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button
-              type="button"
-              @click="goalCategory = 'product'"
-              class="p-3 rounded-xl border-2 transition-all duration-200 text-left"
-              :class="[
-                goalCategory === 'product'
-                  ? 'border-primary-500 bg-primary-500/10'
-                  : 'border-gray-700 hover:border-gray-600',
-              ]"
+            {{ cat.icon }} {{ cat.label }}
+          </button>
+        </div>
+
+        <!-- Product search -->
+        <div v-if="goalCategory === 'product'">
+          <label class="block text-xs font-medium text-gray-300 mb-1">
+            Search for a product
+            <span
+              class="ml-1 text-[10px] text-primary-400 bg-primary-500/10 px-1.5 py-0.5 rounded-full"
+              >autofills price</span
             >
-              <span class="text-xl block mb-1">📦</span>
-              <span class="text-sm font-medium text-white block">Product</span>
-              <p class="text-[11px] text-gray-400 mt-0.5">
-                Electronics, gadgets, items
-              </p>
-            </button>
-            <button
-              type="button"
-              @click="goalCategory = 'service'"
-              class="p-3 rounded-xl border-2 transition-all duration-200 text-left"
-              :class="[
-                goalCategory === 'service'
-                  ? 'border-primary-500 bg-primary-500/10'
-                  : 'border-gray-700 hover:border-gray-600',
-              ]"
+          </label>
+          <div class="relative">
+            <span
+              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
+              >🔍</span
             >
-              <span class="text-xl block mb-1">🎫</span>
-              <span class="text-sm font-medium text-white block">Service</span>
-              <p class="text-[11px] text-gray-400 mt-0.5">
-                Travel, events, fees, rent
-              </p>
-            </button>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="e.g. iPhone 16, MacBook Air..."
+              class="w-full pl-9 pr-4 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+              @input="onSearchInput"
+              @focus="showDropdown = true"
+            />
+            <div
+              v-if="searching"
+              class="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-t-2 border-primary-500"
+              />
+            </div>
+          </div>
+
+          <!-- Inline search dropdown -->
+          <div
+            v-if="
+              showDropdown && (searchResults.length || searchQuery.length > 1)
+            "
+            class="mt-1 bg-gray-800 border border-gray-700 rounded-xl overflow-hidden"
+          >
+            <div
+              v-for="product in searchResults"
+              :key="product.id"
+              class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-700/60 transition"
+              @click="applyProduct(product)"
+            >
+              <img
+                :src="product.image"
+                class="w-9 h-9 rounded-lg object-contain bg-gray-700 flex-shrink-0"
+              />
+              <div class="flex-1 min-w-0">
+                <p class="text-sm text-white font-medium truncate">
+                  {{ product.name }}
+                </p>
+                <p class="text-xs text-gray-400">{{ product.store }}</p>
+              </div>
+              <span class="text-sm text-primary-400 font-medium flex-shrink-0"
+                >₦{{ format(product.price) }}</span
+              >
+            </div>
+            <div
+              v-if="
+                !searchResults.length && searchQuery.length > 1 && !searching
+              "
+              class="px-3 py-3 text-sm text-gray-400 text-center"
+            >
+              No results — enter amount manually below
+            </div>
           </div>
         </div>
 
-        <!-- Platform Fulfillment Toggle -->
-        <div class="flex items-center gap-2 pt-2">
-          <input
-            id="usePlatformFulfillment"
-            v-model="usePlatformFulfillment"
-            type="checkbox"
-            class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-primary-500 focus:ring-primary-500"
+        <!-- Selected product preview -->
+        <div
+          v-if="selectedProduct"
+          class="bg-gray-800/70 p-3 rounded-xl flex gap-3 items-center"
+        >
+          <img
+            :src="selectedProduct.image"
+            class="w-12 h-12 rounded-lg object-contain bg-gray-700 flex-shrink-0"
           />
-          <label for="usePlatformFulfillment" class="text-xs text-gray-300">
-            I want GoalTabs to handle fulfillment (purchase/booking)
-            automatically when the goal is reached
-          </label>
+          <div class="flex-1 min-w-0">
+            <p class="text-white text-sm font-medium truncate">
+              {{ selectedProduct.name }}
+            </p>
+            <p class="text-primary-400 text-xs">
+              ₦{{ format(selectedProduct.price) }} · {{ selectedProduct.store }}
+            </p>
+          </div>
+          <button
+            type="button"
+            @click="clearProduct"
+            class="text-gray-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-gray-700"
+          >
+            ✕
+          </button>
         </div>
 
-        <!-- Title -->
+        <!-- Goal title -->
         <div>
           <label class="block text-xs font-medium text-gray-300 mb-1"
-            >Goal Title</label
+            >Goal title</label
           >
           <input
             v-model="title"
             type="text"
             required
             :placeholder="
-              goalCategory === 'product'
-                ? 'e.g., MacBook Pro'
-                : 'e.g., Bali Vacation'
+              goalCategory === 'product' ? 'e.g. MacBook Pro' : 'e.g. Bali Trip'
             "
             class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
 
-        <!-- Find Product Button (for products only) -->
-        <div v-if="goalCategory === 'product'" class="flex justify-end">
-          <button
-            type="button"
-            @click="openProductSearch"
-            class="text-sm text-primary-400 hover:text-primary-300 transition"
-          >
-            🔍 Find a product
-          </button>
-        </div>
-
-        <!-- Target Amount -->
+        <!-- Target amount -->
         <div>
           <label class="block text-xs font-medium text-gray-300 mb-1"
-            >Target Amount (₦)</label
+            >Target amount (₦)</label
           >
           <div class="relative">
             <span
@@ -156,49 +204,189 @@
               type="number"
               required
               min="1000"
-              step="1000"
+              step="500"
               placeholder="0"
               class="w-full pl-8 pr-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
         </div>
+
+        <!-- Fulfillment -->
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-2"
+            >How should GoalTabs handle it?</label
+          >
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              @click="setFulfillment(true)"
+              class="p-3 rounded-xl border-2 text-left transition-all"
+              :class="
+                usePlatformFulfillment
+                  ? 'border-primary-500 bg-primary-500/10'
+                  : 'border-gray-700 hover:border-gray-600'
+              "
+            >
+              <span class="text-lg block mb-1">🚀</span>
+              <span class="text-xs font-medium text-white block"
+                >GoalTabs handles it</span
+              >
+              <p class="text-[11px] text-gray-400 mt-0.5">
+                We purchase automatically when you're done
+              </p>
+            </button>
+            <button
+              type="button"
+              @click="setFulfillment(false)"
+              class="p-3 rounded-xl border-2 text-left transition-all"
+              :class="
+                !usePlatformFulfillment
+                  ? 'border-primary-500 bg-primary-500/10'
+                  : 'border-gray-700 hover:border-gray-600'
+              "
+            >
+              <span class="text-lg block mb-1">🧠</span>
+              <span class="text-xs font-medium text-white block"
+                >I'll handle it</span
+              >
+              <p class="text-[11px] text-gray-400 mt-0.5">
+                Just save the money, I'll buy it myself
+              </p>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Step 2: Product/Service Details -->
-      <div v-else-if="currentStep === 2" class="space-y-4 animate-fade-in">
-        <h3 class="text-lg font-bold text-white mb-3">Additional details</h3>
+      <!-- ───── STEP 2: When do you want it? ───── -->
+      <div v-else-if="currentStep === 2" class="space-y-5 animate-fade-in">
+        <div>
+          <h3 class="text-lg font-bold text-white">When do you want it?</h3>
+          <p class="text-xs text-gray-400 mt-0.5">
+            Move the slider — we'll work out how much to save.
+          </p>
+        </div>
 
-        <!-- Product-specific fields -->
-        <template v-if="goalCategory === 'product'">
-          <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1"
-              >Product Link (optional)</label
+        <!-- Frequency toggle -->
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-2"
+            >Save every</label
+          >
+          <div class="flex gap-2">
+            <button
+              v-for="f in frequencies"
+              :key="f.value"
+              type="button"
+              @click="frequency = f.value as 'daily' | 'weekly' | 'monthly'"
+              class="flex-1 py-2 text-xs rounded-lg border transition-all"
+              :class="
+                frequency === f.value
+                  ? 'bg-primary-500 border-primary-500 text-white'
+                  : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'
+              "
             >
-            <input
-              v-model="productLink"
-              type="url"
-              placeholder="https://..."
-              class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+              {{ f.label }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Time slider -->
+        <div>
+          <div class="flex justify-between items-baseline mb-2">
+            <div>
+              <span class="text-2xl font-bold text-white">{{
+                sliderLabel
+              }}</span>
+              <span class="text-xs text-gray-400 ml-2">{{
+                sliderSubLabel
+              }}</span>
+            </div>
+          </div>
+          <input
+            v-model.number="weeks"
+            type="range"
+            min="1"
+            max="52"
+            step="1"
+            class="w-full accent-primary-500"
+          />
+          <div class="flex justify-between text-[10px] text-gray-500 mt-1">
+            <span>1 week</span>
+            <span>52 weeks</span>
+          </div>
+        </div>
+
+        <!-- Live calculation card -->
+        <div
+          class="bg-primary-500/10 border border-primary-500/30 rounded-xl p-4 space-y-2"
+        >
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-400">Goal amount</span>
+            <span class="text-white font-medium">₦{{ format(target) }}</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-400">Duration</span>
+            <span class="text-white font-medium">{{ sliderLabel }}</span>
+          </div>
+          <div class="border-t border-primary-500/20 pt-2 flex justify-between">
+            <span class="text-sm font-medium text-primary-300"
+              >Save per {{ frequencyLabel }}</span
+            >
+            <span class="text-lg font-bold text-primary-300"
+              >₦{{ format(amountPerPeriod) }}</span
+            >
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-400">Estimated completion</span>
+            <span class="text-white font-medium">{{ completionDate }}</span>
+          </div>
+        </div>
+
+        <!-- Icon picker -->
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-2"
+            >Goal icon</label
+          >
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="ic in icons"
+              :key="ic"
+              type="button"
+              @click="icon = ic"
+              class="w-9 h-9 rounded-lg flex items-center justify-center text-lg transition"
+              :class="
+                icon === ic
+                  ? 'bg-primary-500 ring-2 ring-primary-500/50'
+                  : 'bg-gray-700 hover:bg-gray-600'
+              "
+            >
+              {{ ic }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Color picker -->
+        <div>
+          <label class="block text-xs font-medium text-gray-300 mb-2"
+            >Color theme</label
+          >
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="c in colors"
+              :key="c.value"
+              type="button"
+              @click="color = c.value"
+              class="w-9 h-9 rounded-lg transition ring-offset-2 ring-offset-gray-900"
+              :style="{ background: c.bg }"
+              :class="color === c.value ? 'ring-2 ring-white' : ''"
             />
           </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1"
-              >Store Name (optional)</label
-            >
-            <input
-              v-model="storeName"
-              type="text"
-              placeholder="e.g., Apple Store"
-              class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-        </template>
+        </div>
 
         <!-- Service-specific fields -->
-        <template v-else-if="goalCategory === 'service'">
+        <template v-if="goalCategory === 'service'">
           <div>
             <label class="block text-xs font-medium text-gray-300 mb-1"
-              >Service Date (optional)</label
+              >Service date (optional)</label
             >
             <input
               v-model="serviceDate"
@@ -213,202 +401,106 @@
             <input
               v-model="location"
               type="text"
-              placeholder="City, venue, etc."
+              placeholder="City, venue..."
               class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1"
-              >Number of People (optional)</label
-            >
-            <input
-              v-model.number="peopleCount"
-              type="number"
-              min="1"
-              placeholder="e.g., 2"
-              class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1"
-              >Special Instructions (optional)</label
-            >
-            <textarea
-              v-model="instructions"
-              rows="2"
-              placeholder="Any additional details..."
-              class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-            ></textarea>
           </div>
         </template>
 
-        <!-- Icon & Color (common) -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Product manual link (self-fulfillment) -->
+        <template v-if="goalCategory === 'product' && !usePlatformFulfillment">
           <div>
-            <label class="block text-xs font-medium text-gray-300 mb-2"
-              >Icon</label
-            >
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                v-for="iconItem in icons"
-                :key="iconItem"
-                type="button"
-                @click="icon = iconItem"
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-base transition"
-                :class="
-                  icon === iconItem
-                    ? 'bg-primary-500'
-                    : 'bg-gray-700 hover:bg-gray-600'
-                "
-              >
-                {{ iconItem }}
-              </button>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-300 mb-2"
-              >Color Theme</label
-            >
-            <div class="flex flex-wrap gap-1.5">
-              <button
-                v-for="colorItem in colors"
-                :key="colorItem.value"
-                type="button"
-                @click="color = colorItem.value"
-                class="w-8 h-8 rounded-lg transition ring-offset-2 ring-offset-gray-900"
-                :style="{ background: colorItem.bg }"
-                :class="color === colorItem.value ? 'ring-2 ring-white' : ''"
-                :title="colorItem.label"
-              ></button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 3: Auto-save Settings -->
-      <div v-else-if="currentStep === 3" class="space-y-4 animate-fade-in">
-        <h3 class="text-lg font-bold text-white mb-3">Auto-save settings</h3>
-
-        <!-- Auto-save Type -->
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-2"
-            >Auto-save Type</label
-          >
-          <div class="flex flex-col sm:flex-row gap-2">
-            <button
-              type="button"
-              @click="type = 'percentage'"
-              class="flex-1 py-2.5 text-sm rounded-lg transition"
-              :class="
-                type === 'percentage'
-                  ? 'bg-primary-500'
-                  : 'bg-gray-700 hover:bg-gray-600'
-              "
-            >
-              Percentage
-            </button>
-            <button
-              type="button"
-              @click="type = 'fixed'"
-              class="flex-1 py-2.5 text-sm rounded-lg transition"
-              :class="
-                type === 'fixed'
-                  ? 'bg-primary-500'
-                  : 'bg-gray-700 hover:bg-gray-600'
-              "
-            >
-              Fixed Amount
-            </button>
-          </div>
-        </div>
-
-        <!-- Auto-save Value -->
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1">
-            {{
-              type === "percentage"
-                ? "Percentage of income (%)"
-                : "Amount per period (₦)"
-            }}
-          </label>
-          <div class="relative">
-            <span
-              v-if="type === 'fixed'"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
-              >₦</span
+            <label class="block text-xs font-medium text-gray-300 mb-1"
+              >Product link (optional)</label
             >
             <input
-              v-model.number="autoSave"
-              type="number"
-              required
-              :min="type === 'percentage' ? 1 : 100"
-              :max="type === 'percentage' ? 100 : undefined"
+              v-model="productLink"
+              type="url"
+              placeholder="https://..."
               class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-              :class="{ 'pl-8': type === 'fixed' }"
             />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-300 mb-1"
+              >Store name (optional)</label
+            >
+            <input
+              v-model="storeName"
+              type="text"
+              placeholder="e.g. Jumia"
+              class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+        </template>
+      </div>
+
+      <!-- ───── STEP 3: Confirm ───── -->
+      <div v-else-if="currentStep === 3" class="space-y-4 animate-fade-in">
+        <div>
+          <h3 class="text-lg font-bold text-white">Looks good — confirm</h3>
+          <p class="text-xs text-gray-400 mt-0.5">
+            Review your goal before creating it.
+          </p>
+        </div>
+
+        <!-- Goal preview card -->
+        <div
+          class="rounded-xl p-4 space-y-3"
+          :style="{ background: cardGradient }"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl"
+            >
+              {{ icon }}
+            </div>
+            <div>
+              <p class="text-white font-semibold">{{ title }}</p>
+              <p class="text-white/70 text-xs">₦{{ format(target) }} target</p>
+            </div>
+          </div>
+          <div class="h-1.5 rounded-full bg-white/20 overflow-hidden">
+            <div class="h-full w-0 rounded-full bg-white/80" />
+          </div>
+          <div class="flex justify-between text-xs text-white/70">
+            <span>₦0 saved</span>
+            <span>Due {{ completionDate }}</span>
           </div>
         </div>
 
-        <!-- Frequency -->
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-2"
-            >Frequency</label
-          >
-          <select
-            v-model="frequency"
-            class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
+        <!-- Summary table -->
+        <div
+          class="bg-gray-800/50 rounded-xl overflow-hidden divide-y divide-gray-700/50"
+        >
+          <div class="flex justify-between px-4 py-3 text-sm">
+            <span class="text-gray-400">Auto-save</span>
+            <span class="text-white font-medium"
+              >₦{{ format(amountPerPeriod) }} / {{ frequencyLabel }}</span
+            >
+          </div>
+          <div class="flex justify-between px-4 py-3 text-sm">
+            <span class="text-gray-400">Frequency</span>
+            <span class="text-white font-medium capitalize">{{
+              frequency
+            }}</span>
+          </div>
+          <div class="flex justify-between px-4 py-3 text-sm">
+            <span class="text-gray-400">Duration</span>
+            <span class="text-white font-medium">{{ sliderLabel }}</span>
+          </div>
+          <div class="flex justify-between px-4 py-3 text-sm">
+            <span class="text-gray-400">Fulfillment</span>
+            <span class="text-white font-medium">{{
+              usePlatformFulfillment ? "🚀 GoalTabs" : "🧠 Self"
+            }}</span>
+          </div>
+          <div class="flex justify-between px-4 py-3 text-sm">
+            <span class="text-gray-400">Target date</span>
+            <span class="text-white font-medium">{{ completionDate }}</span>
+          </div>
         </div>
 
-        <!-- Enable Auto-save Checkbox -->
-        <div class="flex items-center gap-2 pt-1">
-          <input
-            id="autoSaveEnabled"
-            v-model="autoSaveEnabled"
-            type="checkbox"
-            class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-primary-500 focus:ring-primary-500"
-          />
-          <label for="autoSaveEnabled" class="text-xs text-gray-300"
-            >Enable auto‑save</label
-          >
-        </div>
-
-        <!-- Deadline (optional) -->
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1"
-            >Deadline (optional)</label
-          >
-          <input
-            v-model="deadline"
-            type="date"
-            class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
-
-        <!-- Category (optional) -->
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-1"
-            >Category</label
-          >
-          <select
-            v-model="category"
-            class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">Select category</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Travel">Travel</option>
-            <option value="Savings">Savings</option>
-            <option value="Education">Education</option>
-            <option value="Health">Health</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <!-- Account Selector -->
+        <!-- Linked account -->
         <AccountSelector
           v-if="accountsStore.accounts.length > 0"
           v-model="accountId"
@@ -416,25 +508,25 @@
         />
       </div>
 
-      <!-- Navigation Buttons -->
-      <div class="flex flex-col sm:flex-row gap-3 pt-4">
+      <!-- Navigation -->
+      <div class="flex gap-3 pt-2">
         <BaseButton
           v-if="currentStep > 1"
           type="button"
           variant="secondary"
-          class="w-full sm:w-auto text-sm py-2"
+          class="text-sm py-2 px-4"
           @click="prevStep"
         >
           ← Back
         </BaseButton>
-        <div class="flex-1"></div>
+        <div class="flex-1" />
         <BaseButton
           v-if="currentStep < steps.length"
           type="button"
           variant="primary"
-          class="w-full sm:w-auto text-sm py-2"
-          @click="nextStep"
+          class="text-sm py-2 px-5"
           :disabled="!canProceed"
+          @click="nextStep"
         >
           Continue →
         </BaseButton>
@@ -442,25 +534,23 @@
           v-else
           type="submit"
           variant="primary"
-          class="w-full sm:w-auto text-sm py-2"
+          class="text-sm py-2 px-5"
           :loading="loading"
         >
-          Create Goal
+          Create goal
         </BaseButton>
       </div>
     </form>
   </div>
-
-  <!-- Product Search Modal -->
-  <ProductSearchModal v-model="showProductSearch" @select="onProductSelected" />
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from "vue";
+import { ref, computed, watch } from "vue";
+import debounce from "lodash/debounce";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import AccountSelector from "@/components/accounts/AccountSelector.vue";
-import ProductSearchModal from "@/components/goals/ProductSearchModal.vue";
 import { useAccountsStore } from "@/stores/accounts";
+import api from "@/services/api";
 
 const props = withDefaults(
   defineProps<{
@@ -468,30 +558,19 @@ const props = withDefaults(
       goalCategory: "product" | "service";
       title: string;
       userTarget: number;
-      fee?: number;
       icon: string;
       color: string;
-      type: "percentage" | "fixed";
-      autoSave: number;
       frequency: "daily" | "weekly" | "monthly";
       deadline?: string;
-      category?: string;
       accountId?: string;
-      autoSaveEnabled?: boolean;
       usePlatformFulfillment?: boolean;
       productLink?: string;
       storeName?: string;
       serviceDate?: string;
       location?: string;
-      peopleCount?: number;
-      instructions?: string;
     }>;
-    submitLabel?: string;
   }>(),
-  {
-    initialData: () => ({}),
-    submitLabel: "Create Goal",
-  },
+  { initialData: () => ({}) },
 );
 
 const emit = defineEmits<{
@@ -500,42 +579,154 @@ const emit = defineEmits<{
 
 const accountsStore = useAccountsStore();
 
+// ── Steps ──────────────────────────────────────────────
 const steps = [
-  { key: "type", label: "Goal Type" },
-  { key: "details", label: "Details" },
-  { key: "auto", label: "Auto-save" },
+  { label: "What you want" },
+  { label: "How fast" },
+  { label: "Confirm" },
 ];
-
 const currentStep = ref(1);
 const loading = ref(false);
 
-const goalCategory = ref(props.initialData.goalCategory || "product");
-const title = ref(props.initialData.title || "");
-const target = ref(props.initialData.userTarget || 0);
-const fee = 100; // fixed platform fee
-const icon = ref(props.initialData.icon || "💻");
-const color = ref(props.initialData.color || "from-blue-500 to-cyan-400");
-const type = ref(props.initialData.type || "percentage");
-const autoSave = ref(props.initialData.autoSave || 10);
-const frequency = ref(props.initialData.frequency || "weekly");
-const deadline = ref(props.initialData.deadline || "");
-const category = ref(props.initialData.category || "");
-const accountId = ref(props.initialData.accountId || "");
-const autoSaveEnabled = ref(props.initialData.autoSaveEnabled ?? true);
+// ── Form state ─────────────────────────────────────────
+const goalCategory = ref<"product" | "service">(
+  (props.initialData.goalCategory ?? "product") as "product" | "service",
+);
+const title = ref(props.initialData.title ?? "");
+const target = ref(props.initialData.userTarget ?? 0);
+const icon = ref(props.initialData.icon ?? "💻");
+const color = ref(props.initialData.color ?? "from-blue-500 to-cyan-400");
+const frequency = ref<"daily" | "weekly" | "monthly">(
+  (props.initialData.frequency ?? "weekly") as "daily" | "weekly" | "monthly",
+);
+const weeks = ref(12);
+const accountId = ref(props.initialData.accountId ?? "");
 const usePlatformFulfillment = ref(
   props.initialData.usePlatformFulfillment ?? false,
 );
-const productLink = ref(props.initialData.productLink || "");
-const storeName = ref(props.initialData.storeName || "");
-const serviceDate = ref(props.initialData.serviceDate || "");
-const location = ref(props.initialData.location || "");
-const peopleCount = ref(props.initialData.peopleCount || 1);
-const instructions = ref(props.initialData.instructions || "");
+const productLink = ref(props.initialData.productLink ?? "");
+const storeName = ref(props.initialData.storeName ?? "");
+const serviceDate = ref(props.initialData.serviceDate ?? "");
+const location = ref(props.initialData.location ?? "");
 
-const showProductSearch = ref(false);
+// ── Product search ─────────────────────────────────────
+const searchQuery = ref("");
+const searchResults = ref<any[]>([]);
+const searching = ref(false);
+const showDropdown = ref(false);
 const selectedProduct = ref<any>(null);
 
-const icons = ["💻", "🏝️", "🚗", "🏠", "🎓", "🛡️", "🎮", "📱", "👕", "🍔"];
+const performSearch = async () => {
+  if (!searchQuery.value.trim()) {
+    searchResults.value = [];
+    return;
+  }
+  searching.value = true;
+  try {
+    const token = localStorage.getItem("token");
+    const { data } = await api.get("/goals/shopping/search", {
+      params: { q: searchQuery.value },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    searchResults.value = data;
+  } catch {
+    searchResults.value = [];
+  } finally {
+    searching.value = false;
+  }
+};
+
+const debouncedSearch = debounce(performSearch, 450);
+const onSearchInput = () => {
+  showDropdown.value = true;
+  debouncedSearch();
+};
+
+const applyProduct = (p: any) => {
+  selectedProduct.value = p;
+  title.value = p.name;
+  target.value = p.price;
+  searchQuery.value = p.name;
+  showDropdown.value = false;
+  searchResults.value = [];
+};
+
+const clearProduct = () => {
+  selectedProduct.value = null;
+  title.value = "";
+  target.value = 0;
+  searchQuery.value = "";
+};
+
+// ── Fulfillment ────────────────────────────────────────
+const setFulfillment = (val: boolean) => {
+  usePlatformFulfillment.value = val;
+};
+
+watch(goalCategory, () => {
+  clearProduct();
+});
+
+// ── Calculations ───────────────────────────────────────
+const frequencies = [
+  { label: "Daily", value: "daily" },
+  { label: "Weekly", value: "weekly" },
+  { label: "Monthly", value: "monthly" },
+];
+
+const frequencyLabel = computed(() => frequency.value.replace("ly", ""));
+
+const periodsFromWeeks = computed(() => {
+  if (frequency.value === "daily") return weeks.value * 7;
+  if (frequency.value === "monthly") return Math.ceil(weeks.value / 4.33);
+  return weeks.value;
+});
+
+const amountPerPeriod = computed(() =>
+  periodsFromWeeks.value > 0
+    ? Math.ceil(target.value / periodsFromWeeks.value)
+    : 0,
+);
+
+const sliderLabel = computed(() => {
+  const w = weeks.value;
+  if (w < 4) return `${w} week${w > 1 ? "s" : ""}`;
+  const m = Math.round(w / 4.33);
+  return `${m} month${m > 1 ? "s" : ""}`;
+});
+
+const sliderSubLabel = computed(() => {
+  const w = weeks.value;
+  if (w < 4) return "";
+  return `(${w} weeks)`;
+});
+
+const completionDate = computed(() => {
+  const d = new Date();
+  d.setDate(d.getDate() + weeks.value * 7);
+  return d.toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+});
+
+// ── Visuals ────────────────────────────────────────────
+const icons = [
+  "💻",
+  "📱",
+  "🎧",
+  "🎮",
+  "✈️",
+  "🏠",
+  "🎓",
+  "👟",
+  "🚗",
+  "💍",
+  "📷",
+  "🛍️",
+];
+
 const colors = [
   {
     label: "Blue",
@@ -559,65 +750,54 @@ const colors = [
   },
 ];
 
+const categories = [
+  { value: "product" as const, label: "Product", icon: "📦" },
+  { value: "service" as const, label: "Service", icon: "🎫" },
+];
+
+const cardGradient = computed(() => {
+  const found = colors.find((c) => c.value === color.value);
+  return found ? found.bg : "linear-gradient(to right, #3b82f6, #22d3ee)";
+});
+
+// ── Navigation ─────────────────────────────────────────
 const canProceed = computed(() => {
-  if (currentStep.value === 1) {
-    return goalCategory.value && title.value && target.value > 0;
-  }
-  if (currentStep.value === 2) {
-    return true;
-  }
-  if (currentStep.value === 3) {
-    return (
-      autoSave.value > 0 &&
-      (type.value !== "percentage" || autoSave.value <= 100)
-    );
-  }
-  return false;
+  if (currentStep.value === 1) return !!(title.value && target.value > 0);
+  if (currentStep.value === 2) return amountPerPeriod.value > 0;
+  return true;
 });
 
 const nextStep = () => {
   if (canProceed.value) currentStep.value++;
 };
-
 const prevStep = () => {
   if (currentStep.value > 1) currentStep.value--;
 };
 
-const openProductSearch = () => {
-  showProductSearch.value = true;
-};
-
-const onProductSelected = (product: any) => {
-  title.value = product.name;
-  target.value = product.price;
-  selectedProduct.value = product;
-};
+// ── Submit ─────────────────────────────────────────────
+const format = (n: number) => Math.round(n).toLocaleString("en-NG");
 
 const handleSubmit = async () => {
   loading.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await new Promise((r) => setTimeout(r, 500));
   emit("submit", {
     goalCategory: goalCategory.value,
     title: title.value,
-    userTarget: target.value, // rename: the target input becomes userTarget
-    fee: fee,
+    userTarget: target.value,
     icon: icon.value,
     color: color.value,
-    type: type.value,
-    autoSave: autoSave.value,
+    autoSave: amountPerPeriod.value,
+    type: "fixed",
     frequency: frequency.value,
-    deadline: deadline.value || undefined,
-    category: category.value || undefined,
-    accountId: accountId.value,
-    autoSaveEnabled: autoSaveEnabled.value,
+    weeks: weeks.value,
+    deadline: completionDate.value,
+    accountId: accountId.value || undefined,
     usePlatformFulfillment: usePlatformFulfillment.value,
     selectedProduct: selectedProduct.value || undefined,
     productLink: productLink.value || undefined,
     storeName: storeName.value || undefined,
     serviceDate: serviceDate.value || undefined,
     location: location.value || undefined,
-    peopleCount: peopleCount.value || undefined,
-    instructions: instructions.value || undefined,
   });
   loading.value = false;
 };
@@ -625,16 +805,23 @@ const handleSubmit = async () => {
 
 <style scoped>
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.25s ease-out;
 }
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 </style>
