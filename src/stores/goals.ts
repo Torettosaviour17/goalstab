@@ -40,7 +40,7 @@ export interface Goal {
   sharedWith: SharedUser[];
   autoSaveEnabled?: boolean;
   nextAutoSave?: string;
-  availableBalance: number; // ✅ required
+  availableBalance: number;
   pendingPlatformFee?: number;
 }
 
@@ -61,7 +61,6 @@ export interface GoalFormData {
   goalType?: "product" | "service";
 }
 
-// Helper to normalize any goal object from the API
 const normalizeGoal = (goal: any): Goal => {
   return {
     ...goal,
@@ -81,6 +80,7 @@ export const useGoalsStore = defineStore("goals", () => {
   const loading = ref(false);
   let fetching = false;
 
+  // ── Computed ───────────────────────────────────────────
   const recalculateProgress = (goal: Goal) => {
     if (goal.target <= 0) {
       goal.progress = 0;
@@ -116,18 +116,15 @@ export const useGoalsStore = defineStore("goals", () => {
   const activeGoalsCount = computed(() => activeGoals.value.length);
   const completedGoalsCount = computed(() => completedGoals.value.length);
 
-  // API actions
+  // ── Fetch ──────────────────────────────────────────────
   const fetchGoals = async () => {
-    if (fetching) {
-      console.log("[Goals] fetchGoals already in progress, skipping");
-      return;
-    }
+    if (fetching) return;
     fetching = true;
     loading.value = true;
     try {
       const { data } = await api.get("/goals");
       goals.value = data.map((g: any) => normalizeGoal(g));
-    } catch (err) {
+    } catch {
       uiStore.addToast({ type: "error", message: "Failed to load goals" });
     } finally {
       loading.value = false;
@@ -135,6 +132,7 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
+  // ── Create ─────────────────────────────────────────────
   const addGoal = async (goalData: GoalFormData) => {
     try {
       const payload = {
@@ -168,6 +166,7 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
+  // ── Add Funds (manual / internal) ─────────────────────
   const addFunds = async (id: string, amount: number) => {
     try {
       const { data } = await api.post(`/goals/${id}/add-funds`, { amount });
@@ -191,14 +190,87 @@ export const useGoalsStore = defineStore("goals", () => {
       return normalized;
     } catch (err) {
       console.error("Add funds error:", err);
+      uiStore.addToast({ type: "error", message: "Failed to add funds" });
+      throw err;
+    }
+  };
+
+  // ── Paystack: Initialize ───────────────────────────────
+  const initializePaystackPayment = async (
+    goalId: string,
+    amount: number,
+    email: string,
+  ) => {
+    try {
+      const { data } = await api.post("/paystack/initialize", {
+        email,
+        amount,
+        goalId,
+      });
+      // Redirect user to Paystack checkout page
+      window.location.href = data.authorization_url;
+    } catch (err: any) {
+      console.error("Paystack init error:", err.response?.data || err.message);
       uiStore.addToast({
         type: "error",
-        message: "Failed to add funds",
+        message: err.response?.data?.msg || "Payment initialization failed",
       });
       throw err;
     }
   };
 
+  // ── Paystack: Verify (called on /payment-success page) ─
+  const verifyPaystackPayment = async (reference: string) => {
+    try {
+      const { data } = await api.get(`/paystack/verify?reference=${reference}`);
+
+      if (data.alreadyProcessed) {
+        uiStore.addToast({
+          type: "info",
+          message: "Payment already processed",
+        });
+        return null;
+      }
+
+      const normalized = normalizeGoal(data.goal);
+      const index = goals.value.findIndex(
+        (g) => g._id === normalized._id || g.id === normalized.id,
+      );
+      if (index !== -1) {
+        goals.value[index] = normalized;
+      } else {
+        // Goal not in store yet — add it
+        goals.value.unshift(normalized);
+      }
+
+      const xpGained = Math.floor(normalized.saved / 100);
+      levelStore.addXP(xpGained);
+
+      if (normalized.progress >= 100) {
+        recentlyCompletedGoal.value = normalized;
+        levelStore.addXP(200);
+      }
+
+      uiStore.addToast({
+        type: "success",
+        message: "Payment verified! Funds added to your goal 🎉",
+      });
+
+      return normalized;
+    } catch (err: any) {
+      console.error(
+        "Paystack verify error:",
+        err.response?.data || err.message,
+      );
+      uiStore.addToast({
+        type: "error",
+        message: err.response?.data?.msg || "Payment verification failed",
+      });
+      throw err;
+    }
+  };
+
+  // ── Update ─────────────────────────────────────────────
   const updateGoal = async (id: string, updates: Partial<GoalFormData>) => {
     try {
       const { data } = await api.put(`/goals/${id}`, updates);
@@ -213,6 +285,7 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
+  // ── Delete ─────────────────────────────────────────────
   const deleteGoal = async (id: string) => {
     try {
       await api.delete(`/goals/${id}`);
@@ -224,6 +297,7 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
+  // ── Share ──────────────────────────────────────────────
   const shareGoal = async (
     goalId: string,
     email: string,
@@ -268,6 +342,7 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
+  // ── Fulfillment ────────────────────────────────────────
   const requestFulfillment = async (goalId: string, details?: any) => {
     try {
       const { data } = await api.post(`/goals/${goalId}/fulfillment-request`, {
@@ -292,6 +367,7 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
+  // ── Misc ───────────────────────────────────────────────
   const clearCompleted = () => {
     recentlyCompletedGoal.value = null;
   };
@@ -320,8 +396,11 @@ export const useGoalsStore = defineStore("goals", () => {
     updateGoal,
     deleteGoal,
     addFunds,
+    initializePaystackPayment,
+    verifyPaystackPayment,
     shareGoal,
     unshareGoal,
     requestFulfillment,
+    recalculateAll,
   };
 });

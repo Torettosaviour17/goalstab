@@ -30,21 +30,7 @@
         <!-- Right section -->
         <div class="flex items-center gap-3">
           <!-- Notifications bell -->
-          <button
-            @click="toggleNotifications"
-            class="relative p-2 rounded-lg hover:bg-gray-800/50 transition"
-            aria-label="Notifications"
-          >
-            <span class="text-xl">🔔</span>
-            <span
-              v-if="hasUnreadNotifications"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-ping"
-            ></span>
-            <span
-              v-if="hasUnreadNotifications"
-              class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"
-            ></span>
-          </button>
+          <NotificationBell />
 
           <!-- User menu -->
           <div class="relative">
@@ -150,6 +136,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
+import NotificationBell from "@/components/notifications/NotificationBell.vue";
 import { useAuthStore } from "@/stores/auth";
 
 const router = useRouter();
@@ -157,7 +144,6 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const showUserMenu = ref(false);
-const hasUnreadNotifications = ref(true);
 
 // Computed user data
 const userName = computed(() => user.value?.name || "User");
@@ -174,10 +160,6 @@ const userInitials = computed(() => {
     .toUpperCase()
     .slice(0, 2);
 });
-
-const toggleNotifications = () => {
-  console.log("Notifications toggled");
-};
 
 const toggleUserMenu = () => (showUserMenu.value = !showUserMenu.value);
 const closeUserMenu = () => (showUserMenu.value = false);

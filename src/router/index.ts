@@ -81,6 +81,12 @@ const routes = [
     component: () => import("@/views/Help.vue"),
     meta: { requiresAuth: true, title: "Help & Support" },
   },
+  {
+    path: "/payment-success",
+    name: "payment-success",
+    component: () => import("@/views/PaymentSuccess.vue"),
+    meta: { title: "Payment Success" },
+  },
   // {
   //   path: "/privacy",
   //   name: "privacy",
