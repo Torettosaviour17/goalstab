@@ -51,20 +51,20 @@
       <!-- No active goals but past activity -->
       <div
         v-if="activeGoalsCount === 0 && lifetime.totalSavedLifetime > 0"
-        class="mb-6 glass-card p-4 bg-primary-500/10 border border-primary-500/20 light:bg-light-card light:border-light-border"
+        class="mb-6 glass-card p-4 bg-primary-500/10 border border-primary-500/20"
       >
         <div class="flex items-center gap-4">
           <div
-            class="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center light:bg-light-bg"
+            class="w-12 h-12 rounded-full bg-primary-500/20 flex items-center justify-center"
           >
             <span class="text-2xl">🎉✨</span>
           </div>
           <div>
-            <p class="text-white font-medium light:text-gray-900">
+            <p class="text-white font-medium">
               You've saved ₦{{ formatNumber(lifetime.totalSavedLifetime) }} in
               total and completed {{ lifetime.goalsCompletedLifetime }} goals!
             </p>
-            <p class="text-sm text-gray-300 light:text-gray-600">
+            <p class="text-sm text-gray-300">
               Ready to start a new savings journey?
             </p>
           </div>
@@ -78,7 +78,7 @@
         </div>
       </div>
 
-      <!-- Goals Section -->
+      <!-- Main Grid -->
       <div
         class="grid grid-cols-1 lg:grid-cols-3 gap-8"
         v-motion
@@ -86,28 +86,42 @@
         :enter="{ opacity: 1, y: 0, transition: { delay: 200 } }"
         :duration="400"
       >
+        <!-- Goals Column -->
         <div class="lg:col-span-2">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-semibold text-white light:text-gray-900">
-              Your Goals
-            </h2>
-            <BaseButton
-              @click="uiStore.openCreateGoalModal()"
-              size="sm"
-              class="shadow-lg hover:shadow-primary-500/30 transition-all new-goal-button light:shadow-gray-300"
-            >
-              <template #icon>＋</template>
-              New Goal
-            </BaseButton>
+          <!-- Goals header -->
+          <div class="flex items-center justify-between mb-5">
+            <div>
+              <h2 class="text-2xl font-semibold text-white">Your Goals</h2>
+              <p class="text-xs text-gray-400 mt-0.5">
+                Showing {{ previewGoals.length }} of {{ goals.length }}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <router-link
+                v-if="goals.length > 3"
+                to="/goals"
+                class="text-sm text-primary-400 hover:text-primary-300 transition"
+              >
+                View all ({{ goals.length }}) →
+              </router-link>
+              <BaseButton
+                @click="uiStore.openCreateGoalModal()"
+                size="sm"
+                class="shadow-lg hover:shadow-primary-500/30 transition-all new-goal-button"
+              >
+                <template #icon>＋</template>
+                New Goal
+              </BaseButton>
+            </div>
           </div>
 
-          <!-- Goals Grid -->
+          <!-- Goals Grid — max 3 -->
           <div
             v-if="goals.length"
             class="grid grid-cols-1 md:grid-cols-2 gap-5"
           >
             <div
-              v-for="(goal, index) in goals"
+              v-for="(goal, index) in previewGoals"
               :key="goal.id || goal._id"
               v-motion
               :initial="{ opacity: 0, scale: 0.95 }"
@@ -120,18 +134,38 @@
             >
               <GoalCard
                 :goal="goal"
+                :show-actions="false"
                 class="hover:-translate-y-1 transition-all duration-300"
-                @add-funds="openAddFunds(goal.id || goal._id)"
-                @withdraw="handleWithdraw(goal.id || goal._id)"
-                @share="openShareModal(goal)"
+                @click="$router.push('/goals')"
               />
             </div>
+
+            <!-- "More goals" card -->
+            <router-link
+              v-if="goals.length > 3"
+              to="/goals"
+              class="glass-card p-5 border border-gray-700/50 hover:border-primary-500/30 transition-all duration-300 flex flex-col items-center justify-center gap-3 text-center hover:scale-[1.01] cursor-pointer"
+            >
+              <div
+                class="w-12 h-12 rounded-full bg-primary-500/10 flex items-center justify-center text-2xl"
+              >
+                🎯
+              </div>
+              <div>
+                <p class="text-white font-semibold">
+                  {{ goals.length - 3 }} more goal{{
+                    goals.length - 3 === 1 ? "" : "s"
+                  }}
+                </p>
+                <p class="text-xs text-gray-400 mt-0.5">View on Goals page →</p>
+              </div>
+            </router-link>
           </div>
 
           <!-- Empty State -->
           <div
             v-else
-            class="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 light:bg-light-card light:border-light-border"
+            class="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-8"
           >
             <EmptyState
               title="No goals yet"
@@ -150,7 +184,7 @@
       </div>
     </div>
 
-    <!-- Modals -->
+    <!-- ── Modals ── -->
     <BaseModal v-model="uiStore.showCreateGoalModal" title="Create New Goal">
       <SmartGoalForm @submit="handleCreateGoal" />
     </BaseModal>
@@ -200,10 +234,10 @@ import { useUIStore } from "@/stores/ui";
 import { useAccountsStore } from "@/stores/accounts";
 import { useTransactionsStore } from "@/stores/transactions";
 import { useAnalyticsStore } from "@/stores/analytics";
-import { useOnboardingTour } from "@/composables/useOnboardingTour";
 import { useLevelStore } from "@/stores/level";
+import { useOnboardingTour } from "@/composables/useOnboardingTour";
 
-// API
+// Services
 import api from "@/services/api";
 import type { Goal } from "@/types/goal";
 
@@ -224,7 +258,7 @@ import EmptyState from "@/components/dashboard/EmptyState.vue";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner.vue";
 import SkeletonDashboard from "@/components/skeleton/SkeletonDashboard.vue";
 
-// Stores Initialization
+// ── Stores ─────────────────────────────────────────────
 const goalsStore = useGoalsStore();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
@@ -234,12 +268,12 @@ const analyticsStore = useAnalyticsStore();
 const levelStore = useLevelStore();
 const { shouldShowTour, startTour } = useOnboardingTour();
 
-// Loading & Error States
+// ── Loading / error ────────────────────────────────────
 const isLoading = ref(true);
 const hasError = ref(false);
 const minimumLoadingTime = 600;
 
-// Store References
+// ── Store refs ─────────────────────────────────────────
 const {
   goals,
   totalSaved,
@@ -250,14 +284,17 @@ const {
 const { user } = storeToRefs(authStore);
 const { lifetime } = storeToRefs(analyticsStore);
 
-// Computed Properties
+// ── Computed ───────────────────────────────────────────
 const userName = computed(() => user.value?.name || "User");
 const monthlyGrowth = computed(() => totalSaved.value * 0.153);
 
-const formatCurrency = (value: number) =>
-  `₦${new Intl.NumberFormat("en-NG").format(value || 0)}`;
-const formatNumber = (num: number) =>
-  new Intl.NumberFormat("en-NG").format(num || 0);
+// Only show 3 goals on dashboard
+const previewGoals = computed(() => goals.value.slice(0, 3));
+
+const formatCurrency = (v: number) =>
+  `₦${new Intl.NumberFormat("en-NG").format(v || 0)}`;
+const formatNumber = (n: number) =>
+  new Intl.NumberFormat("en-NG").format(n || 0);
 
 const statsData = computed(() => [
   {
@@ -286,7 +323,7 @@ const statsData = computed(() => [
   },
 ]);
 
-// Modal States
+// ── Modal state ────────────────────────────────────────
 const showAddFundsModal = ref(false);
 const selectedGoalId = ref<string | null>(null);
 const selectedGoal = computed(
@@ -305,11 +342,10 @@ const showCompletedModal = ref(false);
 const completedGoal = ref<any>(null);
 let lastCompletedGoalId: string | null = null;
 
-// Actions
+// ── Data fetching ──────────────────────────────────────
 const fetchDashboardData = async () => {
   isLoading.value = true;
   hasError.value = false;
-
   const startTime = Date.now();
 
   try {
@@ -319,8 +355,8 @@ const fetchDashboardData = async () => {
       transactionsStore.fetchRecentTransactions(),
       analyticsStore.fetchLifetimeStats(),
     ]);
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     hasError.value = true;
   } finally {
     const elapsed = Date.now() - startTime;
@@ -331,6 +367,7 @@ const fetchDashboardData = async () => {
   }
 };
 
+// ── Actions ────────────────────────────────────────────
 const openAddFunds = (id: string | undefined) => {
   if (!id) return;
   selectedGoalId.value = id;
@@ -354,10 +391,7 @@ const handleWithdraw = (id: string | undefined) => {
     selectedWithdrawGoal.value = goal;
     showWithdrawModal.value = true;
   } else {
-    uiStore.addToast({
-      type: "warning",
-      message: "Complete the goal first!",
-    });
+    uiStore.addToast({ type: "warning", message: "Complete the goal first!" });
   }
 };
 
@@ -374,20 +408,14 @@ const submitWithdrawRequest = async (data: any) => {
     });
     showWithdrawModal.value = false;
   } catch {
-    uiStore.addToast({
-      type: "error",
-      message: "Failed to submit request",
-    });
+    uiStore.addToast({ type: "error", message: "Failed to submit request" });
   }
 };
 
 const handleCreateGoal = (formData: any) => {
   goalsStore.addGoal(formData);
   uiStore.closeCreateGoalModal();
-  uiStore.addToast({
-    type: "success",
-    message: "Goal created successfully!",
-  });
+  uiStore.addToast({ type: "success", message: "Goal created successfully!" });
 };
 
 const openShareModal = (goal: Goal) => {
@@ -419,21 +447,14 @@ const handleUnshare = async (userId: string) => {
   }
 };
 
-// Goal Completion Handling
+// ── Goal completion watcher ────────────────────────────
 watch(recentlyCompletedGoal, async (newGoal) => {
   if (!newGoal || newGoal._id === lastCompletedGoalId) return;
-
   lastCompletedGoalId = newGoal._id;
   completedGoal.value = newGoal;
   showConfetti.value = true;
-
   levelStore.addXP(50);
-
-  uiStore.addToast({
-    type: "success",
-    message: "Goal completed! +50 XP 🎉",
-  });
-
+  uiStore.addToast({ type: "success", message: "Goal completed! +50 XP 🎉" });
   await nextTick();
   setTimeout(() => {
     showCompletedModal.value = true;
@@ -444,16 +465,14 @@ watch(showCompletedModal, (open) => {
   if (!open) goalsStore.clearCompleted();
 });
 
-// Share Completed Goal
+// ── Share completed goal ───────────────────────────────
 const handleShare = async () => {
   if (!completedGoal.value) return;
-
   const shareData = {
     title: "Goal Completed!",
     text: `I just completed my goal: ${completedGoal.value.title}`,
     url: window.location.origin,
   };
-
   try {
     if (navigator.share) {
       await navigator.share(shareData);
@@ -472,7 +491,7 @@ const handleShare = async () => {
   }
 };
 
-// Lifecycle
+// ── Lifecycle ──────────────────────────────────────────
 onMounted(async () => {
   await fetchDashboardData();
   if (shouldShowTour()) setTimeout(() => startTour(), 1000);
