@@ -23,6 +23,7 @@ const withdrawalRoutes = require("./routes/withdrawals");
 const adminRoutes = require("./routes/admin");
 const analyticsRoutes = require("./routes/analytics");
 const productRoutes = require("./routes/products");
+const paystackRoutes = require("./routes/paystack");
 
 // Mount routes
 app.use("/api/analytics", analyticsRoutes);
@@ -34,6 +35,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes); // ✅ admin routes used here
 app.use("/api/products", productRoutes);
+app.use("/api/paystack", paystackRoutes);
 
 // Test route
 app.get("/api/test", (req, res) => {

@@ -337,10 +337,10 @@ const openAddFunds = (id: string | undefined) => {
   showAddFundsModal.value = true;
 };
 
-const handleAddFunds = (amount: number) => {
+const handleAddFunds = async (amount: number) => {
   if (!selectedGoal.value) return;
   const goalId = selectedGoal.value.id || selectedGoal.value._id;
-  goalsStore.addFunds(goalId, amount);
+  await goalsStore.addFunds(goalId, amount);
   uiStore.addToast({
     type: "success",
     message: `₦${amount.toLocaleString()} added to ${selectedGoal.value.title}`,

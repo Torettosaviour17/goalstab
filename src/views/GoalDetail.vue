@@ -296,9 +296,9 @@ const openAddFunds = () => {
   showAddFundsModal.value = true;
 };
 
-const handleAddFunds = (amount: number) => {
+const handleAddFunds = async (amount: number) => {
   if (goal.value) {
-    goalsStore.addFunds(goal.value.id, amount);
+    await goalsStore.addFunds(goal.value.id, amount);
     uiStore.addToast({
       type: "success",
       message: `₦${amount.toLocaleString()} added to ${goal.value.title}`,

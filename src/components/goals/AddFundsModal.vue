@@ -20,9 +20,11 @@
             }}
             • {{ goal.progress }}%
           </p>
-          <div class="w-full h-1.5 bg-gray-700 rounded-full mt-2">
+          <div
+            class="w-full h-1.5 bg-gray-700 rounded-full mt-2 overflow-hidden"
+          >
             <div
-              class="h-1.5 rounded-full"
+              class="h-1.5 rounded-full transition-all duration-500"
               :class="goal.color.split(' ')[0]"
               :style="{ width: goal.progress + '%' }"
             ></div>
