@@ -45,6 +45,7 @@ export interface GoalFormData {
   autoSaveEnabled?: boolean;
   goalType?: "product" | "service";
   usePlatformFulfillment?: boolean;
+  selectedProduct?: any;
 }
 
 export interface GoalStats {

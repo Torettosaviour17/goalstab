@@ -7,7 +7,7 @@
     <div class="flex items-start justify-between mb-4">
       <div class="flex items-center gap-3">
         <div
-          class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-gradient-to-br flex-shrink-0"
+          class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-linear-to-br shrink-0"
           :class="goal.color"
         >
           {{ goal.icon }}
@@ -18,7 +18,7 @@
         </div>
       </div>
       <span
-        class="text-xs px-2 py-1 rounded-full flex-shrink-0 ml-2"
+        class="text-xs px-2 py-1 rounded-full shrink-0 ml-2"
         :class="statusClass"
       >
         {{ statusText }}
@@ -181,7 +181,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import BaseButton from "@/components/shared/BaseButton.vue";
-import type { Goal } from "@/stores/goals";
+import type { Goal } from "@/types/goal";
 
 const props = defineProps<{
   goal: Goal;

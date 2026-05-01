@@ -3,68 +3,13 @@ import { ref, computed } from "vue";
 import api from "@/services/api";
 import { useUIStore } from "./ui";
 import { useLevelStore } from "./level";
-
-export interface SharedUser {
-  id: string;
-  name: string;
-  email: string;
-  role: "owner" | "contributor" | "viewer";
-}
-
-export interface Goal {
-  _id: string;
-  id: string;
-  title: string;
-  userTarget: number;
-  fee: number;
-  target: number;
-  saved: number;
-  withdrawn: number;
-  icon: string;
-  color: string;
-  type: "percentage" | "fixed";
-  autoSave: number;
-  frequency: "daily" | "weekly" | "monthly";
-  deadline?: string;
-  locked: boolean;
-  progress: number;
-  lastUpdated: string;
-  createdAt: string;
-  category?: string;
-  accountId?: string;
-  goalType?: "product" | "service";
-  fulfillmentStatus?: "pending" | "processing" | "delivered" | "booked";
-  fulfillmentDetails?: any;
-  usePlatformFulfillment?: boolean;
-  selectedProduct?: any;
-  sharedWith: SharedUser[];
-  autoSaveEnabled?: boolean;
-  nextAutoSave?: string;
-  availableBalance: number;
-  pendingPlatformFee?: number;
-}
-
-export interface GoalFormData {
-  title: string;
-  userTarget: number;
-  icon: string;
-  color: string;
-  type: "percentage" | "fixed";
-  autoSave: number;
-  frequency: "daily" | "weekly" | "monthly";
-  deadline?: string;
-  category?: string;
-  accountId?: string;
-  autoSaveEnabled?: boolean;
-  usePlatformFulfillment?: boolean;
-  selectedProduct?: any;
-  goalType?: "product" | "service";
-}
+import type { Goal, GoalFormData } from "@/types/goal";
 
 const normalizeGoal = (goal: any): Goal => {
   return {
     ...goal,
     id: goal.id || goal._id,
+    sharedWith: goal.sharedWith ?? [],
     availableBalance:
       typeof goal.availableBalance === "number"
         ? goal.availableBalance

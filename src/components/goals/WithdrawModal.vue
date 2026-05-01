@@ -205,11 +205,15 @@
 import { ref, computed, watch } from "vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import BaseButton from "@/components/shared/BaseButton.vue";
-import type { Goal } from "@/stores/goals";
 
 const props = defineProps<{
   modelValue: boolean;
-  goal?: Goal | null;
+  goal?: {
+    icon?: string;
+    title?: string;
+    saved?: number | null;
+    withdrawn?: number | null;
+  } | null;
 }>();
 
 const emit = defineEmits<{
