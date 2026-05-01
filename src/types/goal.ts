@@ -24,6 +24,7 @@ export interface Goal {
   fulfillmentStatus?: "pending" | "processing" | "delivered" | "booked";
   fulfillmentDetails?: any;
   usePlatformFulfillment?: boolean;
+  selectedProduct?: any;
   sharedWith?: SharedUser[];
   createdAt: string;
   availableBalance: number;

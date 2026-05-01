@@ -83,7 +83,7 @@ import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import { useGoalsStore } from "@/stores/goals";
-import type { Goal } from "@/stores/goals";
+import type { Goal } from "@/types/goal";
 
 const router = useRouter();
 const route = useRoute();

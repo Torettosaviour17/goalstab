@@ -154,7 +154,7 @@ import BaseModal from "@/components/shared/BaseModal.vue";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import { useGoalsStore } from "@/stores/goals";
 import { useAuthStore } from "@/stores/auth";
-import type { Goal } from "@/stores/goals";
+import type { Goal } from "@/types/goal";
 
 const props = defineProps<{
   modelValue: boolean;

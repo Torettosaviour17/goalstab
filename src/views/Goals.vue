@@ -171,7 +171,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useGoalsStore } from "@/stores/goals";
 import { useUIStore } from "@/stores/ui";
-import type { Goal } from "@/stores/goals";
+import type { Goal } from "@/types/goal";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import SmartGoalForm from "@/components/goals/SmartGoalForm.vue";
