@@ -3,8 +3,43 @@ import { useAuthStore } from "@/stores/auth";
 
 // Route definitions
 const routes = [
+  // ── PUBLIC LANDING PAGE (entry point) ──
   {
     path: "/",
+    name: "landing",
+    component: () => import("@/views/Landing.vue"),
+    meta: { title: "GoalTabs - Command Your Wealth" },
+  },
+
+  // ── AUTH ROUTES ──
+  {
+    path: "/login",
+    name: "login",
+    component: () => import("@/views/auth/Login.vue"),
+    meta: { guestOnly: true, title: "Login" },
+  },
+  {
+    path: "/register",
+    name: "register",
+    component: () => import("@/views/auth/Register.vue"),
+    meta: { guestOnly: true, title: "Register" },
+  },
+  {
+    path: "/forgot-password",
+    name: "forgot-password",
+    component: () => import("@/views/auth/ForgotPassword.vue"),
+    meta: { guestOnly: true, title: "Forgot Password" },
+  },
+  {
+    path: "/terms",
+    name: "terms",
+    component: () => import("@/views/Terms.vue"),
+    meta: { title: "Terms of Service" },
+  },
+
+  // ── PROTECTED ROUTES (authenticated users only) ──
+  {
+    path: "/dashboard",
     name: "dashboard",
     component: () => import("@/views/Dashboard.vue"),
     meta: { requiresAuth: true, title: "Dashboard" },
@@ -46,36 +81,6 @@ const routes = [
     meta: { requiresAuth: true, title: "Accounts" },
   },
   {
-    path: "/admin",
-    name: "admin",
-    component: () => import("@/views/admin/AdminDashboard.vue"),
-    meta: { requiresAuth: true, adminOnly: true, title: "Admin" },
-  },
-  {
-    path: "/login",
-    name: "login",
-    component: () => import("@/views/auth/Login.vue"),
-    meta: { guestOnly: true, title: "Login" },
-  },
-  {
-    path: "/register",
-    name: "register",
-    component: () => import("@/views/auth/Register.vue"),
-    meta: { guestOnly: true, title: "Register" },
-  },
-  {
-    path: "/forgot-password",
-    name: "forgot-password",
-    component: () => import("@/views/auth/ForgotPassword.vue"),
-    meta: { guestOnly: true, title: "Forgot Password" },
-  },
-  {
-    path: "/terms",
-    name: "terms",
-    component: () => import("@/views/Terms.vue"),
-    meta: { title: "Terms of Service" },
-  },
-  {
     path: "/help",
     name: "help",
     component: () => import("@/views/Help.vue"),
@@ -85,14 +90,18 @@ const routes = [
     path: "/payment-success",
     name: "payment-success",
     component: () => import("@/views/PaymentSuccess.vue"),
-    meta: { title: "Payment Success" },
+    meta: { requiresAuth: true, title: "Payment Success" },
   },
-  // {
-  //   path: "/privacy",
-  //   name: "privacy",
-  //   component: () => import("@/views/Privacy.vue"),
-  //   meta: { title: "Privacy Policy" },
-  // },
+
+  // ── ADMIN ROUTES ──
+  {
+    path: "/admin",
+    name: "admin",
+    component: () => import("@/views/admin/AdminDashboard.vue"),
+    meta: { requiresAuth: true, adminOnly: true, title: "Admin" },
+  },
+
+  // ── 404 ──
   {
     path: "/:pathMatch(.*)*",
     name: "not-found",
@@ -133,7 +142,7 @@ router.beforeEach(async (to, from, next) => {
     // Redirect to login with the intended destination
     next({ name: "login", query: { redirect: to.fullPath } });
   } else if (adminOnly && !authStore.user?.isAdmin) {
-    // Non‑admin trying to access admin area -> dashboard
+    // Non-admin trying to access admin area -> dashboard
     next({ name: "dashboard" });
   } else if (guestOnly && authStore.isAuthenticated) {
     // Already logged in user trying to access login/register -> dashboard
