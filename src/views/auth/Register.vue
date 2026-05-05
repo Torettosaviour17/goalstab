@@ -20,11 +20,17 @@
     <div class="w-full max-w-md relative z-10">
       <!-- Logo and welcome -->
       <div class="text-center mb-8 animate-fade-in">
-        <img
-          src="@/assets/goaltab-logo.png"
-          alt="GoalTabs"
-          class="w-40 h-40 mx-auto shadow-2xl object-contain"
-        />
+        <div class="w-20 h-20 mx-auto mb-4 rounded-2xl p-1 shadow-2xl">
+          <div
+            class="w-full h-full bg-gray-950 rounded-xl flex items-center justify-center"
+          >
+            <img
+              src="@/assets/goaltab-logo.png"
+              alt="GoalTabs"
+              class="w-40 h-40 mx-auto shadow-2xl object-contain"
+            />
+          </div>
+        </div>
         <h1 class="text-3xl font-bold text-white mb-2">Join GoalTabs</h1>
         <p class="text-gray-400">Start your savings journey today</p>
       </div>
@@ -63,6 +69,9 @@
               googleLoading ? "Signing in..." : "Continue with Google"
             }}</span>
           </button>
+          <p v-if="googleError" class="mt-2 text-xs text-red-400">
+            {{ googleError }}
+          </p>
         </div>
 
         <!-- Divider -->
@@ -274,6 +283,7 @@ const uiStore = useUIStore();
 
 const loading = ref(false);
 const googleLoading = ref(false);
+const googleError = ref("");
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
@@ -294,80 +304,109 @@ const passwordError = computed(() => {
 
 // Initialize Google Sign-In
 onMounted(() => {
-  // Load Google Sign-In script
+  // Load Google Sign-In script dynamically
   const script = document.createElement("script");
   script.src = "https://accounts.google.com/gsi/client";
   script.async = true;
   script.defer = true;
+  script.onload = () => {
+    console.log("[Google] Script loaded");
+    initializeGoogleSignIn();
+  };
+  script.onerror = () => {
+    googleError.value = "Failed to load Google Sign-In";
+    console.error("[Google] Failed to load script");
+  };
   document.head.appendChild(script);
 });
 
-// Handle Google Sign-In
-const handleGoogleSignIn = async () => {
+// Initialize Google Sign-In
+const initializeGoogleSignIn = () => {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  if (!clientId) {
+    googleError.value = "Google Client ID not configured";
+    console.error("[Google] VITE_GOOGLE_CLIENT_ID is not set");
+    return;
+  }
+
+  if (!window.google) {
+    googleError.value = "Google library not available";
+    console.error("[Google] window.google not available");
+    return;
+  }
+
   try {
-    googleLoading.value = true;
-
-    // Initialize Google Sign-In with callback
-    if (!window.google) {
-      uiStore.addToast({
-        type: "error",
-        message: "Google Sign-In not loaded. Please refresh the page.",
-      });
-      return;
-    }
-
     window.google.accounts.id.initialize({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      client_id: clientId,
       callback: handleGoogleCallback,
     });
-
-    // Trigger the One Tap UI or redirect
-    window.google.accounts.id.renderButton(
-      document.querySelector("#google_signin_button"),
-      { theme: "filled_black", size: "large" },
-    );
-
-    // Or use prompt instead
-    window.google.accounts.id.prompt(handleGoogleCallback);
+    console.log("[Google] Initialized successfully");
   } catch (error) {
-    console.error("Google sign-in error:", error);
-    uiStore.addToast({
-      type: "error",
-      message: "Failed to initialize Google Sign-In",
+    googleError.value = "Failed to initialize Google Sign-In";
+    console.error("[Google] Initialization error:", error);
+  }
+};
+
+// Handle Google Sign-In button click
+const handleGoogleSignIn = async () => {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+  if (!clientId) {
+    googleError.value = "Google Client ID not configured";
+    return;
+  }
+
+  if (!window.google) {
+    googleError.value = "Google library not loaded";
+    return;
+  }
+
+  try {
+    googleLoading.value = true;
+    googleError.value = "";
+
+    // Use One Tap prompt
+    window.google.accounts.id.prompt((notification: any) => {
+      if (notification.isNotDisplayed()) {
+        // One Tap not displayed, show normal auth flow
+        window.google.accounts.id.renderButton(
+          document.querySelector("#google_signin_button"),
+          { theme: "outline", size: "large", width: "100%" },
+        );
+      }
     });
+  } catch (error: any) {
+    console.error("[Google] Sign-in error:", error);
+    googleError.value = error.message || "Failed to initiate Google Sign-In";
   } finally {
     googleLoading.value = false;
   }
 };
 
-// Handle Google callback
+// Handle Google Sign-In callback
 const handleGoogleCallback = async (response: any) => {
   try {
     googleLoading.value = true;
+    googleError.value = "";
 
     if (!response.credential) {
-      uiStore.addToast({
-        type: "error",
-        message: "No credential received from Google",
-      });
-      return;
+      throw new Error("No credential received from Google");
     }
+
+    console.log("[Google] Credential received, signing in...");
 
     // Send token to backend
     await authStore.signInWithGoogle(response.credential);
 
-    uiStore.addToast({
-      type: "success",
-      message: "Welcome to GoalTabs!",
-    });
-
     // Redirect to dashboard
-    router.push("/dashboard");
+    await router.push("/dashboard");
   } catch (error: any) {
-    console.error("Google callback error:", error);
+    console.error("[Google] Callback error:", error);
+    googleError.value = error.message || "Google sign-in failed";
     uiStore.addToast({
       type: "error",
-      message: error.message || "Google sign-in failed",
+      message: googleError.value,
     });
   } finally {
     googleLoading.value = false;
@@ -393,7 +432,7 @@ const handleRegister = async () => {
       message: "Account created successfully!",
     });
 
-    router.push("/dashboard");
+    await router.push("/dashboard");
   } catch (error: any) {
     uiStore.addToast({
       type: "error",
