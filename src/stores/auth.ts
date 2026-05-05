@@ -17,14 +17,16 @@ export interface User {
   name: string;
   phone?: string;
   isPremium: boolean;
-  isAdmin?: boolean; // ✅ added
+  isAdmin?: boolean;
   avatar?: string;
+  googleId?: string;
+  profilePicture?: string;
   preferences: {
     currency: string;
     theme: string;
     autoSaveDefault: boolean;
-    monthlyIncome?: number; // 👈 New field for monthly income
-    onboardingCompleted?: boolean; // 👈 new
+    monthlyIncome?: number;
+    onboardingCompleted?: boolean;
     notifications: NotificationSettings;
   };
 }
@@ -33,6 +35,8 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null as User | null,
     token: null as string | null,
+    loading: false,
+    error: null as string | null,
   }),
   persist: true,
   getters: {
@@ -51,6 +55,7 @@ export const useAuthStore = defineStore("auth", {
         console.log("[Auth] Making API call to /auth/me");
         const response = await api.get("/auth/me");
         this.user = response.data;
+        this.error = null;
         console.log("[Auth] token valid, user updated");
       } catch (error: any) {
         console.error("[Auth] API call failed:", error);
@@ -67,29 +72,38 @@ export const useAuthStore = defineStore("auth", {
         }
       }
     },
+
     async login(email: string, password: string, rememberMe: boolean = false) {
+      this.loading = true;
+      this.error = null;
       try {
         const response = await api.post("/auth/login", { email, password });
         const { token, user } = response.data;
         this.token = token;
         this.user = user;
-        localStorage.setItem("token", token); // for axios interceptor
+        localStorage.setItem("token", token);
         useUIStore().addToast({
           type: "success",
           message: "Login successful!",
         });
       } catch (error: any) {
         const message = error.response?.data?.msg || "Login failed";
+        this.error = message;
         useUIStore().addToast({ type: "error", message });
         throw error;
+      } finally {
+        this.loading = false;
       }
     },
+
     async register(
       name: string,
       email: string,
       password: string,
       rememberMe: boolean = false,
     ) {
+      this.loading = true;
+      this.error = null;
       try {
         const response = await api.post("/auth/register", {
           name,
@@ -106,30 +120,70 @@ export const useAuthStore = defineStore("auth", {
         });
       } catch (error: any) {
         const message = error.response?.data?.msg || "Registration failed";
+        this.error = message;
         useUIStore().addToast({ type: "error", message });
         throw error;
+      } finally {
+        this.loading = false;
       }
     },
+
+    async signInWithGoogle(googleToken: string) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await api.post("/auth/google-signin", {
+          token: googleToken,
+        });
+        const { token, user } = response.data;
+        this.token = token;
+        this.user = user;
+        localStorage.setItem("token", token);
+        useUIStore().addToast({
+          type: "success",
+          message: "Welcome to GoalTabs!",
+        });
+      } catch (error: any) {
+        const message = error.response?.data?.msg || "Google sign-in failed";
+        this.error = message;
+        useUIStore().addToast({ type: "error", message });
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     logout() {
       this.user = null;
       this.token = null;
+      this.error = null;
       localStorage.removeItem("token");
       useUIStore().addToast({ type: "info", message: "Logged out" });
     },
+
     async updateUser(userData: Partial<User>) {
+      this.loading = true;
+      this.error = null;
       try {
         const response = await api.put("/users/profile", userData);
         this.user = response.data;
         useUIStore().addToast({ type: "success", message: "Profile updated" });
       } catch (error: any) {
+        const message = error.response?.data?.msg || "Update failed";
+        this.error = message;
         useUIStore().addToast({
           type: "error",
-          message: error.response?.data?.msg || "Update failed",
+          message,
         });
+      } finally {
+        this.loading = false;
       }
     },
+
     async updatePreferences(prefs: Partial<User["preferences"]>) {
       if (!this.user) return;
+      this.loading = true;
+      this.error = null;
       try {
         const response = await api.put("/users/preferences", prefs);
         this.user.preferences = response.data.preferences;
@@ -138,13 +192,20 @@ export const useAuthStore = defineStore("auth", {
           message: "Preferences saved",
         });
       } catch (error: any) {
+        const message = error.response?.data?.msg || "Update failed";
+        this.error = message;
         useUIStore().addToast({
           type: "error",
-          message: error.response?.data?.msg || "Update failed",
+          message,
         });
+      } finally {
+        this.loading = false;
       }
     },
+
     async changePassword(currentPassword: string, newPassword: string) {
+      this.loading = true;
+      this.error = null;
       try {
         const response = await api.put("/users/password", {
           currentPassword,
@@ -157,11 +218,17 @@ export const useAuthStore = defineStore("auth", {
         return response.data;
       } catch (error: any) {
         const message = error.response?.data?.msg || "Password change failed";
+        this.error = message;
         useUIStore().addToast({ type: "error", message });
         throw error;
+      } finally {
+        this.loading = false;
       }
     },
+
     async updateAvatar(avatar: string | null) {
+      this.loading = true;
+      this.error = null;
       try {
         const response = await api.put("/users/avatar", {
           avatar: avatar || "",
@@ -174,8 +241,11 @@ export const useAuthStore = defineStore("auth", {
         return response.data;
       } catch (error: any) {
         const message = error.response?.data?.msg || "Avatar update failed";
+        this.error = message;
         useUIStore().addToast({ type: "error", message });
         throw error;
+      } finally {
+        this.loading = false;
       }
     },
   },

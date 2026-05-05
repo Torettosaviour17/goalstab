@@ -15,6 +15,7 @@
     "@capacitor/cli": "^8.2.0",
     "@capacitor/core": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
+    "@react-oauth/google": "^0.13.5",
     "@vueuse/core": "^10.6.0",
     "@vueuse/motion": "^3.0.3",
     "apexcharts": "^5.5.0",
