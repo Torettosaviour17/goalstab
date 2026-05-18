@@ -18,7 +18,7 @@
       <div
         v-if="showDropdown"
         v-click-outside="closeDropdown"
-        class="absolute right-0 sm:right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 left-1/2 sm:left-auto -translate-x-1/2 sm:translate-x-0 bg-gray-800/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl z-50 overflow-hidden"
+        class="fixed sm:absolute top-16 sm:top-auto right-4 sm:right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 bg-gray-800/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl shadow-2xl z-50 overflow-hidden"
       >
         <div
           class="flex items-center justify-between px-4 py-3 border-b border-gray-700/50"

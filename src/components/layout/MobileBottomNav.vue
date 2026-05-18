@@ -33,7 +33,7 @@ const { user } = storeToRefs(authStore);
 
 const navItems = computed(() => {
   const items = [
-    { name: "Dashboard", path: "/", icon: "📊" },
+    { name: "Dashboard", path: "/dashboard", icon: "📊" },
     { name: "Goals", path: "/goals", icon: "🎯" },
     { name: "Analytics", path: "/analytics", icon: "📈" },
   ];

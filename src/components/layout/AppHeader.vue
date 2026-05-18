@@ -4,7 +4,6 @@
   >
     <div class="container mx-auto px-4 md:px-6">
       <div class="flex items-center justify-between h-16">
-        <!-- Logo -->
         <div class="flex items-center gap-3">
           <router-link to="/dashboard" class="flex items-center group">
             <img
@@ -12,7 +11,7 @@
               alt="GoalTabs"
               class="w-9 h-9 rounded-lg object-contain group-hover:scale-110 transition-transform duration-300 shadow-lg"
             />
-            <div>
+            <div class="ml-3">
               <h1 class="text-lg font-bold text-white tracking-tight">
                 GoalTabs
               </h1>
@@ -27,19 +26,15 @@
           >
         </div>
 
-        <!-- Right section -->
         <div class="flex items-center gap-3">
-          <!-- Notifications bell -->
           <NotificationBell />
 
-          <!-- User menu -->
           <div class="relative">
             <button
               @click="toggleUserMenu"
               class="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-800/50 transition border border-transparent"
               :class="{ 'border-gray-700 bg-gray-800/50': showUserMenu }"
             >
-              <!-- Avatar -->
               <div
                 class="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden shadow-inner"
                 :class="{
@@ -83,7 +78,6 @@
               </svg>
             </button>
 
-            <!-- Dropdown -->
             <transition name="fade-slide">
               <div
                 v-if="showUserMenu"
@@ -145,7 +139,6 @@ const { user } = storeToRefs(authStore);
 
 const showUserMenu = ref(false);
 
-// Computed user data
 const userName = computed(() => user.value?.name || "User");
 const userEmail = computed(() => user.value?.email || "user@example.com");
 const userPlan = computed(() => (user.value?.isPremium ? "Premium" : "Free"));
@@ -170,7 +163,6 @@ const handleLogout = () => {
   router.push("/login");
 };
 
-// Escape key closes user menu
 const handleEscapeKey = (event: KeyboardEvent) => {
   if (event.key === "Escape") closeUserMenu();
 };
