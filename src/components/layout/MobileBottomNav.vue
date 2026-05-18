@@ -1,6 +1,6 @@
 <template>
   <nav
-    class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-xl border-t border-gray-800/50"
+    class="md:hidden sticky bottom-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-xl border-t border-gray-800/50"
   >
     <div class="flex justify-around items-center h-16">
       <router-link
