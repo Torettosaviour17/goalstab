@@ -41,7 +41,7 @@
     <!-- Floating button only on dashboard -->
     <FloatingButton
       v-if="showFloatingButton"
-      class="relative z-30"
+      class="z-30"
       @click="uiStore.openCreateGoalModal"
       aria-label="Create goal"
     />
