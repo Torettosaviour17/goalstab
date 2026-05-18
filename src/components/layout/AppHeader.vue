@@ -6,7 +6,7 @@
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
         <div class="flex items-center gap-3">
-          <router-link to="/" class="flex items-center group">
+          <router-link to="/dashboard" class="flex items-center group">
             <img
               src="@/assets/goaltab-logo.png"
               alt="GoalTabs"

@@ -111,7 +111,7 @@ const { totalSaved } = storeToRefs(goalsStore);
 // Computed navigation items – includes Admin link if user is admin
 const navItems = computed(() => {
   const baseItems = [
-    { name: "Dashboard", path: "/", icon: "📊" },
+    { name: "Dashboard", path: "/dashboard", icon: "📊" },
     { name: "Goals", path: "/goals", icon: "🎯" },
     { name: "Analytics", path: "/analytics", icon: "📈" },
   ];
