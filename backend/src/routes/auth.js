@@ -2,9 +2,13 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
 const { sendEmailToUser } = require("../services/emailService");
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // @route   POST api/auth/register
 // @desc    Register a new user
@@ -110,6 +114,62 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
+  }
+});
+
+// @route   POST api/auth/google-signin
+router.post("/google-signin", async (req, res) => {
+  const token = req.body.credential || req.body.token;
+  if (!token) {
+    return res.status(400).json({ msg: "Missing Google credential" });
+  }
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ msg: "Invalid Google credential" });
+    }
+
+    let user = await User.findOne({ email: payload.email });
+
+    if (!user) {
+      const randomPassword = crypto.randomBytes(32).toString("hex");
+      user = new User({
+        name: payload.name || payload.email.split("@")[0],
+        email: payload.email,
+        password: randomPassword,
+        avatar: payload.picture || null,
+        googleId: payload.sub,
+      });
+      await user.save();
+    }
+
+    const jwtPayload = { user: { id: user.id } };
+    jwt.sign(
+      jwtPayload,
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" },
+      (err, token) => {
+        if (err) throw err;
+        res.json({
+          token,
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            preferences: user.preferences,
+            isAdmin: user.isAdmin,
+          },
+        });
+      },
+    );
+  } catch (err) {
+    console.error("Google sign-in error:", err);
+    res.status(500).json({ msg: "Google sign-in failed" });
   }
 });
 
