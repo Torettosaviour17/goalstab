@@ -76,36 +76,117 @@ const initializePayment = async (req, res) => {
 // ================================
 // VERIFY PAYMENT + UPDATE GOAL
 // ================================
+const creditSuccessfulPayment = async ({
+  reference,
+  amountInNaira,
+  goalId,
+  userId,
+  rawResponse,
+}) => {
+  const session = await require("mongoose").startSession();
+  try {
+    let result;
+    await session.withTransaction(async () => {
+      const payment = await Payment.findOne({ reference }).session(session);
+      if (!payment) {
+        throw new Error("Payment record not found");
+      }
+      if (payment.user.toString() !== userId || payment.goal.toString() !== goalId) {
+        throw new Error("Payment ownership mismatch");
+      }
+      if (payment.status === "success") {
+        result = { alreadyProcessed: true };
+        return;
+      }
+
+      const goal = await Goal.findById(goalId).session(session);
+      if (!goal || goal.user.toString() !== userId) {
+        throw new Error("Goal ownership mismatch");
+      }
+
+      goal.saved += amountInNaira;
+      goal.lastUpdated = Date.now();
+      await goal.save({ session });
+
+      payment.status = "success";
+      payment.amount = amountInNaira;
+      payment.rawResponse = rawResponse;
+      await payment.save({ session });
+
+      await Transaction.create([{
+        user: userId,
+        goal: goal._id,
+        type: "deposit",
+        amount: amountInNaira,
+        description: `Paystack payment for ${goal.title}`,
+        reference,
+      }], { session });
+
+      await Notification.create([{
+        user: userId,
+        type: "deposit_received",
+        title: "Payment Successful",
+        message: `₦${amountInNaira.toLocaleString()} added to ${goal.title} via Paystack`,
+        goal: goal._id,
+      }], { session });
+
+      result = { alreadyProcessed: false, goal };
+    });
+    return result;
+  } finally {
+    await session.endSession();
+  }
+};
+
+const sendPaymentSuccessNotifications = async (userId, goal, amountInNaira) => {
+  sendNotification(userId, {
+    type: "deposit",
+    message: `₦${amountInNaira.toLocaleString()} added to ${goal.title}`,
+  });
+
+  await sendEmailToUser(
+    userId,
+    "Payment Successful",
+    `<p>₦${amountInNaira.toLocaleString()} was successfully added to your goal: <strong>${goal.title}</strong></p>`,
+  );
+
+  if (goal.saved >= goal.target) {
+    await Notification.create({
+      user: userId,
+      type: "goal_completed",
+      title: "Goal Completed 🎉",
+      message: `Congratulations! You've reached your goal: ${goal.title}`,
+      goal: goal._id,
+    });
+
+    sendNotification(userId, {
+      type: "goal_completed",
+      message: `Goal completed: ${goal.title}`,
+    });
+
+    await sendEmailToUser(
+      userId,
+      "Goal Completed! 🎉",
+      `<h1>Congratulations!</h1>
+       <p>You've reached your goal: <strong>${goal.title}</strong></p>
+       <p>You can now withdraw your funds or request fulfillment.</p>
+       <a href="${process.env.FRONTEND_URL}/goals/${goal._id}">View Goal</a>`,
+    );
+  }
+};
+
 const verifyPayment = async (req, res) => {
   try {
     const { reference } = req.query;
-
-    if (!reference) {
-      return res.status(400).json({ msg: "Reference is required" });
-    }
-
-    // Check if already processed (prevent duplicate crediting)
-    const existingPayment = await Payment.findOne({ reference });
-    if (existingPayment && existingPayment.status === "success") {
-      return res.json({
-        msg: "Payment already verified",
-        alreadyProcessed: true,
-      });
-    }
+    if (!reference) return res.status(400).json({ msg: "Reference is required" });
 
     const response = await axios.get(
-      `https://api.paystack.co/transaction/verify/${reference}`,
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
-        },
-      },
+      `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,
+      { headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` } },
     );
 
-    const { status, amount, metadata } = response.data.data;
-
-    if (status !== "success") {
-      // Update payment record to failed
+    const paymentData = response.data.data;
+    if (paymentData.status !== "success") {
       await Payment.findOneAndUpdate(
         { reference },
         { status: "failed", rawResponse: response.data },
@@ -113,90 +194,33 @@ const verifyPayment = async (req, res) => {
       return res.status(400).json({ msg: "Payment was not successful" });
     }
 
-    const amountInNaira = amount / 100;
-    const { goalId, userId } = metadata;
+    const amountInNaira = paymentData.amount / 100;
+    const { goalId, userId } = paymentData.metadata || {};
 
-    // Verify the user owns this payment
-    if (userId !== req.user.id) {
-      return res.status(401).json({ msg: "Not authorized" });
+    if (!goalId || !userId || userId !== req.user.id) {
+      return res.status(401).json({ msg: "Payment ownership could not be verified" });
     }
 
-    const goal = await Goal.findById(goalId);
-    if (!goal) return res.status(404).json({ msg: "Goal not found" });
-
-    // Credit the goal
-    goal.saved += amountInNaira;
-    goal.lastUpdated = Date.now();
-    await goal.save();
-
-    // Update payment record to success
-    await Payment.findOneAndUpdate(
-      { reference },
-      { status: "success", amount: amountInNaira, rawResponse: response.data },
-    );
-
-    // Create transaction record
-    await Transaction.create({
-      user: req.user.id,
-      goal: goal._id,
-      type: "deposit",
-      amount: amountInNaira,
-      description: `Paystack payment for ${goal.title}`,
+    const result = await creditSuccessfulPayment({
       reference,
+      amountInNaira,
+      goalId,
+      userId,
+      rawResponse: response.data,
     });
 
-    // Notify user
-    await Notification.create({
-      user: req.user.id,
-      type: "deposit_received",
-      title: "Payment Successful",
-      message: `₦${amountInNaira.toLocaleString()} added to ${goal.title} via Paystack`,
-      goal: goal._id,
-    });
-
-    sendNotification(req.user.id, {
-      type: "deposit",
-      message: `₦${amountInNaira.toLocaleString()} added to ${goal.title}`,
-    });
-
-    await sendEmailToUser(
-      req.user.id,
-      "Payment Successful",
-      `<p>₦${amountInNaira.toLocaleString()} was successfully added to your goal: <strong>${goal.title}</strong></p>`,
-    );
-
-    // Check goal completion
-    if (goal.saved >= goal.target) {
-      await Notification.create({
-        user: req.user.id,
-        type: "goal_completed",
-        title: "Goal Completed 🎉",
-        message: `Congratulations! You've reached your goal: ${goal.title}`,
-        goal: goal._id,
-      });
-
-      sendNotification(req.user.id, {
-        type: "goal_completed",
-        message: `Goal completed: ${goal.title}`,
-      });
-
-      await sendEmailToUser(
-        req.user.id,
-        "Goal Completed! 🎉",
-        `<h1>Congratulations!</h1>
-         <p>You've reached your goal: <strong>${goal.title}</strong></p>
-         <p>You can now withdraw your funds or request fulfillment.</p>
-         <a href="${process.env.FRONTEND_URL}/goals/${goal._id}" style="background-color:#3b82f6;color:white;padding:10px 20px;text-decoration:none;border-radius:8px;">View Goal</a>`,
-      );
+    if (result.alreadyProcessed) {
+      return res.json({ msg: "Payment already verified", alreadyProcessed: true });
     }
 
-    res.json({
+    await sendPaymentSuccessNotifications(req.user.id, result.goal, amountInNaira);
+    return res.json({
       msg: "Payment verified and funds added",
-      goal: goal.toObject ? goal.toObject() : goal,
+      goal: result.goal.toObject ? result.goal.toObject() : result.goal,
     });
   } catch (err) {
     console.error("Paystack verify error:", err.response?.data || err.message);
-    res.status(500).json({ msg: "Verification failed" });
+    return res.status(500).json({ msg: "Verification failed" });
   }
 };
 
@@ -214,55 +238,31 @@ const paystackWebhook = async (req, res) => {
     return res.status(401).send("Invalid signature");
   }
 
-  const event = req.body;
+  if (req.body.event !== "charge.success") return res.sendStatus(200);
 
-  if (event.event === "charge.success") {
-    const { reference, amount, metadata } = event.data;
+  const { reference, amount, metadata } = req.body.data || {};
+  const { goalId, userId } = metadata || {};
 
-    try {
-      const existing = await Payment.findOne({ reference });
-      if (existing && existing.status === "success") {
-        return res.sendStatus(200); // already handled
-      }
+  if (!reference || !amount || !goalId || !userId) return res.sendStatus(200);
 
-      const amountInNaira = amount / 100;
-      const { goalId, userId } = metadata || {};
+  try {
+    const result = await creditSuccessfulPayment({
+      reference,
+      amountInNaira: amount / 100,
+      goalId,
+      userId,
+      rawResponse: req.body,
+    });
 
-      if (goalId && userId) {
-        const goal = await Goal.findById(goalId);
-        if (goal) {
-          goal.saved += amountInNaira;
-          goal.lastUpdated = Date.now();
-          await goal.save();
-
-          await Payment.findOneAndUpdate(
-            { reference },
-            {
-              status: "success",
-              amount: amountInNaira,
-              rawResponse: event.data,
-            },
-            { upsert: true },
-          );
-
-          await Transaction.create({
-            user: userId,
-            goal: goal._id,
-            type: "deposit",
-            amount: amountInNaira,
-            description: `Paystack webhook for ${goal.title}`,
-            reference,
-          });
-
-          console.log(`Webhook: ₦${amountInNaira} added to goal ${goal._id}`);
-        }
-      }
-    } catch (err) {
-      console.error("Webhook processing error:", err.message);
+    if (!result.alreadyProcessed) {
+      await sendPaymentSuccessNotifications(userId, result.goal, amount / 100);
     }
+  } catch (err) {
+    console.error("Webhook processing error:", err.message);
+    return res.sendStatus(500);
   }
 
-  res.sendStatus(200);
+  return res.sendStatus(200);
 };
 
 module.exports = { initializePayment, verifyPayment, paystackWebhook };
