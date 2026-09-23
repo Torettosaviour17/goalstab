@@ -26,7 +26,7 @@
           class="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-2xl shadow-2xl object-contain"
         />
         <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Join GoalTabs</h1>
-        <p class="text-gray-400">Start your savings journey today</p>
+        <p class="text-xs sm:text-base text-gray-400">Start your savings journey today</p>
       </div>
 
       <!-- Register form -->
@@ -55,14 +55,14 @@
         <form @submit.prevent="handleRegister" class="space-y-4 sm:space-y-5">
           <!-- Name -->
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2"
+            <label class="block text-xs sm:text-sm font-medium text-gray-300 mb-1 sm:mb-2"
               >Full Name</label
             >
             <div class="relative">
               <div
-                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                class="absolute inset-y-0 left-0 pl-2.5 sm:pl-3 flex items-center pointer-events-none"
               >
-                <span class="text-gray-500 text-lg">👤</span>
+                <span class="text-gray-500 text-base sm:text-lg">👤</span>
               </div>
               <input
                 v-model="form.name"
@@ -111,12 +111,12 @@
                 :type="showPassword ? 'text' : 'password'"
                 required
                 placeholder="••••••••"
-                class="w-full pl-10 pr-12 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                class="w-full pl-9 pr-10 py-2 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white transition"
+                class="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center text-gray-400 hover:text-white transition"
               >
                 {{ showPassword ? "👁️" : "👁️‍🗨️" }}
               </button>
@@ -200,7 +200,7 @@
         </div>
 
         <!-- Login link -->
-        <p class="mt-5 sm:mt-8 text-center text-sm sm:text-base text-gray-400">
+        <p class="mt-4 sm:mt-8 text-center text-xs sm:text-base text-gray-400">
           Already have an account?
           <router-link
             to="/login"
