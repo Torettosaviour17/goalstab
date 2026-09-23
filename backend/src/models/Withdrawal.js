@@ -23,8 +23,8 @@ const WithdrawalSchema = new mongoose.Schema({
   processedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 });
 
-module.exports = mongoose.model('Withdrawal', WithdrawalSchema);
-
 WithdrawalSchema.index({ user: 1, createdAt: -1 });
 WithdrawalSchema.index({ goal: 1, status: 1 });
 WithdrawalSchema.index({ user: 1, goal: 1, status: 1 });
+
+module.exports = mongoose.model('Withdrawal', WithdrawalSchema);
