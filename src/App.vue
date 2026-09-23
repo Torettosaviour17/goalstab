@@ -14,7 +14,7 @@
     </div>
 
     <!-- Header – only shown on non-auth pages when logged in (not on landing/login/register) -->
-    <AppHeader v-if="showHeader" class="relative z-40" />
+    <AppHeader v-if="showHeader" />
 
     <!-- Main content wrapper -->
     <div class="flex relative z-10" :class="{ 'pt-1': showHeader }">
@@ -36,7 +36,7 @@
     </div>
 
     <!-- Mobile Bottom Navigation – only when authenticated and not on public/auth pages -->
-    <MobileBottomNav v-if="showMobileNav" class="relative z-40" />
+    <MobileBottomNav v-if="showMobileNav" />
 
     <!-- Floating button only on dashboard -->
     <FloatingButton
