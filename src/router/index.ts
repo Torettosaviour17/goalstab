@@ -42,6 +42,12 @@ const routes = [
     component: () => import("@/views/Terms.vue"),
     meta: { title: "Terms of Service" },
   },
+  {
+    path: "/privacy",
+    name: "privacy",
+    component: () => import("@/views/Privacy.vue"),
+    meta: { title: "Privacy Policy" },
+  },
 
   // ── PROTECTED ROUTES (authenticated users only) ──
   {
