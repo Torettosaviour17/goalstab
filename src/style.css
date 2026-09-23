@@ -427,3 +427,106 @@ body {
 .driver-progress-text {
   color: #9ca3af !important;
 }
+
+
+/* Responsive safety layer */
+html {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+body,
+#app {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+table {
+  max-width: 100%;
+}
+
+pre,
+code {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+@media (max-width: 767px) {
+  body {
+    font-size: 0.9375rem;
+  }
+
+  .glass-card {
+    max-width: 100%;
+    border-radius: 1rem;
+  }
+
+  .glass-card:hover {
+    transform: none;
+  }
+
+  .container {
+    max-width: 100%;
+  }
+
+  /* Prevent long labels, emails and numbers from pushing layouts sideways. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  a,
+  span,
+  label,
+  button {
+    overflow-wrap: anywhere;
+  }
+
+  /* Keep dialogs and dropdowns inside narrow screens. */
+  [role="dialog"],
+  .modal,
+  .dropdown-menu {
+    max-width: calc(100vw - 1rem);
+  }
+
+  /* Tables become horizontally scrollable instead of breaking the page. */
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  /* Give the fixed/sticky mobile navigation enough breathing room. */
+  main {
+    min-width: 0;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 380px) {
+  .glass-card {
+    border-radius: 0.875rem;
+  }
+}
