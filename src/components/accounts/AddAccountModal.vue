@@ -136,7 +136,7 @@ const close = () => {
 }
 
 const handleSubmit = async () => {
-  if (!/^\\d{11}$/.test(form.accountNumber)) return
+  if (!/^\d{11}$/.test(form.accountNumber)) return
   loading.value = true
   try {
     emit('submit', { ...form })
