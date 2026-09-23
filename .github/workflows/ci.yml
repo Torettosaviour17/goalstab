@@ -38,7 +38,5 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package.json
       - run: npm install
-      - run: node --check server.js
-      - run: node --check src/app.js
-      - run: node --check src/routes/auth.js
-      - run: node --check src/controllers/paystack.js
+      - name: Syntax-check backend JavaScript
+        run: find . -type f -name "*.js" -not -path "./node_modules/*" -print0 | xargs -0 -n1 node --check
