@@ -62,21 +62,41 @@ const createGoal = async (req, res) => {
       req.body.accountId = undefined;
     }
 
-    const { userTarget, ...rest } = req.body;
-    const numericUserTarget = Number(userTarget);
+    const numericUserTarget = Number(req.body.userTarget);
     if (!Number.isFinite(numericUserTarget) || numericUserTarget <= 0) {
       return res.status(400).json({ msg: "A valid target amount is required" });
     }
+
     const fee = 100;
-    const target = Number(userTarget) + fee;
+    const allowedFields = [
+      "title",
+      "icon",
+      "color",
+      "type",
+      "autoSave",
+      "frequency",
+      "deadline",
+      "category",
+      "accountId",
+      "autoSaveEnabled",
+      "usePlatformFulfillment",
+      "selectedProduct",
+      "goalType",
+    ];
+    const goalFields = {};
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        goalFields[field] = req.body[field];
+      }
+    }
 
     const newGoal = new Goal({
+      ...goalFields,
       user: req.user.id,
       userTarget: numericUserTarget,
       fee,
       target: numericUserTarget + fee,
       goalType: req.body.goalType || "product",
-      ...rest,
     });
 
     if (newGoal.autoSaveEnabled) {
