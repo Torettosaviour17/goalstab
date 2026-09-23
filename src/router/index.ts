@@ -150,6 +150,9 @@ router.beforeEach(async (to, from, next) => {
   } else {
     next();
   }
+
+  // Keep document titles useful for users and search/social previews.
+  document.title = to.meta.title ? `${String(to.meta.title)} | GoalTabs` : "GoalTabs | Smart Savings Platform";
 });
 
 export default router;
