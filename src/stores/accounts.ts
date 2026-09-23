@@ -16,81 +16,52 @@ export interface Account {
   createdAt: string;
 }
 
+type AccountInput = Pick<Account, "bankName" | "accountNumber" | "accountName" | "type" | "currency" | "isDefault">;
+
 export const useAccountsStore = defineStore("accounts", () => {
   const uiStore = useUIStore();
   const accounts = ref<Account[]>([]);
   const loading = ref(false);
-  let fetching = false; // Guard flag to prevent concurrent fetches
+  let fetching = false;
 
-  const defaultAccount = computed(() =>
-    accounts.value.find((acc) => acc.isDefault),
-  );
+  const defaultAccount = computed(() => accounts.value.find((acc) => acc.isDefault));
 
   const fetchAccounts = async () => {
-    if (fetching) {
-      console.log("[Accounts] fetchAccounts already in progress, skipping");
-      return;
-    }
-    console.trace("fetchAccounts called");
+    if (fetching) return;
     fetching = true;
     loading.value = true;
     try {
-      const { data } = await api.get("/accounts");
+      const { data } = await api.get<Account[]>("/accounts");
       accounts.value = data;
     } catch (err) {
-      uiStore.addToast({
-        type: "error",
-        message: "Failed to load accounts",
-      });
+      uiStore.addToast({ type: "error", message: "Failed to load accounts" });
     } finally {
       loading.value = false;
       fetching = false;
     }
   };
 
-  const addAccount = async (accountData: {
-    bankName: string;
-    accountNumber: string;
-    accountName: string;
-    type: string;
-  }) => {
+  const addAccount = async (accountData: AccountInput) => {
     try {
-      const { data } = await api.post("/accounts", accountData);
+      const { data } = await api.post<Account>("/accounts", accountData);
       accounts.value.push(data);
-
-      uiStore.addToast({
-        type: "success",
-        message: "Account added successfully",
-      });
-
+      uiStore.addToast({ type: "success", message: "Account added successfully" });
       return data;
     } catch (err) {
-      uiStore.addToast({
-        type: "error",
-        message: "Failed to add account",
-      });
+      uiStore.addToast({ type: "error", message: "Failed to add account" });
       throw err;
     }
   };
 
-  const updateAccount = async (id: string, updates: Partial<Account>) => {
+  const updateAccount = async (id: string, updates: Partial<AccountInput>) => {
     try {
-      const { data } = await api.put(`/accounts/${id}`, updates);
-
+      const { data } = await api.put<Account>(`/accounts/${id}`, updates);
       const index = accounts.value.findIndex((a) => a._id === id);
       if (index !== -1) accounts.value[index] = data;
-
-      uiStore.addToast({
-        type: "success",
-        message: "Account updated",
-      });
-
+      uiStore.addToast({ type: "success", message: "Account updated" });
       return data;
     } catch (err) {
-      uiStore.addToast({
-        type: "error",
-        message: "Failed to update account",
-      });
+      uiStore.addToast({ type: "error", message: "Failed to update account" });
       throw err;
     }
   };
@@ -99,48 +70,26 @@ export const useAccountsStore = defineStore("accounts", () => {
     try {
       await api.delete(`/accounts/${id}`);
       accounts.value = accounts.value.filter((a) => a._id !== id);
-
-      uiStore.addToast({
-        type: "success",
-        message: "Account removed",
-      });
+      uiStore.addToast({ type: "success", message: "Account removed" });
     } catch (err) {
-      uiStore.addToast({
-        type: "error",
-        message: "Failed to delete account",
-      });
+      uiStore.addToast({ type: "error", message: "Failed to delete account" });
       throw err;
     }
   };
 
   const setDefaultAccount = async (id: string) => {
     try {
-      await api.post(`/accounts/${id}/default`);
-
-      accounts.value.forEach((acc) => {
-        acc.isDefault = acc._id === id;
-      });
-
-      uiStore.addToast({
-        type: "success",
-        message: "Default account updated",
-      });
+      const { data } = await api.post<Account>(`/accounts/${id}/default`);
+      accounts.value = accounts.value.map((acc) => ({
+        ...acc,
+        isDefault: acc._id === data._id,
+      }));
+      uiStore.addToast({ type: "success", message: "Default account updated" });
     } catch (err) {
-      uiStore.addToast({
-        type: "error",
-        message: "Failed to set default account",
-      });
+      uiStore.addToast({ type: "error", message: "Failed to set default account" });
+      throw err;
     }
   };
 
-  return {
-    accounts,
-    loading,
-    defaultAccount,
-    fetchAccounts,
-    addAccount,
-    updateAccount,
-    deleteAccount,
-    setDefaultAccount,
-  };
+  return { accounts, loading, defaultAccount, fetchAccounts, addAccount, updateAccount, deleteAccount, setDefaultAccount };
 });
