@@ -128,6 +128,29 @@ const createGoal = async (req, res) => {
 
 router.post("/", auth, createGoal);
 
+// @route   GET api/goals/:id
+// @desc    Get one goal for its owner or an invited collaborator
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const goal = await Goal.findById(req.params.id)
+      .populate("sharedWith.user", "name email");
+    if (!goal) return res.status(404).json({ msg: "Goal not found" });
+
+    const isOwner = goal.user.toString() === req.user.id;
+    const isShared = goal.sharedWith.some(
+      (entry) => entry.user && entry.user._id.toString() === req.user.id,
+    );
+    if (!isOwner && !isShared) {
+      return res.status(403).json({ msg: "Access denied" });
+    }
+
+    res.json(goal.toObject ? goal.toObject() : goal);
+  } catch (err) {
+    console.error("GET goal error:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
 // @route   PUT api/goals/:id
 // @desc    Update a goal
 router.put("/:id", auth, async (req, res) => {
