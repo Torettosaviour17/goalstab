@@ -97,9 +97,8 @@ const close = () => {
   show.value = false;
 };
 
-const handleSubmit = async () => {
+const handleSubmit = () => {
   loading.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 500));
   emit("submit", { ...form });
   loading.value = false;
   close();
