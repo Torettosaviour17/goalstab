@@ -142,7 +142,9 @@ export const useNotificationsStore = defineStore("notifications", () => {
       // Handle withdrawal status changes - refresh transactions
       if (data.type === "withdrawal_processed") {
         const transactionsStore = useTransactionsStore();
+        const goalsStore = useGoalsStore();
         transactionsStore.fetchRecentTransactions();
+        goalsStore.fetchGoals();
       }
 
       // Toast
