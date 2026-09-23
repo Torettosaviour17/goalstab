@@ -43,19 +43,26 @@ jobs:
 
   vercel-production:
     name: Deploy production to Vercel
-    if: \${{ github.event_name == 'push' && secrets.VERCEL_TOKEN != '' }}
     needs: [frontend, backend]
     runs-on: ubuntu-latest
     env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_NHjbgwh0pXVXKi1tF6S4v9ez
       VERCEL_PROJECT_ID: prj_LN7dYeJJ2rOjuLgpegnstlhmoMne
     steps:
       - uses: actions/checkout@v4
       - name: Install Vercel CLI
+        if: env.VERCEL_TOKEN != ''
         run: npm install --global vercel@latest
       - name: Pull Vercel production environment
-        run: vercel pull --yes --environment=production --token=\${{ secrets.VERCEL_TOKEN }}
+        if: env.VERCEL_TOKEN != ''
+        run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
       - name: Build Vercel production artifacts
-        run: vercel build --prod --token=\${{ secrets.VERCEL_TOKEN }}
+        if: env.VERCEL_TOKEN != ''
+        run: vercel build --prod --token="$VERCEL_TOKEN"
       - name: Deploy Vercel production artifacts
-        run: vercel deploy --prebuilt --prod --token=\${{ secrets.VERCEL_TOKEN }}
+        if: env.VERCEL_TOKEN != ''
+        run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
+      - name: Vercel token check
+        if: env.VERCEL_TOKEN == ''
+        run: echo "VERCEL_TOKEN is not configured; Vercel deployment was skipped."
