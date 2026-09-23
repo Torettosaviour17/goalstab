@@ -1,12 +1,12 @@
 <template>
-  <div class="container mx-auto px-4 py-6 md:px-6 md:py-8">
-    <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Transactions</h1>
-    <p class="text-gray-400 mb-6">
+  <div class="container mx-auto px-3 py-5 sm:px-4 sm:py-6 md:px-6 md:py-8">
+    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">Transactions</h1>
+    <p class="text-sm text-gray-400 mb-4 sm:mb-6">
       View, filter, and export your transaction history
     </p>
 
     <!-- Filters and Export Buttons -->
-    <div class="flex flex-col lg:flex-row gap-4 mb-6">
+    <div class="flex flex-col lg:flex-row gap-3 sm:gap-4 mb-5 sm:mb-6">
       <div class="flex-1">
         <input
           v-model="search"
@@ -57,7 +57,7 @@
     </div>
 
     <!-- Transactions Table -->
-    <div class="glass-card p-4 md:p-6 overflow-x-auto">
+    <div class="glass-card p-3 sm:p-4 md:p-6">
       <!-- Summary Stats -->
       <div
         v-if="filteredTransactions.length"
@@ -86,8 +86,8 @@
           class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"
         ></div>
       </div>
-      <div v-else-if="filteredTransactions.length" class="min-w-[800px]">
-        <table class="w-full text-sm">
+      <div v-else-if="filteredTransactions.length">
+        <table class="w-full text-sm mobile-card-table">
           <thead>
             <tr class="text-left text-gray-400 border-b border-gray-800">
               <th class="pb-3 font-medium">Type</th>
