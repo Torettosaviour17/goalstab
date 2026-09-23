@@ -1,12 +1,8 @@
 const express = require("express");
 const cors = require("cors");
-const connectDB = require("./config/database");
 
 // ⚠️ IMPORTANT: Create the app instance FIRST
 const app = express();
-
-// Connect Database
-connectDB();
 
 // Middleware
 const allowedOrigins = new Set(
