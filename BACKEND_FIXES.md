@@ -34,7 +34,7 @@
 
 **Problem**: Hardcoded admin password in [initAdmin.js](backend/src/initAdmin.js)
 
-- `ADMIN_PASSWORD = "081toretto78"` visible in source code
+- `ADMIN_PASSWORD` from environment variables visible in source code
 - Password exposed to anyone with repo access
 - Gets committed to version control
 
