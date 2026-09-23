@@ -1,7 +1,7 @@
 import { ref, onUnmounted } from "vue";
 
-export function useDebouncedLoading(threshold = 200) {
-  const loading = ref(true);
+export function useDebouncedLoading(threshold = 800) {
+  const loading = ref(false);
   const showSkeleton = ref(false);
   let timeout: ReturnType<typeof setTimeout> | null = null;
 
