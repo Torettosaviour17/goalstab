@@ -26,7 +26,7 @@
           class="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-2xl shadow-2xl object-contain"
         />
         <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Welcome Back</h1>
-        <p class="text-gray-400">Sign in to continue to GoalTabs</p>
+        <p class="text-xs sm:text-base text-gray-400">Sign in to continue to GoalTabs</p>
       </div>
 
       <!-- Login form -->
