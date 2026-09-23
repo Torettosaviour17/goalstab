@@ -385,4 +385,23 @@ const forecast = computed(() => {
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 });
+const changePeriod = async (period: string) => {
+  selectedPeriod.value = period;
+  await analyticsStore.fetchTrend(period);
+};
+
+const formatNumber = (num: number) => num?.toLocaleString() || "0";
+const formatDate = (date: string) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+
+onMounted(async () => {
+  await Promise.all([
+    analyticsStore.fetchAll(selectedPeriod.value),
+    goalsStore.fetchGoals(),
+  ]);
+});
 </script>
