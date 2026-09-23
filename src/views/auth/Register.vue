@@ -20,17 +20,11 @@
     <div class="w-full max-w-md relative z-10">
       <!-- Logo and welcome -->
       <div class="text-center mb-8 animate-fade-in">
-        <div class="w-20 h-20 mx-auto mb-4 rounded-2xl p-1 shadow-2xl">
-          <div
-            class="w-full h-full bg-gray-950 rounded-xl flex items-center justify-center"
-          >
-            <img
-              src="@/assets/goaltab-logo.png"
-              alt="GoalTabs"
-              class="w-40 h-40 mx-auto shadow-2xl object-contain"
-            />
-          </div>
-        </div>
+        <img
+          src="@/assets/goaltab-logo.png"
+          alt="GoalTabs"
+          class="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-2xl object-contain"
+        />
         <h1 class="text-3xl font-bold text-white mb-2">Join GoalTabs</h1>
         <p class="text-gray-400">Start your savings journey today</p>
       </div>
