@@ -178,6 +178,79 @@ router.post("/google-signin", async (req, res) => {
   }
 });
 
+// @route   POST api/auth/forgot-password
+// @desc    Create a short-lived password reset token and email the reset link
+router.post("/forgot-password", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+
+  // Always return the same response so account existence is not disclosed.
+  const genericResponse = {
+    msg: "If an account exists for that email, a password reset link has been sent.",
+  };
+
+  if (!email) return res.json(genericResponse);
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.json(genericResponse);
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+
+    user.passwordResetToken = tokenHash;
+    user.passwordResetExpires = new Date(Date.now() + 30 * 60 * 1000);
+    await user.save();
+
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const resetUrl = `${frontendUrl.replace(/\/$/, "")}/reset-password?token=${rawToken}`;
+
+    await sendEmailToUser(
+      user.id,
+      "Reset your GoalTabs password",
+      `<p>We received a request to reset your GoalTabs password.</p>
+       <p><a href="${resetUrl}">Reset your password</a></p>
+       <p>This link expires in 30 minutes. If you did not request this, you can ignore this email.</p>`,
+    );
+
+    return res.json(genericResponse);
+  } catch (err) {
+    console.error("Password reset request error:", err);
+    return res.json(genericResponse);
+  }
+});
+
+// @route   POST api/auth/reset-password
+// @desc    Reset password using a single-use token
+router.post("/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) {
+    return res.status(400).json({ msg: "Reset token and new password are required" });
+  }
+  if (String(password).length < 6) {
+    return res.status(400).json({ msg: "Password must be at least 6 characters" });
+  }
+
+  try {
+    const tokenHash = crypto.createHash("sha256").update(String(token)).digest("hex");
+    const user = await User.findOne({
+      passwordResetToken: tokenHash,
+      passwordResetExpires: { $gt: new Date() },
+    });
+
+    if (!user) return res.status(400).json({ msg: "Reset link is invalid or expired" });
+
+    user.password = password;
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    await user.save();
+
+    return res.json({ msg: "Password reset successfully" });
+  } catch (err) {
+    console.error("Password reset error:", err);
+    return res.status(500).json({ msg: "Unable to reset password" });
+  }
+});
+
 // @route   GET api/auth/me (protected)
 router.get("/me", auth, async (req, res) => {
   try {
