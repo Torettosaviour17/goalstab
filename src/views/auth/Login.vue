@@ -133,6 +133,21 @@
           </button>
         </form>
 
+        <!-- Google Sign-In -->
+        <div class="mb-6">
+          <div id="google_signin_button" class="w-full min-h-10 flex justify-center"></div>
+          <p v-if="googleError" class="mt-2 text-xs text-red-400">{{ googleError }}</p>
+        </div>
+
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-gray-700"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-gray-800 text-gray-400 rounded-full">Or sign in with email</span>
+          </div>
+        </div>
+
         <!-- Simple savings tip (replaces social buttons) -->
         <div
           class="mt-8 text-center text-sm text-gray-500 border-t border-gray-700 pt-6"
@@ -175,10 +190,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
+
+declare global { interface Window { google: any } }
 
 const router = useRouter();
 const route = useRoute();
@@ -187,12 +204,68 @@ const uiStore = useUIStore();
 
 const loading = ref(false);
 const showPassword = ref(false);
+const googleError = ref("");
 
 const form = reactive({
   email: "",
   password: "",
   rememberMe: false,
 });
+
+const handleGoogleCallback = async (response: any) => {
+  try {
+    googleError.value = "";
+    if (!response?.credential) throw new Error("No Google credential received");
+    await authStore.signInWithGoogle(response.credential);
+    const redirect = (route.query.redirect as string) || "/dashboard";
+    await router.push(redirect);
+  } catch (error: any) {
+    googleError.value = error.response?.data?.msg || error.message || "Google sign-in failed";
+  }
+};
+
+const initializeGoogleSignIn = () => {
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  if (!clientId || !window.google?.accounts?.id) {
+    googleError.value = "Google Sign-In is unavailable";
+    return;
+  }
+
+  window.google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleGoogleCallback,
+  });
+
+  const container = document.getElementById("google_signin_button");
+  if (container) {
+    container.innerHTML = "";
+    window.google.accounts.id.renderButton(container, {
+      theme: "outline",
+      size: "large",
+      width: Math.min(400, container.clientWidth || 400),
+      text: "continue_with",
+      shape: "rectangular",
+    });
+  }
+};
+
+onMounted(() => {
+  const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]') as HTMLScriptElement | null;
+  if (window.google?.accounts?.id) {
+    initializeGoogleSignIn();
+    return;
+  }
+
+  const script = existing || document.createElement("script");
+  if (!existing) {
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+  }
+  script.addEventListener("load", initializeGoogleSignIn, { once: true });
+});
+
 
 const handleLogin = async () => {
   loading.value = true;
