@@ -272,7 +272,7 @@ const quickAmounts = computed(() => {
 
 const availableBalance = computed(() => {
   if (!props.goal) return 0;
-  return Math.max(0, (props.goal.saved || 0) - (props.goal.withdrawn || 0));
+  return Math.max(0, props.goal.saved || 0);
 });
 
 // Validation
