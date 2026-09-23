@@ -61,7 +61,7 @@ export default defineConfig({
         // Cache the complete built app shell so installed GoalTabs can open offline.
         navigateFallback: "/index.html",
         navigateFallbackAllowlist: [
-          /^\\/(dashboard|goals|analytics|transactions|settings|accounts|help|payment-success|admin)(?:\\/|$)/,
+          /^\/(dashboard|goals|analytics|transactions|settings|accounts|help|payment-success|admin)(?:\/|$)/,
         ],
         // Never cache authenticated API responses in the service worker.
         // They can contain user-specific financial data and should always come from the network.
