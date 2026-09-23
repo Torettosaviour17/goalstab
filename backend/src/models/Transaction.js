@@ -17,6 +17,7 @@ const TransactionSchema = new mongoose.Schema(
       default: "completed",
     },
     date: { type: Date, default: Date.now },
+    reference: { type: String, index: true },
   },
   { timestamps: true },
 );
