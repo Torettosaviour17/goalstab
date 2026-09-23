@@ -113,6 +113,7 @@ router.get("/trend", auth, async (req, res) => {
         $match: {
           user: new mongoose.Types.ObjectId(req.user.id),
           date: { $gte: startDate },
+          type: { $in: ["deposit", "auto_save"] },
         },
       },
       { $group: { _id: groupFormat, total: { $sum: "$amount" } } },
