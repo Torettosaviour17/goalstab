@@ -3,42 +3,26 @@
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
         <label class="block text-sm font-medium text-gray-300 mb-1">Bank Name</label>
-        <input
-          v-model="form.bankName"
-          type="text"
-          required
-          placeholder="e.g., GTBank"
-          class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-        />
+        <input v-model="form.bankName" type="text" required placeholder="e.g., GTBank"
+          class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-300 mb-1">Account Name</label>
-        <input
-          v-model="form.accountName"
-          type="text"
-          required
-          placeholder="John Doe"
-          class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-        />
+        <input v-model="form.accountName" type="text" required placeholder="John Doe"
+          class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-300 mb-1">Account Number</label>
-        <input
-          v-model="form.accountNumber"
-          type="text"
-          required
-          maxlength="11"
-          placeholder="01234567890"
-          class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-        />
+        <input v-model="form.accountNumber" type="text" inputmode="numeric" required maxlength="11"
+          pattern="[0-9]{11}" placeholder="01234567890"
+          class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500" />
+        <p class="text-xs text-gray-500 mt-1">Enter exactly 11 digits.</p>
       </div>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-medium text-gray-300 mb-1">Account Type</label>
-          <select
-            v-model="form.type"
-            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
+          <select v-model="form.type"
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="savings">Savings</option>
             <option value="checking">Checking</option>
             <option value="credit">Credit</option>
@@ -46,10 +30,8 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-300 mb-1">Currency</label>
-          <select
-            v-model="form.currency"
-            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
+          <select v-model="form.currency"
+            class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500">
             <option value="NGN">NGN (₦)</option>
             <option value="USD">USD ($)</option>
             <option value="EUR">EUR (€)</option>
@@ -57,17 +39,13 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <input
-          id="isDefault"
-          v-model="form.isDefault"
-          type="checkbox"
-          class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-primary-500 focus:ring-primary-500"
-        />
+        <input id="isDefault" v-model="form.isDefault" type="checkbox"
+          class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-primary-500 focus:ring-primary-500" />
         <label for="isDefault" class="text-sm text-gray-300">Set as default account</label>
       </div>
-      <div class="flex gap-2 justify-end pt-4">
-        <BaseButton variant="secondary" @click="close">Cancel</BaseButton>
-        <BaseButton type="submit" :loading="loading">
+      <div class="flex flex-col-reverse sm:flex-row gap-2 justify-end pt-4">
+        <BaseButton variant="secondary" type="button" @click="close">Cancel</BaseButton>
+        <BaseButton type="submit" :loading="loading" :disabled="loading">
           {{ isEditing ? 'Update' : 'Add Account' }}
         </BaseButton>
       </div>
@@ -76,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch } from 'vue'
+import { reactive, computed, watch } from 'vue'
 import BaseModal from '@/components/shared/BaseModal.vue'
 import BaseButton from '@/components/shared/BaseButton.vue'
 import type { Account } from '@/stores/accounts'
@@ -84,19 +62,30 @@ import type { Account } from '@/stores/accounts'
 interface Props {
   modelValue: boolean
   account?: Account | null
+  loading?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  account: null
+  account: null,
+  loading: false
 })
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: 'submit', account: any): void
+  (e: 'submit', account: {
+    bankName: string
+    accountName: string
+    accountNumber: string
+    type: 'savings' | 'checking' | 'credit'
+    currency: string
+    isDefault: boolean
+  }): void
 }>()
 
-const show = ref(props.modelValue)
-const loading = ref(false)
+const show = computed({
+  get: () => props.modelValue,
+  set: (value: boolean) => emit('update:modelValue', value)
+})
 
 const isEditing = computed(() => !!props.account)
 
@@ -127,22 +116,12 @@ watch(() => props.account, (account) => {
   }
 }, { immediate: true })
 
-watch(show, (val) => {
-  emit('update:modelValue', val)
-})
-
 const close = () => {
   show.value = false
 }
 
-const handleSubmit = async () => {
+const handleSubmit = () => {
   if (!/^\d{11}$/.test(form.accountNumber)) return
-  loading.value = true
-  try {
-    emit('submit', { ...form })
-  } finally {
-    loading.value = false
-    close()
-  }
+  emit('submit', { ...form })
 }
 </script>
