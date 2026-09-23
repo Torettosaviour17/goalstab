@@ -129,20 +129,19 @@ const router = createRouter({
 });
 
 // Global navigation guard
-let authCheckPromise: Promise<void> | null = null;
-
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
-
-  // Reuse one validation request during app startup/navigation.
-  if (!authCheckPromise) {
-    authCheckPromise = authStore.checkAuth();
-  }
-  await authCheckPromise;
 
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   const adminOnly = to.matched.some((record) => record.meta.adminOnly);
   const guestOnly = to.matched.some((record) => record.meta.guestOnly);
+
+  // Do not block public/auth pages on a network request.
+  // A freshly logged-in user already has a valid session, so send them
+  // straight to the destination without an unnecessary /auth/me round-trip.
+  if (requiresAuth && !authStore.isAuthenticated && authStore.token) {
+    await authStore.checkAuth();
+  }
 
   if (requiresAuth && !authStore.isAuthenticated) {
     // Redirect to login with the intended destination
