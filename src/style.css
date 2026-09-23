@@ -530,3 +530,77 @@ code {
     border-radius: 0.875rem;
   }
 }
+
+
+/* Mobile UI scale and data-card layout */
+@media (max-width: 767px) {
+  html { font-size: 14px; }
+
+  /* Compact the whole mobile product without changing desktop sizing. */
+  .text-6xl { font-size: 2.25rem !important; }
+  .text-5xl { font-size: 2rem !important; }
+  .text-4xl { font-size: 1.75rem !important; }
+  .text-3xl { font-size: 1.5rem !important; line-height: 1.2 !important; }
+  .text-2xl { font-size: 1.25rem !important; line-height: 1.25 !important; }
+  .text-xl { font-size: 1.0625rem !important; line-height: 1.3 !important; }
+  .text-lg { font-size: 0.9375rem !important; }
+  .text-base { font-size: 0.875rem !important; }
+  .text-sm { font-size: 0.8125rem !important; }
+  .text-xs { font-size: 0.6875rem !important; }
+
+  /* Admin and transaction data become readable stacked records instead of squeezed columns. */
+  .mobile-card-table {
+    display: block;
+    width: 100%;
+  }
+  .mobile-card-table thead {
+    display: none;
+  }
+  .mobile-card-table tbody,
+  .mobile-card-table tr {
+    display: block;
+    width: 100%;
+  }
+  .mobile-card-table tr {
+    margin: 0 0 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0.875rem;
+    background: rgba(17,24,39,0.5);
+  }
+  .mobile-card-table td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.45rem 0 !important;
+    border: 0 !important;
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  .mobile-card-table td::before {
+    content: attr(data-label);
+    flex: 0 0 38%;
+    color: var(--color-gray-500);
+    text-align: left;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .mobile-card-table td > * {
+    max-width: 62%;
+  }
+  .mobile-card-table td:first-child {
+    padding-top: 0 !important;
+  }
+  .mobile-card-table td:last-child {
+    padding-bottom: 0 !important;
+  }
+
+  /* Keep action controls usable without creating horizontal page overflow. */
+  .mobile-card-table td[data-label="Actions"] > div {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
