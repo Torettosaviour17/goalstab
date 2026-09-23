@@ -368,11 +368,7 @@ const fetchDashboardData = async () => {
 };
 
 // ── Actions ────────────────────────────────────────────
-const openAddFunds = (id: string | undefined) => {
-  if (!id) return;
-  selectedGoalId.value = id;
-  showAddFundsModal.value = true;
-};
+
 
 const handleAddFunds = async (amount: number) => {
   if (!selectedGoal.value) return;
@@ -384,16 +380,7 @@ const handleAddFunds = async (amount: number) => {
   });
 };
 
-const handleWithdraw = (id: string | undefined) => {
-  if (!id) return;
-  const goal = goals.value.find((g) => g.id === id || g._id === id);
-  if (goal && goal.progress >= 100) {
-    selectedWithdrawGoal.value = goal;
-    showWithdrawModal.value = true;
-  } else {
-    uiStore.addToast({ type: "warning", message: "Complete the goal first!" });
-  }
-};
+
 
 const submitWithdrawRequest = async (data: any) => {
   try {
@@ -418,10 +405,7 @@ const handleCreateGoal = (formData: any) => {
   uiStore.addToast({ type: "success", message: "Goal created successfully!" });
 };
 
-const openShareModal = (goal: Goal) => {
-  selectedShareGoal.value = goal;
-  showShareModal.value = true;
-};
+
 
 const handleGoalShare = async ({
   email,
