@@ -185,7 +185,7 @@ const router = useRouter();
 const goalsStore = useGoalsStore();
 const uiStore = useUIStore();
 
-const { showSkeleton, startLoading, finishLoading } = useDebouncedLoading(200);
+const { showSkeleton, startLoading, finishLoading } = useDebouncedLoading(800);
 
 // ── State ──────────────────────────────────────────────
 const search = ref("");
