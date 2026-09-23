@@ -143,6 +143,7 @@ export const useAnalyticsStore = defineStore("analytics", () => {
     lifetime,
     loading,
     fetchAll,
+    fetchOverview,
     fetchTrend,
     fetchLifetimeStats,
   };
