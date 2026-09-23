@@ -270,7 +270,7 @@ const handleLogin = async () => {
   try {
     await authStore.login(form.email, form.password, form.rememberMe);
     const redirect = (route.query.redirect as string) || "/dashboard";
-    router.push(redirect);
+    await router.push(redirect);
   } catch (error) {
     // handled in store
   } finally {
