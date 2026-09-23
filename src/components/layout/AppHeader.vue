@@ -108,7 +108,7 @@
                 </router-link>
 
                 <div
-                  class="border-t hidden md:flex border-gray-700/50 mt-1 pt-1"
+                  class="border-t border-gray-700/50 mt-1 pt-1"
                 >
                   <button
                     @click="handleLogout"
