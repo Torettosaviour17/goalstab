@@ -138,6 +138,7 @@ const GoalSchema = new mongoose.Schema(
     },
     lastAutoSave: Date,
     nextAutoSave: Date,
+    lastUpdated: { type: Date, default: Date.now },
   },
   {
     timestamps: true,
