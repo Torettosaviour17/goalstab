@@ -1,0 +1,45 @@
+name: Sync backend lockfile
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "backend/package.json"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Regenerate backend lockfile
+        working-directory: backend
+        run: pnpm install --lockfile-only
+
+      - name: Commit lockfile if changed
+        run: |
+          if git diff --quiet -- backend/pnpm-lock.yaml; then
+            echo "Lockfile already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/pnpm-lock.yaml
+          git commit -m "chore: sync backend pnpm lockfile"
+          git push
