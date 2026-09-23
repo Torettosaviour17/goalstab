@@ -25,3 +25,6 @@ const GoalActivitySchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("GoalActivity", GoalActivitySchema);
+
+GoalActivitySchema.index({ goal: 1, createdAt: -1 });
+GoalActivitySchema.index({ user: 1, createdAt: -1 });
