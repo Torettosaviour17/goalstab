@@ -6,6 +6,7 @@ const Transaction = require("../models/Transaction");
 const Notification = require("../models/Notification");
 const GoalActivity = require("../models/GoalActivity");
 const User = require("../models/User");
+const Account = require("../models/Account");
 const { sendNotification } = require("./notifications");
 const { runAutoSave } = require("../services/autoSave");
 const { sendEmailToUser } = require("../services/emailService");
@@ -68,6 +69,11 @@ const createGoal = async (req, res) => {
     }
 
     const fee = 100;
+    if (req.body.accountId) {
+      const account = await Account.findOne({ _id: req.body.accountId, user: req.user.id });
+      if (!account) return res.status(400).json({ msg: "Invalid linked account" });
+    }
+
     const allowedFields = [
       "title",
       "icon",
@@ -153,6 +159,11 @@ router.put("/:id", auth, async (req, res) => {
       if (Object.prototype.hasOwnProperty.call(req.body, field)) {
         updates[field] = req.body[field];
       }
+    }
+
+    if (updates.accountId) {
+      const account = await Account.findOne({ _id: updates.accountId, user: req.user.id });
+      if (!account) return res.status(400).json({ msg: "Invalid linked account" });
     }
 
     goal.set(updates);
