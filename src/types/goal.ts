@@ -7,6 +7,7 @@ export interface Goal {
   target: number; // total (userTarget + fee)
   saved: number;
   withdrawn: number;
+  isClosed: boolean;
   icon: string;
   color: string;
   type: "percentage" | "fixed";
