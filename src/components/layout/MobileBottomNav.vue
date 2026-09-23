@@ -41,6 +41,5 @@ const moreItems = [
   { name: "Analytics", path: "/analytics", icon: "📈" },
   { name: "Settings", path: "/settings", icon: "⚙️" },
   { name: "Help & Support", path: "/help", icon: "❓" },
-  { name: "Admin", path: "/admin", icon: "🛡️" },
 ];
 </script>
