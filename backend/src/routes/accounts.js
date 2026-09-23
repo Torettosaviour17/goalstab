@@ -23,7 +23,7 @@ router.get('/', auth, async (req, res) => {
 // @desc    Add an account
 router.post('/', auth, async (req, res) => {
   try {
-    const { bankName, accountNumber, accountName, type } = req.body;
+    const { bankName, accountNumber, accountName, type, currency, isDefault } = req.body;
 
     if (!bankName || !accountNumber || !accountName) {
       return res.status(400).json({ message: 'All required fields must be filled' });
@@ -42,8 +42,13 @@ router.post('/', auth, async (req, res) => {
       accountName,
       lastFour,
       type,
-      isDefault: existingAccounts === 0
+      currency: currency || 'NGN',
+      isDefault: isDefault === true || existingAccounts === 0,
     });
+
+    if (newAccount.isDefault) {
+      await Account.updateMany({ user: req.user.id }, { $set: { isDefault: false } });
+    }
 
     const account = await newAccount.save();
 
@@ -79,6 +84,11 @@ router.put('/:id', auth, async (req, res) => {
     }
     if (accountName !== undefined) account.accountName = accountName;
     if (type !== undefined) account.type = type;
+    if (currency !== undefined) account.currency = currency;
+    if (isDefault === true) {
+      await Account.updateMany({ user: req.user.id, _id: { $ne: account._id } }, { $set: { isDefault: false } });
+      account.isDefault = true;
+    }
 
     await account.save();
     res.json(account);
