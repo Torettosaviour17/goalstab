@@ -27,8 +27,8 @@
           v-model="form.accountNumber"
           type="text"
           required
-          maxlength="10"
-          placeholder="0123456789"
+          maxlength="11"
+          placeholder="01234567890"
           class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </div>
@@ -136,11 +136,13 @@ const close = () => {
 }
 
 const handleSubmit = async () => {
+  if (!/^\\d{11}$/.test(form.accountNumber)) return
   loading.value = true
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500))
-  emit('submit', { ...form })
-  loading.value = false
-  close()
+  try {
+    emit('submit', { ...form })
+  } finally {
+    loading.value = false
+    close()
+  }
 }
 </script>
