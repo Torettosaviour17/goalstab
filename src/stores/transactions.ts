@@ -20,27 +20,17 @@ export const useTransactionsStore = defineStore("transactions", () => {
   let fetching = false; // Guard flag to prevent concurrent fetches
 
   const fetchRecentTransactions = async (limit = 10) => {
-    if (fetching) {
-      console.log(
-        "[Transactions] fetchRecentTransactions already in progress, skipping",
-      );
-      return;
-    }
-    console.trace("fetchRecentTransactions called");
+    if (fetching) return;
     fetching = true;
     loading.value = true;
     try {
       const { data } = await api.get(`/analytics/transactions?limit=${limit}`);
       transactions.value = data;
-    } catch (err: any) {
-      // Silently ignore 404 (endpoint not implemented yet)
-      if (err.response?.status !== 404) {
-        uiStore.addToast({
-          type: "error",
-          message: "Failed to load recent activity",
-        });
-      }
-      // Keep empty array
+    } catch {
+      uiStore.addToast({
+        type: "error",
+        message: "Failed to load recent activity",
+      });
     } finally {
       loading.value = false;
       fetching = false;
