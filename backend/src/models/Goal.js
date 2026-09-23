@@ -149,14 +149,8 @@ const GoalSchema = new mongoose.Schema(
 // PRE-SAVE HOOK – Progress, Fee Deduction, Closure
 // =========================
 GoalSchema.pre("save", async function () {
-  // 1. Update progress
-  if (this.target > 0) {
-    this.progress = Math.min(100, Math.round((this.saved / this.target) * 100));
-  } else {
-    this.progress = 0;
-  }
-
-  // 2. Charge platform fee when target is reached (only once)
+  // The user-facing target includes the platform fee. Once that target is funded,
+  // the fee is removed and the goal becomes withdrawable.
   if (!this.feeCharged && this.saved >= this.target && this.fee > 0) {
     const feeToDeduct = Math.min(this.fee, this.saved);
     this.saved -= feeToDeduct;
@@ -164,13 +158,23 @@ GoalSchema.pre("save", async function () {
     this.feeCharged = true;
   }
 
-  // 3. Auto-close ONLY when balance hits zero after withdrawals
-  // FIX: Removed early closure on target reached — user hasn't withdrawn yet at that point.
-  if (!this.isClosed) {
-    const zeroBalanceAfterWithdrawals = this.saved <= 0 && this.withdrawn > 0;
-    if (zeroBalanceAfterWithdrawals) {
-      this.isClosed = true;
-    }
+  if (this.target > 0) {
+    this.progress = this.feeCharged
+      ? 100
+      : Math.min(100, Math.round((this.saved / this.target) * 100));
+  } else {
+    this.progress = 0;
+  }
+
+  // Goals are locked while saving and become withdrawable at completion.
+  if (this.progress >= 100) {
+    this.locked = false;
+  }
+
+  // Auto-close only after the completed balance has been fully withdrawn.
+  if (!this.isClosed && this.saved <= 0 && this.withdrawn > 0) {
+    this.isClosed = true;
+    this.locked = true;
   }
 });
 
