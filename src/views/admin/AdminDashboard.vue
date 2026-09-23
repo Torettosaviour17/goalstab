@@ -1,9 +1,9 @@
 <template>
-  <div class="container mx-auto px-4 py-6 md:px-6 md:py-8">
-    <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">
+  <div class="container mx-auto px-3 py-5 sm:px-4 sm:py-6 md:px-6 md:py-8">
+    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">
       Admin Dashboard
     </h1>
-    <p class="text-gray-400 mb-8">
+    <p class="text-sm text-gray-400 mb-5 sm:mb-8">
       Manage users, withdrawals, and platform fees
     </p>
 
@@ -97,7 +97,7 @@
 
     <!-- Users Tab -->
     <div v-if="activeTab === 'Users'">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
         <h2 class="text-xl font-bold text-white">All Users</h2>
         <input
           v-model="search"
@@ -107,7 +107,7 @@
         />
       </div>
       <div class="glass-card overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full mobile-card-table">
           <thead>
             <tr
               class="text-left text-sm text-gray-400 border-b border-gray-800"
@@ -172,7 +172,7 @@
 
     <!-- Withdrawals Tab -->
     <div v-if="activeTab === 'Withdrawals'">
-      <div class="flex gap-2 mb-4">
+      <div class="flex flex-wrap gap-2 mb-4">
         <button
           v-for="status in statuses"
           :key="status"
