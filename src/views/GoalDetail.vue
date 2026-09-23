@@ -150,14 +150,14 @@
             Add Funds
           </BaseButton>
           <BaseButton
-            :variant="goal.locked ? 'ghost' : 'primary'"
+            :variant="goal.locked || pendingWithdrawal ? 'ghost' : 'primary'"
             size="lg"
             class="flex-1"
-            :disabled="goal.locked"
+            :disabled="goal.locked || pendingWithdrawal || goal.progress < 100 || goal.isClosed"
             @click="handleWithdraw"
           >
             <template #icon>💸</template>
-            {{ goal.locked ? "Locked" : "Withdraw" }}
+            {{ pendingWithdrawal ? "Pending" : goal.locked ? "Locked" : goal.isClosed ? "Closed" : "Withdraw" }}
           </BaseButton>
         </div>
 
@@ -238,6 +238,12 @@
       @add="handleAddFunds"
     />
 
+    <WithdrawModal
+      v-model="showWithdrawModal"
+      :goal="goal"
+      @submit="submitWithdrawRequest"
+    />
+
     <ServiceBookingModal
       v-model="showServiceModal"
       @submit="submitServiceBooking"
@@ -255,6 +261,7 @@ import { useActivitiesStore } from "@/stores/activities";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import GoalProgress from "@/components/goals/GoalProgress.vue";
 import AddFundsModal from "@/components/goals/AddFundsModal.vue";
+import WithdrawModal from "@/components/goals/WithdrawModal.vue";
 import GoalActivityFeed from "@/components/goals/GoalActivityFeed.vue";
 import ServiceBookingModal from "@/components/goals/ServiceBookingModal.vue";
 import api from "@/services/api";
@@ -273,6 +280,8 @@ const goal = computed(() => {
 const activeDetailTab = ref("overview");
 
 const showAddFundsModal = ref(false);
+const showWithdrawModal = ref(false);
+const pendingWithdrawal = ref(false);
 
 const showServiceModal = ref(false);
 
@@ -307,19 +316,48 @@ const handleAddFunds = async (amount: number) => {
 };
 
 const handleWithdraw = () => {
-  if (goal.value) {
-    if (goal.value.progress >= 100) {
-      // In a real app, initiate withdrawal
-      uiStore.addToast({
-        type: "success",
-        message: "Withdrawal request sent!",
-      });
-    } else {
-      uiStore.addToast({
-        type: "warning",
-        message: "Complete the goal first!",
-      });
-    }
+  if (!goal.value) return;
+  if (pendingWithdrawal.value) {
+    uiStore.addToast({ type: "info", message: "A withdrawal is already pending." });
+    return;
+  }
+  if (goal.value.progress < 100 || goal.value.locked || goal.value.isClosed) {
+    uiStore.addToast({ type: "warning", message: "Complete and unlock the goal before withdrawing." });
+    return;
+  }
+  showWithdrawModal.value = true;
+};
+
+const loadPendingWithdrawal = async () => {
+  if (!goal.value) return;
+  try {
+    const { data } = await api.get("/withdrawals/user");
+    pendingWithdrawal.value = data.some(
+      (withdrawal: any) =>
+        (withdrawal.goal?._id || withdrawal.goal) === goal.value?._id &&
+        withdrawal.status === "pending",
+    );
+  } catch {
+    pendingWithdrawal.value = false;
+  }
+};
+
+const submitWithdrawRequest = async (data: any) => {
+  if (!goal.value) return;
+  try {
+    await api.post("/withdrawals", {
+      goalId: goal.value._id,
+      amount: data.amount,
+      accountDetails: data,
+    });
+    pendingWithdrawal.value = true;
+    uiStore.addToast({ type: "success", message: "Withdrawal request submitted!" });
+  } catch (err: any) {
+    uiStore.addToast({
+      type: "error",
+      message: err.response?.data?.msg || "Failed to submit withdrawal request",
+    });
+    throw err;
   }
 };
 
@@ -354,6 +392,16 @@ const initiatePurchase = async () => {
     uiStore.addToast({ type: "error", message: "Purchase failed" });
   }
 };
+
+// Load the goal list for direct/deep links, then refresh withdrawal state.
+watch(
+  () => route.params.id,
+  async () => {
+    await goalsStore.fetchGoals();
+    await loadPendingWithdrawal();
+  },
+  { immediate: true },
+);
 
 // Load activities when goal changes
 watch(
