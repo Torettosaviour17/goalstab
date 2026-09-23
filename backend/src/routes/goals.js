@@ -63,14 +63,18 @@ const createGoal = async (req, res) => {
     }
 
     const { userTarget, ...rest } = req.body;
+    const numericUserTarget = Number(userTarget);
+    if (!Number.isFinite(numericUserTarget) || numericUserTarget <= 0) {
+      return res.status(400).json({ msg: "A valid target amount is required" });
+    }
     const fee = 100;
     const target = Number(userTarget) + fee;
 
     const newGoal = new Goal({
       user: req.user.id,
-      userTarget: Number(userTarget),
+      userTarget: numericUserTarget,
       fee,
-      target,
+      target: numericUserTarget + fee,
       goalType: req.body.goalType || "product",
       ...rest,
     });
@@ -109,11 +113,31 @@ router.put("/:id", auth, async (req, res) => {
     if (goal.user.toString() !== req.user.id)
       return res.status(401).json({ msg: "Not authorized" });
 
-    goal = await Goal.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body, lastUpdated: Date.now() },
-      { new: true },
-    );
+    const allowedFields = [
+      "title",
+      "icon",
+      "color",
+      "type",
+      "autoSave",
+      "frequency",
+      "deadline",
+      "category",
+      "accountId",
+      "autoSaveEnabled",
+      "usePlatformFulfillment",
+      "selectedProduct",
+      "goalType",
+    ];
+    const updates = {};
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    goal.set(updates);
+    goal.lastUpdated = new Date();
+    await goal.save();
 
     res.json(goal.toObject ? goal.toObject() : goal);
   } catch (err) {
