@@ -15,9 +15,8 @@ api.interceptors.request.use(
     if (!token) {
       try {
         // lazy import to avoid circular deps
-        const { useAuthStore } = require("@/stores/auth");
-        const auth = useAuthStore();
-        token = auth.token || "";
+        // Authentication state is persisted by Pinia; localStorage is the single source for the HTTP client.
+        token = localStorage.getItem("token") || "";
       } catch (e) {
         // ignore if store not ready
       }
@@ -40,7 +39,7 @@ api.interceptors.response.use(
       // Unauthorized - clear token and redirect to login
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      window.location.assign("/login");
     }
     return Promise.reject(error);
   },
