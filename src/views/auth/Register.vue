@@ -273,6 +273,18 @@ const passwordError = computed(() => {
   return "";
 });
 
+const handleGoogleCallback = async (response: any) => {
+  try {
+    googleError.value = "";
+    if (!response?.credential) throw new Error("No Google credential received");
+    await authStore.signInWithGoogle(response.credential);
+    await router.push("/dashboard");
+  } catch (error: any) {
+    googleError.value =
+      error.response?.data?.msg || error.message || "Google sign-in failed";
+  }
+};
+
 // Initialize Google Sign-In once, then render the official Google button.
 const initializeGoogleSignIn = () => {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
