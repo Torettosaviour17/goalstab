@@ -125,12 +125,12 @@
               :key="user._id"
               class="border-b border-gray-800"
             >
-              <td class="p-4 text-white">{{ user.name }}</td>
-              <td class="p-4 text-gray-300">{{ user.email }}</td>
-              <td class="p-4 text-gray-300">
+              <td class="p-4 text-white" data-label="Name">{{ user.name }}</td>
+              <td class="p-4 text-gray-300" data-label="Email">{{ user.email }}</td>
+              <td class="p-4 text-gray-300" data-label="Joined">
                 {{ formatDate(user.createdAt) }}
               </td>
-              <td class="p-4">
+              <td class="p-4" data-label="Admin">
                 <span
                   class="px-2 py-1 rounded-full text-xs"
                   :class="
@@ -142,7 +142,7 @@
                   {{ user.isAdmin ? "Admin" : "User" }}
                 </span>
               </td>
-              <td class="p-4">
+              <td class="p-4" data-label="Actions">
                 <div class="flex gap-2">
                   <button
                     @click="toggleAdmin(user._id)"
@@ -208,18 +208,18 @@
               :key="wd._id"
               class="border-b border-gray-800"
             >
-              <td class="p-4 text-white">{{ wd.user?.name || "N/A" }}</td>
-              <td class="p-4 text-gray-300">{{ wd.goal?.title }}</td>
-              <td class="p-4 text-white">₦{{ formatNumber(wd.amount) }}</td>
-              <td class="p-4 text-gray-300">
+              <td class="p-4 text-white" data-label="User">{{ wd.user?.name || "N/A" }}</td>
+              <td class="p-4 text-gray-300" data-label="Goal">{{ wd.goal?.title }}</td>
+              <td class="p-4 text-white" data-label="Amount">₦{{ formatNumber(wd.amount) }}</td>
+              <td class="p-4 text-gray-300" data-label="Account">
                 {{ wd.accountDetails?.bankName }} ••{{
                   wd.accountDetails?.accountNumber.slice(-4)
                 }}
               </td>
-              <td class="p-4 text-gray-300">
+              <td class="p-4 text-gray-300" data-label="Requested">
                 {{ formatDate(wd.requestedAt) }}
               </td>
-              <td class="p-4">
+              <td class="p-4" data-label="Status">
                 <span
                   class="px-2 py-1 rounded-full text-xs"
                   :class="statusClass(wd.status)"
@@ -227,7 +227,7 @@
                   {{ wd.status }}
                 </span>
               </td>
-              <td class="p-4">
+              <td class="p-4" data-label="Actions">
                 <div v-if="wd.status === 'pending'" class="flex gap-2">
                   <button
                     @click="openActionModal('approve', wd)"
@@ -293,15 +293,15 @@
               :key="goal._id"
               class="border-b border-gray-800"
             >
-              <td class="p-4 text-white">{{ goal.user?.name || "Unknown" }}</td>
-              <td class="p-4 text-gray-300">{{ goal.title }}</td>
-              <td class="p-4 capitalize">{{ goal.goalType }}</td>
-              <td class="p-4 text-white">₦{{ formatNumber(goal.target) }}</td>
-              <td class="p-4 text-white">₦{{ formatNumber(goal.saved) }}</td>
-              <td class="p-4 text-gray-300">
+              <td class="p-4 text-white" data-label="User">{{ goal.user?.name || "Unknown" }}</td>
+              <td class="p-4 text-gray-300" data-label="Goal">{{ goal.title }}</td>
+              <td class="p-4 capitalize" data-label="Type">{{ goal.goalType }}</td>
+              <td class="p-4 text-white" data-label="Target">₦{{ formatNumber(goal.target) }}</td>
+              <td class="p-4 text-white" data-label="Saved">₦{{ formatNumber(goal.saved) }}</td>
+              <td class="p-4 text-gray-300" data-label="Completed">
                 {{ formatDate(goal.createdAt) }}
               </td>
-              <td class="p-4">
+              <td class="p-4" data-label="Status">
                 <span
                   class="px-2 py-1 rounded-full text-xs"
                   :class="
@@ -315,7 +315,7 @@
                   {{ goal.fulfillmentStatus }}
                 </span>
               </td>
-              <td class="p-4">
+              <td class="p-4" data-label="Actions">
                 <div class="flex gap-2">
                   <button
                     v-if="goal.goalType === 'product'"
@@ -373,13 +373,13 @@
               :key="fee._id"
               class="border-b border-gray-800"
             >
-              <td class="p-4 text-white">{{ fee.user?.name || "Unknown" }}</td>
-              <td class="p-4 text-gray-300">{{ fee.originalGoalTitle }}</td>
-              <td class="p-4 text-green-400 font-medium">
+              <td class="p-4 text-white" data-label="User">{{ fee.user?.name || "Unknown" }}</td>
+              <td class="p-4 text-gray-300" data-label="Goal">{{ fee.originalGoalTitle }}</td>
+              <td class="p-4 text-green-400 font-medium" data-label="Amount">
                 ₦{{ formatNumber(fee.amount) }}
               </td>
-              <td class="p-4 text-gray-300">{{ formatDate(fee.createdAt) }}</td>
-              <td class="p-4">
+              <td class="p-4 text-gray-300" data-label="Date">{{ formatDate(fee.createdAt) }}</td>
+              <td class="p-4" data-label="Status">
                 <span
                   class="px-2 py-1 rounded-full text-xs"
                   :class="
@@ -426,17 +426,17 @@
               :key="log._id"
               class="border-b border-gray-800"
             >
-              <td class="p-4 text-gray-300">
+              <td class="p-4 text-gray-300" data-label="Timestamp">
                 {{ formatDateTime(log.timestamp) }}
               </td>
-              <td class="p-4 text-white">{{ log.user?.name || "Unknown" }}</td>
-              <td class="p-4 capitalize">
+              <td class="p-4 text-white" data-label="Admin">{{ log.user?.name || "Unknown" }}</td>
+              <td class="p-4 capitalize" data-label="Action">
                 {{ log.action.replace(/_/g, " ") }}
               </td>
-              <td class="p-4">
+              <td class="p-4" data-label="Target">
                 {{ log.targetType }} ({{ log.targetId.slice(-6) }})
               </td>
-              <td class="p-4 text-gray-300">
+              <td class="p-4 text-gray-300" data-label="Details">
                 <pre class="text-xs">{{
                   JSON.stringify(log.details, null, 2)
                 }}</pre>
