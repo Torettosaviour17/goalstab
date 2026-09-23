@@ -1,121 +1,123 @@
 <template>
-  <div class="md:hidden relative">
-    <!-- Mobile Menu Button -->
+  <div class="md:hidden">
     <button
       @click="isOpen = !isOpen"
       class="p-2 rounded-lg bg-white/10"
       aria-label="Toggle menu"
+      :aria-expanded="isOpen"
     >
       <span class="text-xl">{{ isOpen ? "✕" : "☰" }}</span>
     </button>
 
-    <!-- Mobile Menu -->
-    <transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="transform -translate-y-2 opacity-0"
-      enter-to-class="transform translate-y-0 opacity-100"
-      leave-active-class="transition duration-150 ease-in"
-      leave-from-class="transform translate-y-0 opacity-100"
-      leave-to-class="transform -translate-y-2 opacity-0"
-    >
-      <div
-        v-if="isOpen"
-        v-click-outside="closeMenu"
-        class="absolute top-16 left-4 right-4 glass-card rounded-2xl p-4 shadow-2xl z-50"
-      >
-        <div class="space-y-2">
-          <router-link
-            v-for="route in navigationRoutes"
-            :key="route.name"
-            :to="{ name: route.name }"
-            @click="closeMenu"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl transition"
-            :class="{
-              'bg-gradient-to-r from-primary/20 to-secondary/20 text-white':
-                isActive(route.name),
-              'text-gray-400 hover:bg-white/5': !isActive(route.name),
-            }"
-          >
-            <span class="text-lg">{{ route.meta?.icon }}</span>
-            <span class="font-medium">{{ route.meta?.title }}</span>
-          </router-link>
-        </div>
-
-        <!-- User Section -->
-        <div v-if="isAuthenticated" class="border-t border-white/10 mt-4 pt-4">
-          <div class="flex items-center gap-3 px-4 py-3">
-            <div
-              class="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-400"
-            ></div>
-            <div>
-              <p class="font-medium">{{ user?.name }}</p>
-              <p class="text-sm opacity-60">
-                {{ user?.isPremium ? "Premium" : "Free" }}
-              </p>
-            </div>
-          </div>
-
-          <router-link
-            to="/settings"
-            @click="closeMenu"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition"
-          >
-            <span>⚙️</span> Settings
-          </router-link>
-
+    <Teleport to="body">
+      <transition name="mobile-menu">
+        <div v-if="isOpen" class="fixed inset-0 z-[110] md:hidden">
           <button
-            @click="handleLogout"
-            class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-red-400 transition"
-          >
-            <span>🚪</span> Logout
-          </button>
-        </div>
-
-        <!-- Auth Section -->
-        <div v-else class="border-t border-white/10 mt-4 pt-4 space-y-2">
-          <router-link
-            to="/login"
+            class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            aria-label="Close menu"
             @click="closeMenu"
-            class="block w-full text-center btn-secondary py-3"
+          />
+
+          <aside
+            class="absolute top-0 right-0 h-[100dvh] w-[min(22rem,90vw)] overflow-y-auto overscroll-contain bg-gray-900 border-l border-gray-800 shadow-2xl p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))]"
           >
-            Sign In
-          </router-link>
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <p class="text-white font-semibold">GoalTabs</p>
+                <p class="text-xs text-gray-400">Navigation</p>
+              </div>
+              <button @click="closeMenu" class="p-2 rounded-lg hover:bg-white/10" aria-label="Close menu">✕</button>
+            </div>
+
+            <nav class="space-y-2">
+              <router-link
+                v-for="item in navItems"
+                :key="item.path"
+                :to="item.path"
+                @click="closeMenu"
+                class="flex items-center gap-3 px-4 py-3 rounded-xl transition"
+                :class="isActive(item.path) ? 'bg-primary-500/15 text-primary-300' : 'text-gray-300 hover:bg-white/5'"
+              >
+                <span class="text-lg">{{ item.icon }}</span>
+                <span class="font-medium">{{ item.name }}</span>
+              </router-link>
+            </nav>
+
+            <div v-if="isAuthenticated" class="border-t border-white/10 mt-6 pt-6 space-y-2">
+              <div class="px-4 pb-3">
+                <p class="text-white font-medium truncate">{{ user?.name }}</p>
+                <p class="text-xs text-gray-500 truncate">{{ user?.email }}</p>
+              </div>
+              <router-link to="/settings" @click="closeMenu" class="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:bg-white/5">
+                <span>⚙️</span><span>Settings</span>
+              </router-link>
+              <button @click="handleLogout" class="w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-white/5">
+                <span>🚪</span><span>Logout</span>
+              </button>
+            </div>
+          </aside>
         </div>
-      </div>
-    </transition>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
-import { routes } from "@/router/routes";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-
+const { user } = storeToRefs(authStore);
 const isOpen = ref(false);
 
-const user = computed(() => authStore.user);
 const isAuthenticated = computed(() => authStore.isAuthenticated);
 
-const navigationRoutes = computed(() => {
-  return routes.filter((r) => r.meta?.showInNav);
+const navItems = computed(() => {
+  const items = [
+    { name: "Dashboard", path: "/dashboard", icon: "📊" },
+    { name: "Goals", path: "/goals", icon: "🎯" },
+    { name: "Transactions", path: "/transactions", icon: "💳" },
+    { name: "Analytics", path: "/analytics", icon: "📈" },
+    { name: "Accounts", path: "/accounts", icon: "🏦" },
+    { name: "Help", path: "/help", icon: "❓" },
+  ];
+  if (user.value?.isAdmin) items.push({ name: "Admin", path: "/admin", icon: "🛡️" });
+  return items;
 });
 
-const isActive = (routeName: string | symbol | null | undefined): boolean => {
-  return route.name === routeName;
-};
+const isActive = (path: string) =>
+  route.path === path || (path === "/goals" && route.path.startsWith("/goals/"));
 
 const closeMenu = () => {
   isOpen.value = false;
 };
 
 const handleLogout = () => {
-  authStore.logout();
-  router.push({ name: "login" });
   closeMenu();
+  authStore.logout();
+  router.push("/login");
 };
+
+watch(isOpen, (open) => {
+  document.body.style.overflow = open ? "hidden" : "";
+});
+
+onBeforeUnmount(() => {
+  document.body.style.overflow = "";
+});
 </script>
+
+<style scoped>
+.mobile-menu-enter-active,
+.mobile-menu-leave-active {
+  transition: opacity 180ms ease;
+}
+.mobile-menu-enter-from,
+.mobile-menu-leave-to {
+  opacity: 0;
+}
+</style>
