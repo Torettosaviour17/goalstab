@@ -9,7 +9,6 @@ import { useThemeStore } from "./stores/theme";
 import "./style.css";
 import VueApexCharts from "vue3-apexcharts";
 import clickOutside from "./directives/clickOutside";
-import { registerSW } from "virtual:pwa-register";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -66,7 +65,9 @@ const enableAppPWA = () => {
     document.head.appendChild(meta);
   }
 
-  registerSW({ immediate: true });
+  if ("serviceWorker" in navigator) {
+    void navigator.serviceWorker.register("/sw.js", { scope: "/" });
+  }
   pwaRegistered = true;
 };
 
