@@ -42,28 +42,13 @@ themeStore.setTheme(themeStore.theme);
 // ===============================
 // AUTH CHECK + PRELOADER CONTROL
 // ===============================
-console.log("[App] Starting auth check...");
 uiStore.setAuthChecking(true);
 
-// Failsafe timeout
-const timeout = setTimeout(() => {
-  console.log("[App] Auth timeout → hiding loader");
+// The router guard owns the single auth validation request.
+// Waiting for router readiness avoids a second /auth/me call during startup.
+router.isReady().finally(() => {
   uiStore.setAuthChecking(false);
-}, 5000);
-
-authStore
-  .checkAuth()
-  .then(() => {
-    console.log("[App] Auth success");
-  })
-  .catch((error) => {
-    console.error("[App] Auth failed:", error);
-  })
-  .finally(() => {
-    clearTimeout(timeout);
-    uiStore.setAuthChecking(false);
-    console.log("[App] Loader removed");
-  });
+});
 
 // ===============================
 // MOUNT APP
