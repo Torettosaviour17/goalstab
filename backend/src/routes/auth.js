@@ -146,6 +146,11 @@ router.post("/google-signin", async (req, res) => {
         googleId: payload.sub,
       });
       await user.save();
+    } else if (!user.googleId || (!user.avatar && payload.picture)) {
+      // Link an existing email account to the verified Google identity.
+      if (!user.googleId) user.googleId = payload.sub;
+      if (!user.avatar && payload.picture) user.avatar = payload.picture;
+      await user.save();
     }
 
     const jwtPayload = { user: { id: user.id } };
