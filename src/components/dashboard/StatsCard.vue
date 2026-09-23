@@ -23,7 +23,9 @@
               'text-xs px-2 py-1 rounded-full',
               trend.startsWith('+')
                 ? 'bg-green-500/20 text-green-400'
-                : 'bg-red-500/20 text-red-400',
+                : trend.startsWith('-')
+                  ? 'bg-red-500/20 text-red-400'
+                  : 'bg-gray-700/60 text-gray-300',
             ]"
           >
             {{ trend }}
