@@ -193,14 +193,12 @@
 import { ref, reactive, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
-import { useUIStore } from "@/stores/ui";
 
 declare global { interface Window { google: any } }
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-const uiStore = useUIStore();
 
 const loading = ref(false);
 const showPassword = ref(false);
