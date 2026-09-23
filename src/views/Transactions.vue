@@ -103,14 +103,15 @@
               :key="tx._id"
               class="text-gray-300"
             >
-              <td class="py-3 capitalize">
+              <td class="py-3 capitalize" data-label="Type">
                 <span class="flex items-center gap-2">
                   <span class="text-lg">{{ transactionIcon(tx.type) }}</span>
                   {{ tx.type.replace("_", " ") }}
                 </span>
               </td>
-              <td class="py-3">{{ tx.goal?.title || "-" }}</td>
+              <td class="py-3" data-label="Goal">{{ tx.goal?.title || "-" }}</td>
               <td
+                data-label="Amount"
                 class="py-3 font-medium"
                 :class="
                   tx.type === 'withdrawal' ? 'text-red-400' : 'text-green-400'
@@ -120,7 +121,7 @@
                   formatNumber(tx.amount)
                 }}
               </td>
-              <td class="py-3">
+              <td class="py-3" data-label="Status">
                 <span
                   v-if="tx.type === 'withdrawal' && tx.status"
                   class="px-2 py-1 rounded-full text-xs"
@@ -130,7 +131,7 @@
                 </span>
                 <span v-else class="text-gray-400">–</span>
               </td>
-              <td class="py-3 text-gray-400">{{ formatDate(tx.createdAt) }}</td>
+              <td class="py-3 text-gray-400" data-label="Date">{{ formatDate(tx.createdAt) }}</td>
             </tr>
           </tbody>
         </table>
