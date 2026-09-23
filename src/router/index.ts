@@ -123,16 +123,16 @@ const router = createRouter({
 });
 
 // Global navigation guard
-let authChecked = false;
+let authCheckPromise: Promise<void> | null = null;
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
 
-  // Only check auth once at startup to avoid repeated calls
-  if (!authChecked) {
-    await authStore.checkAuth();
-    authChecked = true;
+  // Reuse one validation request during app startup/navigation.
+  if (!authCheckPromise) {
+    authCheckPromise = authStore.checkAuth();
   }
+  await authCheckPromise;
 
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   const adminOnly = to.matched.some((record) => record.meta.adminOnly);
