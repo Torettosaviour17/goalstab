@@ -22,7 +22,7 @@ const TransactionSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-module.exports = mongoose.model("Transaction", TransactionSchema);
-
 TransactionSchema.index({ user: 1, date: -1 });
 TransactionSchema.index({ goal: 1, date: -1 });
+
+module.exports = mongoose.model("Transaction", TransactionSchema);
