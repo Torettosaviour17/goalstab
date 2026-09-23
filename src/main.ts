@@ -1,4 +1,4 @@
-import { createApp } from "vue";
+import { createApp, watch } from "vue";
 import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { MotionPlugin } from "@vueuse/motion";
@@ -9,6 +9,7 @@ import { useThemeStore } from "./stores/theme";
 import "./style.css";
 import VueApexCharts from "vue3-apexcharts";
 import clickOutside from "./directives/clickOutside";
+import { registerSW } from "virtual:pwa-register";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -40,6 +41,42 @@ themeStore.setTheme(themeStore.theme);
 // Mount immediately. Authentication checks must never delay the first paint.
 // Protected navigation can validate a persisted session in the router guard.
 void router.isReady();
+
+// GoalTabs has two faces on the same origin:
+// 1. the public website, which stays a normal responsive website;
+// 2. the authenticated app, which enables the PWA shell and offline assets.
+// User-specific API data is deliberately NOT cached by the service worker.
+let pwaRegistered = false;
+const enableAppPWA = () => {
+  if (pwaRegistered || typeof window === "undefined") return;
+
+  let manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+  if (!manifest) {
+    manifest = document.createElement("link");
+    manifest.rel = "manifest";
+    manifest.href = "/manifest.webmanifest";
+    document.head.appendChild(manifest);
+  }
+
+  const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!themeColor) {
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    meta.content = "#3b82f6";
+    document.head.appendChild(meta);
+  }
+
+  registerSW({ immediate: true });
+  pwaRegistered = true;
+};
+
+watch(
+  () => authStore.isAuthenticated,
+  (authenticated) => {
+    if (authenticated) enableAppPWA();
+  },
+  { immediate: true },
+);
 
 // ===============================
 // MOUNT APP
