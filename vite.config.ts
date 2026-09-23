@@ -57,20 +57,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         // navigateFallback: "/offline.html",
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/goalstab\.onrender\.com\/api\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24,
-              },
-              networkTimeoutSeconds: 10,
-            },
-          },
-        ],
+        // Never cache authenticated API responses in the service worker.
+        // They can contain user-specific financial data and should always come from the network.
       },
       devOptions: {
         enabled: false,
