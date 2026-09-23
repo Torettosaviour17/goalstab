@@ -7,7 +7,7 @@
         v-for="item in navItems"
         :key="item.path"
         :to="item.path"
-        class="flex flex-col items-center justify-center flex-1 h-full text-xs transition-colors"
+        class="flex flex-col items-center justify-center min-w-[72px] flex-1 h-full text-[11px] transition-colors"
         :class="
           isActive(item.path)
             ? 'text-primary-400'
@@ -37,7 +37,9 @@ const navItems = computed(() => {
   const items = [
     { name: "Dashboard", path: "/dashboard", icon: "📊" },
     { name: "Goals", path: "/goals", icon: "🎯" },
+    { name: "Transactions", path: "/transactions", icon: "💳" },
     { name: "Analytics", path: "/analytics", icon: "📈" },
+    { name: "Accounts", path: "/accounts", icon: "🏦" },
   ];
 
   // Add Admin link only if user is admin
