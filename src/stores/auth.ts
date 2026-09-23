@@ -175,6 +175,7 @@ export const useAuthStore = defineStore("auth", {
           type: "error",
           message,
         });
+        throw error;
       } finally {
         this.loading = false;
       }
