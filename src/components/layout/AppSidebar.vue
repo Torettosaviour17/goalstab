@@ -61,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useGoalsStore } from "@/stores/goals";
@@ -91,9 +91,6 @@ const navItems = computed(() => {
 
 const isActive = (path: string) =>
   route.path === path || (path === "/goals" && route.path.startsWith("/goals/"));
-
-import { useRoute } from "vue-router";
-const route = useRoute();
 
 const userName = computed(() => user.value?.name || "Guest User");
 const userPlan = computed(() => (user.value?.isPremium ? "Premium" : "Free"));
