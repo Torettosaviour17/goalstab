@@ -73,7 +73,7 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    async login(email: string, password: string, rememberMe: boolean = false) {
+    async login(email: string, password: string, _rememberMe: boolean = false) {
       this.loading = true;
       this.error = null;
       try {
@@ -100,7 +100,7 @@ export const useAuthStore = defineStore("auth", {
       name: string,
       email: string,
       password: string,
-      rememberMe: boolean = false,
+      _rememberMe: boolean = false,
     ) {
       this.loading = true;
       this.error = null;
