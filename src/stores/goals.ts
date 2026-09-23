@@ -77,6 +77,16 @@ export const useGoalsStore = defineStore("goals", () => {
     }
   };
 
+  // ── Fetch one goal ────────────────────────────────────
+  const fetchGoal = async (id: string) => {
+    const { data } = await api.get(`/goals/${id}`);
+    const normalized = normalizeGoal(data);
+    const index = goals.value.findIndex((g) => g._id === id || g.id === id);
+    if (index === -1) goals.value.push(normalized);
+    else goals.value[index] = normalized;
+    return normalized;
+  };
+
   // ── Create ─────────────────────────────────────────────
   const addGoal = async (goalData: GoalFormData) => {
     try {
@@ -337,6 +347,7 @@ export const useGoalsStore = defineStore("goals", () => {
     activeGoalsCount,
     completedGoalsCount,
     fetchGoals,
+    fetchGoal,
     addGoal,
     updateGoal,
     deleteGoal,
