@@ -11,7 +11,7 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       // Register the service worker from the authenticated app only. The public website remains a normal website.
-      injectRegister: null,
+      injectRegister: false,
       includeAssets: ["icons/*.png", "vite.svg"],
       manifest: {
         name: "GoalTabs",
