@@ -111,7 +111,7 @@
                   v-if="user?.isAdmin"
                   to="/admin"
                   @click="closeUserMenu"
-                  class="flex items-center gap-3 px-4 py-3 hover:bg-primary-500/10 transition text-primary-300 hover:text-primary-200"
+                  class="md:hidden flex items-center gap-3 px-4 py-3 hover:bg-primary-500/10 transition text-primary-300 hover:text-primary-200"
                 >
                   <span>🛡️</span> Admin Dashboard
                 </router-link>
