@@ -66,10 +66,12 @@ import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useGoalsStore } from "@/stores/goals";
 import { useAnalyticsStore } from "@/stores/analytics";
+import { useRoute } from "vue-router";
 
 const authStore = useAuthStore();
 const goalsStore = useGoalsStore();
 const analyticsStore = useAnalyticsStore();
+const route = useRoute();
 const { user } = storeToRefs(authStore);
 const { totalSaved, activeGoalsCount } = storeToRefs(goalsStore);
 const { overview } = storeToRefs(analyticsStore);
@@ -88,7 +90,7 @@ const navItems = computed(() => {
 });
 
 const isActive = (path: string) =>
-  routePath.value === path || (path === "/goals" && routePath.value.startsWith("/goals/"));
+  route.path === path || (path === "/goals" && route.path.startsWith("/goals/"));
 
 import { useRoute } from "vue-router";
 const route = useRoute();
