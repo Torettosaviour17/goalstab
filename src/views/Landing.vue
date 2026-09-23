@@ -17,7 +17,7 @@
       class="fixed top-0 left-0 right-0 z-50 bg-gray-950/80 backdrop-blur-md border-b border-white/5 transition-all duration-300"
       :class="{ 'py-4': !scrolled, 'py-2': scrolled }"
     >
-      <div class="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between">
         <router-link to="/" class="flex items-center gap-3 group">
           <div
             class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary-600 to-secondary-600 p-[1px] group-hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] transition-all duration-500"
@@ -50,7 +50,7 @@
             >Integration</a
           >
         </div>
-        <div class="flex items-center gap-6">
+        <div class="flex items-center gap-2 sm:gap-6 shrink-0">
           <router-link
             to="/login"
             class="text-sm font-medium text-gray-300 hover:text-white transition-colors hidden sm:block"
@@ -82,7 +82,7 @@
         ></div>
 
         <div
-          class="max-w-7xl mx-auto px-6 relative z-10 text-center"
+          class="w-full max-w-7xl mx-auto px-4 sm:px-6 relative z-10 text-center"
           v-motion
           :initial="{ opacity: 0, y: 30 }"
           :enter="{
@@ -102,7 +102,7 @@
           </div>
 
           <h1
-            class="text-5xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]"
+            class="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]"
           >
             Command Your Wealth.<br />
             <span
@@ -168,7 +168,7 @@
                 class="w-3 h-3 rounded-full bg-success/50 border border-success"
               ></div>
               <div
-                class="mx-auto text-xs text-gray-500 font-mono tracking-widest"
+                class="mx-auto text-[10px] sm:text-xs text-gray-500 font-mono tracking-widest break-all text-center"
               >
                 GOALTABS_TERMINAL_V2.4
               </div>
@@ -193,7 +193,7 @@
                   >
                   <div>
                     <div
-                      class="text-5xl font-black text-white tracking-tighter mb-2"
+                      class="text-4xl sm:text-5xl font-black text-white tracking-tighter mb-2 break-words"
                     >
                       $142,850.00
                     </div>
@@ -1337,7 +1337,7 @@
     <!-- Footer -->
     <footer class="py-12 border-t border-white/10 bg-gray-950 relative z-10">
       <div
-        class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6"
+        class="w-full max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-6"
       >
         <div class="flex items-center gap-3">
           <img
@@ -1350,7 +1350,7 @@
             reserved.</span
           >
         </div>
-        <div class="flex gap-8">
+        <div class="flex flex-wrap justify-center gap-5 sm:gap-8">
           <router-link
             to="/terms"
             class="text-sm font-medium text-gray-500 hover:text-white transition-colors"
