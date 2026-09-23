@@ -34,12 +34,16 @@
       </span>
 
       <button
-        @click="$emit('edit')"
+        v-if="!account.isDefault"
+        @click="$emit('set-default')"
         class="p-2 hover:bg-gray-700 rounded transition"
-        title="Edit"
+        title="Set as default"
       >
-        ✎
+        ★
       </button>
+
+      <button
+        @click="$emit('edit')"
 
       <button
         @click="$emit('delete')"
@@ -61,7 +65,8 @@ defineProps<{
 
 defineEmits<{
   (e: 'edit'): void
-  (e: 'delete'): void
+  (e: 'delete'): void;
+  (e: 'set-default'): void
 }>()
 
 const getBankIcon = (bankName: string) => {
