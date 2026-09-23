@@ -1,15 +1,15 @@
 <template>
   <nav
-    class="md:hidden sticky bottom-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-xl border-t border-gray-800/50"
+    class="md:hidden fixed inset-x-0 bottom-0 z-[100] bg-gray-900/95 backdrop-blur-xl border-t border-gray-800/70 shadow-[0_-12px_30px_rgba(0,0,0,0.35)] pb-[env(safe-area-inset-bottom)]"
   >
-    <div class="flex justify-around items-center h-16">
+    <div class="flex items-center h-16 overflow-x-auto scrollbar-hide px-1">
       <router-link
         v-for="item in navItems"
         :key="item.path"
         :to="item.path"
         class="flex flex-col items-center justify-center flex-1 h-full text-xs transition-colors"
         :class="
-          $route.path === item.path
+          isActive(item.path)
             ? 'text-primary-400'
             : 'text-gray-400 hover:text-white'
         "
@@ -30,6 +30,8 @@ import { storeToRefs } from "pinia";
 const route = useRoute();
 const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
+
+const isActive = (path: string) => route.path === path || (path === "/goals" && route.path.startsWith("/goals/"));
 
 const navItems = computed(() => {
   const items = [
