@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-2 px-4 py-6 md:px-6 md:py-8">
+  <div class="container mx-auto w-full px-4 py-6 md:px-6 md:py-8">
     <div
       class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8"
     >
@@ -21,6 +21,7 @@
         :account="account"
         @edit="openEditModal(account)"
         @delete="confirmDelete(account)"
+        @set-default="accountsStore.setDefaultAccount(account._id)"
       />
     </div>
 
