@@ -112,35 +112,53 @@
       </div>
 
       <!-- Actions -->
-      <!-- If platform fulfillment is enabled -->
-      <template v-if="goal.usePlatformFulfillment">
-        <div v-if="goal.fulfillmentStatus === 'pending'">
-          <p class="text-gray-400 text-center py-2">
-            Goal completed! We'll process your fulfillment soon.
-          </p>
-        </div>
-        <div v-else-if="goal.fulfillmentStatus === 'processing'">
-          <p class="text-yellow-400 text-center py-2">
-            Fulfillment in progress...
-          </p>
-        </div>
-        <div
-          v-else-if="
-            goal.fulfillmentStatus === 'delivered' ||
-            goal.fulfillmentStatus === 'booked'
-          "
+      <div v-if="goal.progress < 100" class="flex flex-col sm:flex-row gap-4">
+        <BaseButton
+          variant="primary"
+          size="lg"
+          class="flex-1"
+          @click="openAddFunds"
         >
-          <p class="text-green-400 text-center py-2">
-            {{
-              goal.goalType === "product"
-                ? "Product delivered!"
-                : "Service booked!"
-            }}
+          <template #icon>💰</template>
+          Add Funds
+        </BaseButton>
+      </div>
+
+      <template v-else-if="goal.usePlatformFulfillment">
+        <div v-if="goal.fulfillmentStatus === 'pending'" class="space-y-3">
+          <p class="text-gray-400 text-center py-2">
+            Goal completed. Choose how you'd like to receive your purchase or service.
           </p>
+          <BaseButton
+            v-if="goal.goalType === 'product'"
+            variant="primary"
+            size="lg"
+            class="w-full"
+            @click="initiatePurchase"
+          >
+            🛒 Request Product Fulfillment
+          </BaseButton>
+          <BaseButton
+            v-else
+            variant="primary"
+            size="lg"
+            class="w-full"
+            @click="requestFulfillment"
+          >
+            📅 Request Service Fulfillment
+          </BaseButton>
         </div>
+        <p v-else-if="goal.fulfillmentStatus === 'processing'" class="text-yellow-400 text-center py-2">
+          Fulfillment in progress...
+        </p>
+        <p
+          v-else-if="goal.fulfillmentStatus === 'delivered' || goal.fulfillmentStatus === 'booked'"
+          class="text-green-400 text-center py-2"
+        >
+          {{ goal.goalType === "product" ? "Product delivered!" : "Service booked!" }}
+        </p>
       </template>
 
-      <!-- Regular withdrawal buttons (if not using platform fulfillment) -->
       <template v-else>
         <div class="flex flex-col sm:flex-row gap-4">
           <BaseButton
@@ -163,36 +181,6 @@
             {{ pendingWithdrawal ? "Pending" : goal.locked ? "Locked" : goal.isClosed ? "Closed" : "Withdraw" }}
           </BaseButton>
         </div>
-
-        <!-- Fulfillment button (only when goal completed and not yet fulfilled) -->
-        <BaseButton
-          v-if="goal.progress >= 100 && goal.fulfillmentStatus === 'pending'"
-          variant="secondary"
-          size="lg"
-          class="flex-1"
-          @click="requestFulfillment"
-        >
-          <template #icon>{{
-            goal.goalType === "product" ? "🛒" : "📅"
-          }}</template>
-          {{
-            goal.goalType === "product" ? "Request Fulfillment" : "Book Service"
-          }}
-        </BaseButton>
-
-        <!-- Purchase button for product goals -->
-        <BaseButton
-          v-if="
-            goal.progress >= 100 &&
-            goal.goalType === 'product' &&
-            goal.fulfillmentStatus === 'pending'
-          "
-          variant="primary"
-          size="lg"
-          @click="initiatePurchase"
-        >
-          🛒 Purchase with Goal Funds
-        </BaseButton>
       </template>
 
       <!-- Tabs -->
