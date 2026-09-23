@@ -29,6 +29,10 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ message: 'All required fields must be filled' });
     }
 
+    if (!/^\d{11}$/.test(String(accountNumber))) {
+      return res.status(400).json({ message: 'Account number must be 11 digits' });
+    }
+
     // Auto extract last 4 digits
     const lastFour = accountNumber.slice(-4);
 
