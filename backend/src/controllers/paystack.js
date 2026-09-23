@@ -11,12 +11,12 @@ const { sendEmailToUser } = require("../services/emailService");
 // ================================
 const initializePayment = async (req, res) => {
   try {
-    const { email, amount, goalId } = req.body;
+    const { amount, goalId } = req.body;
 
-    if (!email || !amount || !goalId) {
+    if (!amount || !goalId) {
       return res
         .status(400)
-        .json({ msg: "email, amount and goalId are required" });
+        .json({ msg: "amount and goalId are required" });
     }
 
     if (amount <= 0) {
@@ -30,10 +30,14 @@ const initializePayment = async (req, res) => {
       return res.status(401).json({ msg: "Not authorized" });
     }
 
+    const User = require("../models/User");
+    const user = await User.findById(req.user.id).select("email");
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
       {
-        email,
+        email: user.email,
         amount: Math.round(amount * 100), // kobo
         callback_url: `${process.env.FRONTEND_URL}/payment-success`,
         metadata: {
