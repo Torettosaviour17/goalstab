@@ -397,8 +397,12 @@ const initiatePurchase = async () => {
 watch(
   () => route.params.id,
   async () => {
-    await goalsStore.fetchGoals();
-    await loadPendingWithdrawal();
+    try {
+      await goalsStore.fetchGoal(String(route.params.id));
+      await loadPendingWithdrawal();
+    } catch {
+      uiStore.addToast({ type: "error", message: "Failed to load goal" });
+    }
   },
   { immediate: true },
 );
