@@ -107,6 +107,15 @@
                   <span>❓</span> Help & Support
                 </router-link>
 
+                <router-link
+                  v-if="user?.isAdmin"
+                  to="/admin"
+                  @click="closeUserMenu"
+                  class="flex items-center gap-3 px-4 py-3 hover:bg-primary-500/10 transition text-primary-300 hover:text-primary-200"
+                >
+                  <span>🛡️</span> Admin Dashboard
+                </router-link>
+
                 <div
                   class="border-t border-gray-700/50 mt-1 pt-1"
                 >
