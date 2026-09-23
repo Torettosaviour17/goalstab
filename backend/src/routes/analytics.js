@@ -33,6 +33,7 @@ router.get("/overview", auth, async (req, res) => {
         $match: {
           user: new mongoose.Types.ObjectId(req.user.id),
           date: { $gte: firstDayThisMonth },
+          type: { $in: ["deposit", "auto_save"] },
         },
       },
       { $group: { _id: null, total: { $sum: "$amount" } } },
@@ -44,6 +45,7 @@ router.get("/overview", auth, async (req, res) => {
         $match: {
           user: new mongoose.Types.ObjectId(req.user.id),
           date: { $gte: firstDayLastMonth, $lte: lastDayLastMonth },
+          type: { $in: ["deposit", "auto_save"] },
         },
       },
       { $group: { _id: null, total: { $sum: "$amount" } } },
@@ -137,6 +139,7 @@ router.get("/trend", auth, async (req, res) => {
 router.get("/distribution", auth, async (req, res) => {
   try {
     const goals = await Goal.find({ user: req.user.id });
+    const totalSaved = goals.reduce((sum, goal) => sum + Math.max(0, goal.saved || 0), 0);
     const categories = {};
     goals.forEach((goal) => {
       const cat = goal.category || "Other";
@@ -149,7 +152,7 @@ router.get("/distribution", auth, async (req, res) => {
     const result = Object.entries(categories).map(([name, data]) => ({
       name,
       count: data.count,
-      percentage: data.total ? Math.round((data.saved / data.total) * 100) : 0,
+      percentage: totalSaved ? Math.round((data.saved / totalSaved) * 100) : 0,
       color: getCategoryColor(name),
     }));
 
