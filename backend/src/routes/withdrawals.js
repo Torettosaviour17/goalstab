@@ -44,8 +44,8 @@ router.post("/", auth, async (req, res) => {
     if (!numAmount || numAmount <= 0)
       return res.status(400).json({ msg: "Invalid amount" });
 
-    // ✅ Use available balance (saved - withdrawn) instead of raw saved
-    const availableBalance = goal.saved - goal.withdrawn;
+    // `saved` is the current spendable balance. Approved withdrawals are already deducted from it.
+    const availableBalance = Math.max(0, goal.saved);
     if (numAmount > availableBalance)
       return res.status(400).json({ msg: "Insufficient available balance" });
 
