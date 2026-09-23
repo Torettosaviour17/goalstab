@@ -308,12 +308,10 @@ router.put("/withdrawals/:id/reject", [auth, admin], async (req, res) => {
 
     // Update transaction status to rejected
     const transaction = await Transaction.findOne({
-      user: withdrawal.user,
-      goal: withdrawal.goal,
+      reference: withdrawal._id,
       type: "withdrawal",
-      amount: withdrawal.amount,
       status: "pending",
-    }).sort({ createdAt: -1 });
+    });
 
     if (transaction) {
       transaction.status = "rejected";
