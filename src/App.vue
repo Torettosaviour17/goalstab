@@ -22,7 +22,7 @@
       <AppSidebar v-if="showSidebar" class="hidden md:block" />
 
       <!-- Main content – add bottom padding on mobile for bottom nav -->
-      <main class="flex-1 min-h-screen" :class="{ 'pb-16': showMobileNav }">
+      <main class="flex-1 min-h-screen" :class="{ 'pb-[calc(4rem+env(safe-area-inset-bottom))]': showMobileNav }">
         <div
           v-motion
           :initial="{ opacity: 0, y: 20 }"
