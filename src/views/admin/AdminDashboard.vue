@@ -172,12 +172,12 @@
 
     <!-- Withdrawals Tab -->
     <div v-if="activeTab === 'Withdrawals'">
-      <div class="flex flex-wrap gap-2 mb-4">
+      <div class="grid grid-cols-2 sm:flex gap-2 mb-4">
         <button
           v-for="status in statuses"
           :key="status"
           @click="changeStatus(status)"
-          class="px-4 py-2 rounded-lg font-medium transition"
+          class="px-3 py-2 rounded-lg font-medium text-xs sm:text-sm transition"
           :class="
             selectedStatus === status
               ? 'bg-primary-500 text-white'
@@ -188,7 +188,7 @@
         </button>
       </div>
       <div class="glass-card overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full mobile-card-table">
           <thead>
             <tr
               class="text-left text-sm text-gray-400 border-b border-gray-800"
@@ -258,7 +258,7 @@
 
     <!-- Fulfillment Tab -->
     <div v-if="activeTab === 'Fulfillment'">
-      <div class="flex justify-between items-center mb-4">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-4">
         <h2 class="text-xl font-bold text-white">Fulfillment Queue</h2>
         <div class="flex gap-2">
           <div class="bg-gray-800/50 px-3 py-1 rounded-full text-sm">
@@ -272,7 +272,7 @@
         </div>
       </div>
       <div class="glass-card overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full mobile-card-table">
           <thead>
             <tr
               class="text-left text-sm text-gray-400 border-b border-gray-800"
@@ -355,7 +355,7 @@
         </p>
       </div>
       <div class="glass-card overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full mobile-card-table">
           <thead>
             <tr
               class="text-left text-sm text-gray-400 border-b border-gray-800"
@@ -408,7 +408,7 @@
         <h2 class="text-xl font-bold text-white">Admin Activity Log</h2>
       </div>
       <div class="glass-card overflow-x-auto">
-        <table class="w-full">
+        <table class="w-full mobile-card-table">
           <thead>
             <tr
               class="text-left text-sm text-gray-400 border-b border-gray-800"
@@ -522,7 +522,7 @@
             "
           ></textarea>
         </div>
-        <div class="flex gap-2 justify-end pt-4">
+        <div class="flex flex-col-reverse sm:flex-row gap-2 justify-end pt-4">
           <BaseButton variant="secondary" @click="showActionModal = false"
             >Cancel</BaseButton
           >
