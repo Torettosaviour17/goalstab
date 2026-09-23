@@ -21,7 +21,7 @@ const WithdrawalSchema = new mongoose.Schema({
   requestedAt: { type: Date, default: Date.now },
   processedAt: Date,
   processedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-});
+}, { timestamps: true });
 
 WithdrawalSchema.index({ user: 1, createdAt: -1 });
 WithdrawalSchema.index({ goal: 1, status: 1 });
