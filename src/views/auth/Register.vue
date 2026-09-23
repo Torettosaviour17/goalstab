@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden"
+    class="min-h-screen flex items-center justify-center px-3 py-6 sm:px-4 sm:py-12 relative overflow-hidden"
   >
     <!-- Animated background elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -19,18 +19,18 @@
 
     <div class="w-full max-w-md relative z-10">
       <!-- Logo and welcome -->
-      <div class="text-center mb-8 animate-fade-in">
+      <div class="text-center mb-5 sm:mb-8 animate-fade-in">
         <img
           src="@/assets/goaltab-logo.png"
           alt="GoalTabs"
-          class="w-20 h-20 mx-auto mb-4 rounded-2xl shadow-2xl object-contain"
+          class="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-2xl shadow-2xl object-contain"
         />
-        <h1 class="text-3xl font-bold text-white mb-2">Join GoalTabs</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Join GoalTabs</h1>
         <p class="text-gray-400">Start your savings journey today</p>
       </div>
 
       <!-- Register form -->
-      <div class="glass-card p-8 animate-slide-up">
+      <div class="glass-card p-5 sm:p-8 animate-slide-up">
         <!-- Google Sign-In Button -->
         <div class="mb-6">
           <div id="google_signin_button" class="w-full min-h-10 flex justify-center"></div>
@@ -52,7 +52,7 @@
         </div>
 
         <!-- Email/Password Form -->
-        <form @submit.prevent="handleRegister" class="space-y-5">
+        <form @submit.prevent="handleRegister" class="space-y-4 sm:space-y-5">
           <!-- Name -->
           <div>
             <label class="block text-sm font-medium text-gray-300 mb-2"
@@ -69,7 +69,7 @@
                 type="text"
                 required
                 placeholder="John Doe"
-                class="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
+                class="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-gray-800/50 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition"
               />
             </div>
           </div>
@@ -159,7 +159,7 @@
           <button
             type="submit"
             :disabled="loading || !passwordsMatch"
-            class="w-full py-3 px-4 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+            class="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white font-semibold rounded-xl shadow-lg shadow-primary-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
           >
             <span v-if="loading" class="flex items-center justify-center gap-2">
               <svg
@@ -200,7 +200,7 @@
         </div>
 
         <!-- Login link -->
-        <p class="mt-8 text-center text-gray-400">
+        <p class="mt-5 sm:mt-8 text-center text-sm sm:text-base text-gray-400">
           Already have an account?
           <router-link
             to="/login"
@@ -211,7 +211,7 @@
         </p>
 
         <!-- Terms -->
-        <p class="mt-4 text-center text-xs text-gray-500">
+        <p class="mt-3 text-center text-[11px] sm:text-xs text-gray-500">
           By joining, you agree to our
           <router-link
             to="/terms"
