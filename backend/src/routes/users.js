@@ -3,6 +3,14 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const Goal = require("../models/Goal");
+const Transaction = require("../models/Transaction");
+const Withdrawal = require("../models/Withdrawal");
+const Payment = require("../models/Payment");
+const Account = require("../models/Account");
+const Notification = require("../models/Notification");
+const GoalActivity = require("../models/GoalActivity");
+const LeftoverFund = require("../models/LeftoverFund");
 
 // @route   PUT api/users/profile
 // @desc    Update user profile (name, email, phone, avatar)
@@ -117,3 +125,31 @@ router.put("/password", auth, async (req, res) => {
 });
 
 module.exports = router;
+
+
+// @route   DELETE api/users/account
+// @desc    Permanently delete the authenticated user's account and personal data
+router.delete("/account", auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    await Promise.all([
+      Goal.deleteMany({ user: userId }),
+      Transaction.deleteMany({ user: userId }),
+      Withdrawal.deleteMany({ user: userId }),
+      Payment.deleteMany({ user: userId }),
+      Account.deleteMany({ user: userId }),
+      Notification.deleteMany({ user: userId }),
+      GoalActivity.deleteMany({ user: userId }),
+      LeftoverFund.deleteMany({ user: userId }),
+    ]);
+
+    await User.deleteOne({ _id: userId });
+    res.json({ msg: "Account deleted successfully" });
+  } catch (err) {
+    console.error("Account deletion error:", err);
+    res.status(500).json({ msg: "Unable to delete account" });
+  }
+});
