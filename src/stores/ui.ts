@@ -12,15 +12,10 @@ export const useUIStore = defineStore("ui", () => {
   const globalLoading = ref(false);
   const showCreateGoalModal = ref(false);
   const toasts = ref<Toast[]>([]);
-  const authChecking = ref(true);
   const welcomeBannerShown = ref(false);
   const showConfetti = ref(false);
 
   let nextToastId = 0;
-
-  const setAuthChecking = (value: boolean) => {
-    authChecking.value = value;
-  };
 
   const setGlobalLoading = (loading: boolean) => {
     globalLoading.value = loading;
@@ -66,10 +61,8 @@ export const useUIStore = defineStore("ui", () => {
     globalLoading,
     showCreateGoalModal,
     toasts,
-    authChecking,
     welcomeBannerShown,
     showConfetti,
-    setAuthChecking,
     setGlobalLoading,
     openCreateGoalModal,
     closeCreateGoalModal,
