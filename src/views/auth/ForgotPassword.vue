@@ -90,6 +90,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import api from "@/services/api";
 
 const email = ref("");
 const error = ref("");
@@ -112,11 +113,10 @@ const handleSubmit = async () => {
   loading.value = true;
 
   try {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await api.post("/auth/forgot-password", { email: email.value.trim().toLowerCase() });
     submitted.value = true;
-  } catch (err) {
-    error.value = "Failed to send reset link";
+  } catch (err: any) {
+    error.value = err.response?.data?.msg || "Failed to send reset link";
   } finally {
     loading.value = false;
   }
