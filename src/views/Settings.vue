@@ -533,13 +533,15 @@ const saveProfile = async () => {
 
 const saveNotifications = async () => {
   saving.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  authStore.updatePreferences({ notifications: { ...notifications } });
-  uiStore.addToast({
-    type: "success",
-    message: "Notification preferences saved",
-  });
-  saving.value = false;
+  try {
+    await authStore.updatePreferences({ notifications: { ...notifications } });
+    uiStore.addToast({
+      type: "success",
+      message: "Notification preferences saved",
+    });
+  } finally {
+    saving.value = false;
+  }
 };
 
 const changePassword = async () => {
@@ -580,25 +582,31 @@ const handleLogout = () => {
 
 const confirmDelete = async () => {
   deleting.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  authStore.logout();
-  showDeleteModal.value = false;
-  deleting.value = false;
-  router.push("/");
-  uiStore.addToast({ type: "info", message: "Account deleted" });
+  try {
+    await authStore.deleteAccount();
+    showDeleteModal.value = false;
+    router.push("/");
+    uiStore.addToast({ type: "info", message: "Account deleted successfully" });
+  } catch (err) {
+    // The store shows the API error.
+  } finally {
+    deleting.value = false;
+  }
 };
 
 const savePreferences = async () => {
   saving.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  authStore.updatePreferences({
+  try {
+    await authStore.updatePreferences({
     currency: preferences.currency,
     theme: preferences.theme,
     autoSaveDefault: preferences.autoSaveDefault,
     monthlyIncome: preferences.monthlyIncome,
   });
-  uiStore.addToast({ type: "success", message: "Preferences saved" });
-  saving.value = false;
+    uiStore.addToast({ type: "success", message: "Preferences saved" });
+  } finally {
+    saving.value = false;
+  }
 };
 
 const displayedProgress = ref(levelStore.progress);
