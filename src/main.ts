@@ -44,9 +44,9 @@ themeStore.setTheme(themeStore.theme);
 // ===============================
 uiStore.setAuthChecking(true);
 
-// The router guard owns the single auth validation request.
-// Waiting for router readiness avoids a second /auth/me call during startup.
-router.isReady().finally(() => {
+// Mount immediately. Authentication checks must never delay the first paint.
+// Protected navigation can validate a persisted session in the router guard.
+void router.isReady().finally(() => {
   uiStore.setAuthChecking(false);
 });
 
