@@ -301,25 +301,25 @@ const statsData = computed(() => [
     title: "Total Saved",
     value: formatCurrency(totalSaved.value),
     icon: "💰",
-    trend: `${monthlyGrowth.value >= 0 ? "+" : ""}${monthlyGrowth.value.toFixed(1)}%`,
+    trend: undefined,
   },
   {
     title: "Active Goals",
     value: activeGoalsCount.value,
     icon: "🎯",
-    trend: "+2",
+    trend: undefined,
   },
   {
     title: "Progress",
     value: `${overallProgress.value}%`,
     icon: "📈",
-    trend: "+8%",
+    trend: undefined,
   },
   {
     title: "Monthly Growth",
     value: `${monthlyGrowth.value >= 0 ? "+" : ""}${monthlyGrowth.value.toFixed(1)}%`,
     icon: "🚀",
-    trend: "+15.3%",
+    trend: "vs last month",
   },
 ]);
 
