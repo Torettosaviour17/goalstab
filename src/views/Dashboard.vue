@@ -282,11 +282,11 @@ const {
   recentlyCompletedGoal,
 } = storeToRefs(goalsStore);
 const { user } = storeToRefs(authStore);
-const { lifetime } = storeToRefs(analyticsStore);
+const { lifetime, overview } = storeToRefs(analyticsStore);
 
 // ── Computed ───────────────────────────────────────────
 const userName = computed(() => user.value?.name || "User");
-const monthlyGrowth = computed(() => totalSaved.value * 0.153);
+const monthlyGrowth = computed(() => overview.value.monthlyGrowth);
 
 // Only show 3 goals on dashboard
 const previewGoals = computed(() => goals.value.slice(0, 3));
@@ -301,7 +301,7 @@ const statsData = computed(() => [
     title: "Total Saved",
     value: formatCurrency(totalSaved.value),
     icon: "💰",
-    trend: "+12.5%",
+    trend: `${monthlyGrowth.value >= 0 ? "+" : ""}${monthlyGrowth.value.toFixed(1)}%`,
   },
   {
     title: "Active Goals",
@@ -317,7 +317,7 @@ const statsData = computed(() => [
   },
   {
     title: "Monthly Growth",
-    value: formatCurrency(monthlyGrowth.value),
+    value: `${monthlyGrowth.value >= 0 ? "+" : ""}${monthlyGrowth.value.toFixed(1)}%`,
     icon: "🚀",
     trend: "+15.3%",
   },
@@ -354,6 +354,7 @@ const fetchDashboardData = async () => {
       accountsStore.fetchAccounts(),
       transactionsStore.fetchRecentTransactions(),
       analyticsStore.fetchLifetimeStats(),
+      analyticsStore.fetchOverview(),
     ]);
   } catch (err) {
     console.error(err);
@@ -399,10 +400,14 @@ const submitWithdrawRequest = async (data: any) => {
   }
 };
 
-const handleCreateGoal = (formData: any) => {
-  goalsStore.addGoal(formData);
-  uiStore.closeCreateGoalModal();
-  uiStore.addToast({ type: "success", message: "Goal created successfully!" });
+const handleCreateGoal = async (formData: any) => {
+  try {
+    await goalsStore.addGoal(formData);
+    uiStore.closeCreateGoalModal();
+    await fetchDashboardData();
+  } catch {
+    // The store already surfaces the API error to the user.
+  }
 };
 
 
