@@ -352,7 +352,7 @@ router.get("/fulfillment/pending", [auth, admin], async (req, res) => {
   try {
     const goals = await Goal.find({
       progress: 100,
-      fulfillmentStatus: "pending",
+      fulfillmentStatus: { $in: ["pending", "processing"] },
     }).populate("user", "name email");
     res.json(goals);
   } catch (err) {
