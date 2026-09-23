@@ -383,21 +383,18 @@ const submitServiceBooking = async (details: any) => {
 };
 
 const initiatePurchase = async () => {
-  if (!goal.value) return;
-  try {
-    const response = await api.post(
-      `/goals/${goal.value.id}/shopping/purchase`,
-      {
-        productId: goal.value.selectedProduct?.id,
-        provider: "mock",
-      },
-    );
-    uiStore.addToast({ type: "success", message: response.data.message });
-    // Refresh goal to show updated fulfillment status
-    goalsStore.fetchGoals();
-  } catch (err) {
-    uiStore.addToast({ type: "error", message: "Purchase failed" });
+  if (!goal.value?.selectedProduct) {
+    uiStore.addToast({
+      type: "warning",
+      message: "Select a product before requesting purchase fulfillment.",
+    });
+    return;
   }
+
+  await goalsStore.requestFulfillment(goal.value.id, {
+    mode: "purchase",
+    product: goal.value.selectedProduct,
+  });
 };
 
 // Load the goal list for direct/deep links, then refresh withdrawal state.
