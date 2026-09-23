@@ -97,9 +97,12 @@
       <!-- Linked Account -->
       <div v-if="goal.accountId" class="glass-card p-6">
         <h2 class="text-xl font-bold text-white mb-4">Linked Account</h2>
-        <div class="bg-gray-800/50 p-4 rounded-xl">
-          <p class="text-sm text-gray-400">Account details would appear here</p>
+        <div v-if="linkedAccount" class="bg-gray-800/50 p-4 rounded-xl">
+          <p class="font-medium text-white">{{ linkedAccount.bankName }}</p>
+          <p class="text-sm text-gray-400">•••• {{ linkedAccount.lastFour }}</p>
+          <p class="text-sm text-gray-400 mt-1">{{ linkedAccount.accountName }}</p>
         </div>
+        <p v-else class="text-sm text-gray-400">Linked account not found.</p>
       </div>
 
       <!-- Deadline -->
@@ -258,6 +261,7 @@ import { storeToRefs } from "pinia";
 import { useGoalsStore } from "@/stores/goals";
 import { useUIStore } from "@/stores/ui";
 import { useActivitiesStore } from "@/stores/activities";
+import { useAccountsStore } from "@/stores/accounts";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import GoalProgress from "@/components/goals/GoalProgress.vue";
 import AddFundsModal from "@/components/goals/AddFundsModal.vue";
@@ -271,11 +275,14 @@ const router = useRouter();
 const goalsStore = useGoalsStore();
 const uiStore = useUIStore();
 const activitiesStore = useActivitiesStore();
+const accountsStore = useAccountsStore();
 const { activities, loading: activitiesLoading } = storeToRefs(activitiesStore);
 
 const goal = computed(() => {
   return goalsStore.goals.find((g) => g.id === route.params.id);
 });
+
+const linkedAccount = computed(() => accountsStore.accounts.find((account) => account._id === goal.value?.accountId));
 
 const activeDetailTab = ref("overview");
 
@@ -398,7 +405,10 @@ watch(
   () => route.params.id,
   async () => {
     try {
-      await goalsStore.fetchGoal(String(route.params.id));
+      await Promise.all([
+        goalsStore.fetchGoal(String(route.params.id)),
+        accountsStore.fetchAccounts(),
+      ]);
       await loadPendingWithdrawal();
     } catch {
       uiStore.addToast({ type: "error", message: "Failed to load goal" });
