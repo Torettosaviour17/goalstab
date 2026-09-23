@@ -203,13 +203,26 @@ router.get("/withdrawals", [auth, admin], async (req, res) => {
 });
 
 // @route   PUT api/admin/withdrawals/:id/approve
-// @desc    Approve a withdrawal
+// @desc    Approve a withdrawal without deleting the goal
 router.put("/withdrawals/:id/approve", [auth, admin], async (req, res) => {
   const { adminNote } = req.body;
+
   try {
-    const withdrawal = await Withdrawal.findById(req.params.id);
-    if (!withdrawal)
-      return res.status(404).json({ msg: "Withdrawal not found" });
+    const withdrawal = await Withdrawal.findOne({
+      _id: req.params.id,
+      status: "pending",
+    });
+    if (!withdrawal) {
+      return res.status(400).json({ msg: "Already processed or not found" });
+    }
+
+    const goal = await Goal.findById(withdrawal.goal);
+    if (!goal) return res.status(404).json({ msg: "Goal not found" });
+
+    const availableBalance = Math.max(0, goal.saved || 0);
+    if (withdrawal.amount > availableBalance) {
+      return res.status(400).json({ msg: "Insufficient goal balance" });
+    }
 
     withdrawal.status = "approved";
     withdrawal.adminNote = adminNote;
@@ -217,82 +230,49 @@ router.put("/withdrawals/:id/approve", [auth, admin], async (req, res) => {
     withdrawal.processedBy = req.user.id;
     await withdrawal.save();
 
-    // Send approval email
+    goal.saved -= withdrawal.amount;
+    goal.withdrawn = (goal.withdrawn || 0) + withdrawal.amount;
+    goal.lastUpdated = new Date();
+
+    if (goal.saved <= 0) {
+      goal.saved = 0;
+      goal.isClosed = true;
+      goal.locked = true;
+    }
+
+    await goal.save();
+
+    const transaction = await Transaction.findOne({
+      reference: withdrawal._id,
+      type: "withdrawal",
+    });
+    if (transaction) {
+      transaction.status = "approved";
+      transaction.description = `Withdrawal approved from ${goal.title}`;
+      await transaction.save();
+    }
+
+    sendNotification(withdrawal.user.toString(), {
+      type: "withdrawal_processed",
+      message: goal.isClosed
+        ? `Your withdrawal of ₦${withdrawal.amount.toLocaleString()} was approved. Your goal "${goal.title}" is now closed.`
+        : `Your withdrawal of ₦${withdrawal.amount.toLocaleString()} was approved.`,
+    });
+
     await sendEmailToUser(
       withdrawal.user,
       "Withdrawal Approved",
       `<p>Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been approved.</p>
-       <p>Funds will be transferred to your account within 1‑3 business days.</p>
+       <p>${goal.isClosed ? `Your goal "${goal.title}" is now closed.` : "Your goal remains active."}</p>
        <a href="${process.env.FRONTEND_URL}/transactions">View Transaction</a>`,
     );
-
-    // Update goal saved amount & withdrawn tracking
-    const goal = await Goal.findById(withdrawal.goal);
-    if (goal) {
-      goal.withdrawn = (goal.withdrawn || 0) + withdrawal.amount;
-      goal.saved = Math.max(0, goal.saved - withdrawal.amount);
-
-      // If user has withdrawn all their target, finalize the goal
-      if (goal.withdrawn >= goal.userTarget) {
-        // Transfer any remaining saved (fee + oversave) to leftover funds
-        if (goal.saved > 0) {
-          await LeftoverFunds.create({
-            user: goal.user,
-            goal: goal._id,
-            amount: goal.saved,
-            originalGoalTitle: goal.title,
-            withdrawal: withdrawal._id,
-            createdAt: new Date(),
-          });
-        }
-
-        const goalTitle = goal.title;
-        const goalId = goal._id;
-        await goal.deleteOne();
-
-        // Send SSE event for goal deletion
-        sendNotification(withdrawal.user.toString(), {
-          type: "goal_deleted",
-          goalId: goalId.toString(),
-          message: `Goal "${goalTitle}" was removed after full withdrawal.`,
-        });
-      } else {
-        // Keep the goal alive so remaining target can still be withdrawn later
-        await goal.save();
-      }
-    }
-
-    // Update transaction status to approved
-    const transaction = await Transaction.findOne({
-      user: withdrawal.user,
-      goal: withdrawal.goal,
-      type: "withdrawal",
-      amount: withdrawal.amount,
-      status: "pending",
-    }).sort({ createdAt: -1 });
-
-    if (transaction) {
-      transaction.status = "approved";
-      transaction.description = `Withdrawal approved from ${goal?.title || "goal"}`;
-      await transaction.save();
-    }
-
-    // Notify user
-    sendNotification(withdrawal.user.toString(), {
-      type: "withdrawal_processed",
-      message: `Your withdrawal of ₦${withdrawal.amount.toLocaleString()} has been approved.`,
-    });
 
     await logAdminAction(
       req.user.id,
       "approve_withdrawal",
       "withdrawal",
       withdrawal._id,
-      {
-        amount: withdrawal.amount,
-        goal: goal?.title || null,
-        adminNote,
-      },
+      { amount: withdrawal.amount, goal: goal.title, adminNote },
     );
 
     res.json(withdrawal);
