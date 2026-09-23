@@ -194,4 +194,8 @@ GoalSchema.virtual("pendingPlatformFee").get(function () {
 GoalSchema.set("toJSON", { virtuals: true });
 GoalSchema.set("toObject", { virtuals: true });
 
+GoalSchema.index({ user: 1, createdAt: -1 });
+GoalSchema.index({ user: 1, progress: 1 });
+GoalSchema.index({ autoSaveEnabled: 1, nextAutoSave: 1 });
+
 module.exports = mongoose.model("Goal", GoalSchema);
