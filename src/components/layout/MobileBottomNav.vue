@@ -2,12 +2,12 @@
   <nav
     class="md:hidden fixed inset-x-0 bottom-0 z-[100] bg-gray-900/95 backdrop-blur-xl border-t border-gray-800/70 shadow-[0_-12px_30px_rgba(0,0,0,0.35)] pb-[env(safe-area-inset-bottom)]"
   >
-    <div class="flex items-center h-16 overflow-x-auto scrollbar-hide px-1">
+    <div class="flex items-center h-16 px-1">
       <router-link
         v-for="item in navItems"
         :key="item.path"
         :to="item.path"
-        class="flex flex-col items-center justify-center min-w-[72px] flex-1 h-full text-[11px] transition-colors"
+        class="flex flex-col items-center justify-center min-w-0 flex-1 h-full text-[10px] sm:text-[11px] transition-colors"
         :class="
           isActive(item.path)
             ? 'text-primary-400'
@@ -42,14 +42,7 @@ const navItems = computed(() => {
     { name: "Accounts", path: "/accounts", icon: "🏦" },
   ];
 
-  // Add Admin link only if user is admin
-  if (user.value?.isAdmin) {
-    items.push({ name: "Admin", path: "/admin", icon: "🛡️" });
-  }
-
-  // Settings always at the end
-  items.push({ name: "Settings", path: "/settings", icon: "⚙️" });
-
+  // Keep the bottom bar compact. Admin and Settings stay in the header/menu.
   return items;
 });
 </script>
