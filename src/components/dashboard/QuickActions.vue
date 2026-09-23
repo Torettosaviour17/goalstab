@@ -17,12 +17,15 @@
 
 <script setup lang="ts">
 import { useRouter } from "vue-router";
+import { useUIStore } from "@/stores/ui";
 
 const router = useRouter();
+const uiStore = useUIStore();
 
 const actions = [
-  { label: "Add Funds", icon: "💰", handler: () => console.log("Add Funds") },
-  { label: "New Goal", icon: "🎯", handler: () => router.push("/goals") },
+  { label: "Add Funds", icon: "💰", handler: () => router.push("/goals") },
+  { label: "New Goal", icon: "🎯", handler: () => uiStore.openCreateGoalModal() },
+  
   { label: "Analytics", icon: "📈", handler: () => router.push("/analytics") },
   { label: "Settings", icon: "⚙️", handler: () => router.push("/settings") },
 ];
