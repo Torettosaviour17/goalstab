@@ -517,10 +517,6 @@ const saveProfile = async () => {
       phone: profile.phone,
       avatar: profile.avatar,
     });
-    uiStore.addToast({
-      type: "success",
-      message: "Profile updated successfully",
-    });
   } catch (err: any) {
     uiStore.addToast({
       type: "error",
@@ -535,10 +531,6 @@ const saveNotifications = async () => {
   saving.value = true;
   try {
     await authStore.updatePreferences({ notifications: { ...notifications } });
-    uiStore.addToast({
-      type: "success",
-      message: "Notification preferences saved",
-    });
   } finally {
     saving.value = false;
   }
@@ -603,7 +595,6 @@ const savePreferences = async () => {
     autoSaveDefault: preferences.autoSaveDefault,
     monthlyIncome: preferences.monthlyIncome,
   });
-    uiStore.addToast({ type: "success", message: "Preferences saved" });
   } finally {
     saving.value = false;
   }
