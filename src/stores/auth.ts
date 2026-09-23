@@ -203,6 +203,23 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
+    async deleteAccount() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await api.delete("/users/account");
+        this.logout();
+        return response.data;
+      } catch (error: any) {
+        const message = error.response?.data?.msg || "Account deletion failed";
+        this.error = message;
+        useUIStore().addToast({ type: "error", message });
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
     async changePassword(currentPassword: string, newPassword: string) {
       this.loading = true;
       this.error = null;
