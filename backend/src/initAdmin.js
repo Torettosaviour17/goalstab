@@ -1,29 +1,33 @@
 const User = require("./models/User");
-const bcrypt = require("bcryptjs");
-
-const ADMIN_EMAIL = "saviourchidubem17@gmail.com";
 
 const ensureAdmin = async () => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminEmail) {
+    console.warn("ADMIN_EMAIL is not configured; skipping admin bootstrap.");
+    return;
+  }
+
   try {
-    // Check if admin already exists
-    let admin = await User.findOne({ email: ADMIN_EMAIL });
+    let admin = await User.findOne({ email: adminEmail });
+
     if (admin) {
-      console.log(`Admin user already exists: ${ADMIN_EMAIL}`);
-      // Update admin properties to ensure they're correct
       admin.isAdmin = true;
       admin.isPremium = true;
-      admin.name = "Admin";
-      admin.password = "admin@123"; // Reset to known password
       await admin.save();
-      console.log(`✅ Admin user updated: ${ADMIN_EMAIL}`);
       return;
     }
 
-    // Only create if doesn't exist
+    if (!adminPassword) {
+      console.warn("ADMIN_PASSWORD is not configured; cannot create the admin user.");
+      return;
+    }
+
     admin = new User({
       name: "Admin",
-      email: ADMIN_EMAIL,
-      password: "admin@123", // Will be hashed by User schema
+      email: adminEmail,
+      password: adminPassword,
       isPremium: true,
       isAdmin: true,
       preferences: {
@@ -41,7 +45,7 @@ const ensureAdmin = async () => {
     });
 
     await admin.save();
-    console.log(`✅ Admin user created: ${ADMIN_EMAIL}`);
+    console.log("Admin user created successfully.");
   } catch (err) {
     console.error("Error creating/updating admin user:", err.message);
   }
