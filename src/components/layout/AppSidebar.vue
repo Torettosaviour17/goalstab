@@ -114,6 +114,8 @@ const navItems = computed(() => {
     { name: "Dashboard", path: "/dashboard", icon: "📊" },
     { name: "Goals", path: "/goals", icon: "🎯" },
     { name: "Analytics", path: "/analytics", icon: "📈" },
+    { name: "Transactions", path: "/transactions", icon: "💳" },
+    { name: "Accounts", path: "/accounts", icon: "🏦" },
   ];
 
   // Add Admin link only for admin users
