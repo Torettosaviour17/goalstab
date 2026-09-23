@@ -5,7 +5,6 @@ import { MotionPlugin } from "@vueuse/motion";
 import App from "./App.vue";
 import router from "./router";
 import { useAuthStore } from "./stores/auth";
-import { useUIStore } from "./stores/ui";
 import { useThemeStore } from "./stores/theme";
 import "./style.css";
 import VueApexCharts from "vue3-apexcharts";
@@ -33,22 +32,14 @@ app.config.errorHandler = (err, instance, info) => {
 
 // ✅ INIT STORES BEFORE MOUNT
 const authStore = useAuthStore(pinia);
-const uiStore = useUIStore(pinia);
 const themeStore = useThemeStore(pinia);
 
 // ✅ APPLY THEME IMMEDIATELY (VERY IMPORTANT)
 themeStore.setTheme(themeStore.theme);
 
-// ===============================
-// AUTH CHECK + PRELOADER CONTROL
-// ===============================
-uiStore.setAuthChecking(true);
-
 // Mount immediately. Authentication checks must never delay the first paint.
 // Protected navigation can validate a persisted session in the router guard.
-void router.isReady().finally(() => {
-  uiStore.setAuthChecking(false);
-});
+void router.isReady();
 
 // ===============================
 // MOUNT APP
