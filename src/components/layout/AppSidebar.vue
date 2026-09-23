@@ -40,8 +40,10 @@
             ₦{{ formatNumber(totalSaved) }}
           </p>
           <div class="flex items-center gap-1 mt-1">
-            <span class="text-xs text-green-400 font-medium">+12.5%</span>
-            <span class="text-[10px] text-gray-500">this month</span>
+            <span class="text-xs font-medium" :class="overview.monthlyGrowth >= 0 ? 'text-green-400' : 'text-red-400'">
+              {{ overview.monthlyGrowth >= 0 ? "+" : "" }}{{ overview.monthlyGrowth.toFixed(1) }}%
+            </span>
+            <span class="text-[10px] text-gray-500">monthly savings growth</span>
           </div>
         </div>
       </div>
@@ -65,20 +67,18 @@
         </router-link>
       </nav>
 
-      <div
-        class="mt-10 p-5 bg-linear-to-br from-gray-800/80 to-gray-900/80 rounded-2xl border border-gray-700/30 relative overflow-hidden group"
-      >
-        <div
-          class="absolute -right-4 -bottom-4 w-16 h-16 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-colors"
-        ></div>
-
-        <div class="text-center relative z-10">
-          <div
-            class="w-12 h-12 mx-auto mb-3 bg-linear-to-br from-yellow-500 to-orange-600 rounded-full flex items-center justify-center shadow-lg shadow-orange-900/20"
-          >
-            <span class="text-xl">🔥</span>
+      <div class="mt-10 p-5 bg-gray-800/50 rounded-2xl border border-gray-700/30">
+        <div class="text-center">
+          <div class="w-12 h-12 mx-auto mb-3 bg-primary-500/10 rounded-full flex items-center justify-center">
+            <span class="text-xl">🎯</span>
           </div>
-          <h4
+          <h4 class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">
+            Goals in progress
+          </h4>
+          <p class="text-2xl font-black text-primary-400">{{ activeGoalsCount }}</p>
+          <p class="text-[10px] text-gray-500 mt-2">Keep building your savings plan.</p>
+        </div>
+      </div>          <h4
             class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1"
           >
             Savings Streak
@@ -102,11 +102,14 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useGoalsStore } from "@/stores/goals";
+import { useAnalyticsStore } from "@/stores/analytics";
 
 const authStore = useAuthStore();
 const goalsStore = useGoalsStore();
+const analyticsStore = useAnalyticsStore();
 const { user } = storeToRefs(authStore);
-const { totalSaved } = storeToRefs(goalsStore);
+const { totalSaved, activeGoalsCount } = storeToRefs(goalsStore);
+const { overview } = storeToRefs(analyticsStore);
 
 // Computed navigation items – includes Admin link if user is admin
 const navItems = computed(() => {
