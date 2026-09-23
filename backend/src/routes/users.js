@@ -10,7 +10,7 @@ const Payment = require("../models/Payment");
 const Account = require("../models/Account");
 const Notification = require("../models/Notification");
 const GoalActivity = require("../models/GoalActivity");
-const LeftoverFund = require("../models/LeftoverFund");
+const LeftoverFunds = require("../models/LeftoverFunds");
 
 // @route   PUT api/users/profile
 // @desc    Update user profile (name, email, phone, avatar)
@@ -143,7 +143,7 @@ router.delete("/account", auth, async (req, res) => {
       Account.deleteMany({ user: userId }),
       Notification.deleteMany({ user: userId }),
       GoalActivity.deleteMany({ user: userId }),
-      LeftoverFund.deleteMany({ user: userId }),
+      LeftoverFunds.deleteMany({ user: userId }),
     ]);
 
     await User.deleteOne({ _id: userId });
