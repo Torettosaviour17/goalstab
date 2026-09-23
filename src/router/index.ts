@@ -31,6 +31,12 @@ const routes = [
     meta: { guestOnly: true, title: "Forgot Password" },
   },
   {
+    path: "/reset-password",
+    name: "reset-password",
+    component: () => import("@/views/auth/ResetPassword.vue"),
+    meta: { guestOnly: true, title: "Reset Password" },
+  },
+  {
     path: "/terms",
     name: "terms",
     component: () => import("@/views/Terms.vue"),
