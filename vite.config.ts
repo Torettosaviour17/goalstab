@@ -10,6 +10,8 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
+      // Register the service worker from the authenticated app only. The public website remains a normal website.
+      injectRegister: null,
       includeAssets: ["icons/*.png", "vite.svg"],
       manifest: {
         name: "GoalTabs",
@@ -56,7 +58,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        // navigateFallback: "/offline.html",
+        // Cache the complete built app shell so installed GoalTabs can open offline.
+        navigateFallback: "/index.html",
+        navigateFallbackAllowlist: [
+          /^\\/(dashboard|goals|analytics|transactions|settings|accounts|help|payment-success|admin)(?:\\/|$)/,
+        ],
         // Never cache authenticated API responses in the service worker.
         // They can contain user-specific financial data and should always come from the network.
       },
