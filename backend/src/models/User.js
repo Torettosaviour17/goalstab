@@ -35,6 +35,8 @@ const UserSchema = new mongoose.Schema({
   avatar: { type: String, default: null },
   preferences: { type: PreferencesSchema, default: () => ({}) },
   createdAt: { type: Date, default: Date.now },
+  passwordResetToken: { type: String, default: null, index: true },
+  passwordResetExpires: { type: Date, default: null },
 });
 
 // Hash password before saving
