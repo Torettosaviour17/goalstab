@@ -39,6 +39,15 @@ const analyticsRoutes = require("./routes/analytics");
 const productRoutes = require("./routes/products");
 const paystackRoutes = require("./routes/paystack");
 
+// Public Google OAuth configuration. The client ID is not a secret and
+// is safe for the browser to receive at runtime.
+app.get("/api/auth/google-config", (req, res) => {
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    return res.status(503).json({ msg: "Google sign-in is not configured" });
+  }
+  res.json({ clientId: process.env.GOOGLE_CLIENT_ID });
+});
+
 // Mount routes
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/auth", authRoutes);
