@@ -10,6 +10,18 @@ const { sendEmailToUser } = require("../services/emailService");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const googleUserResponse = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  avatar: user.avatar,
+  googleId: user.googleId,
+  phone: user.phone,
+  isPremium: user.isPremium,
+  isAdmin: user.isAdmin,
+  preferences: user.preferences,
+});
+
 // @route   POST api/auth/register
 // @desc    Register a new user
 router.post("/register", async (req, res) => {
@@ -119,62 +131,86 @@ router.post("/login", async (req, res) => {
 
 // @route   POST api/auth/google-signin
 router.post("/google-signin", async (req, res) => {
-  const token = req.body.credential || req.body.token;
-  if (!token) {
+  const credential = req.body.credential || req.body.token;
+
+  if (!credential) {
     return res.status(400).json({ msg: "Missing Google credential" });
+  }
+
+  if (!process.env.GOOGLE_CLIENT_ID) {
+    console.error("Google sign-in is not configured: GOOGLE_CLIENT_ID is missing");
+    return res.status(503).json({ msg: "Google sign-in is not configured on the server" });
+  }
+
+  if (!process.env.JWT_SECRET) {
+    console.error("Google sign-in cannot issue a session: JWT_SECRET is missing");
+    return res.status(503).json({ msg: "Authentication is not configured on the server" });
   }
 
   try {
     const ticket = await googleClient.verifyIdToken({
-      idToken: token,
+      idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
+
     const payload = ticket.getPayload();
-    if (!payload || !payload.email) {
-      return res.status(400).json({ msg: "Invalid Google credential" });
+
+    if (!payload?.sub || !payload.email || payload.email_verified !== true) {
+      return res.status(400).json({ msg: "Google account could not be verified" });
     }
 
-    let user = await User.findOne({ email: payload.email });
+    const email = String(payload.email).trim().toLowerCase();
+    let user = await User.findOne({ email });
 
     if (!user) {
-      const randomPassword = crypto.randomBytes(32).toString("hex");
       user = new User({
-        name: payload.name || payload.email.split("@")[0],
-        email: payload.email,
-        password: randomPassword,
+        name: payload.name || email.split("@")[0],
+        email,
+        password: crypto.randomBytes(32).toString("hex"),
         avatar: payload.picture || null,
         googleId: payload.sub,
       });
       await user.save();
-    } else if (!user.googleId || (!user.avatar && payload.picture)) {
-      // Link an existing email account to the verified Google identity.
-      if (!user.googleId) user.googleId = payload.sub;
-      if (!user.avatar && payload.picture) user.avatar = payload.picture;
-      await user.save();
+    } else {
+      let changed = false;
+
+      // Link an existing GoalTabs account to the verified Google identity.
+      if (!user.googleId) {
+        user.googleId = payload.sub;
+        changed = true;
+      }
+
+      // Keep the Google profile picture in sync when the account does not
+      // already have a custom avatar.
+      if (!user.avatar && payload.picture) {
+        user.avatar = payload.picture;
+        changed = true;
+      }
+
+      if (changed) await user.save();
     }
 
     const jwtPayload = { user: { id: user.id } };
-    jwt.sign(
-      jwtPayload,
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" },
-      (err, token) => {
-        if (err) throw err;
-        res.json({
-          token,
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            preferences: user.preferences,
-            isAdmin: user.isAdmin,
-          },
-        });
-      },
-    );
+    const sessionToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    return res.json({
+      token: sessionToken,
+      user: googleUserResponse(user),
+    });
   } catch (err) {
     console.error("Google sign-in error:", err);
-    res.status(500).json({ msg: "Google sign-in failed" });
+
+    const isGoogleConfigError =
+      err?.message?.toLowerCase?.().includes("audience") ||
+      err?.message?.toLowerCase?.().includes("client");
+
+    return res.status(isGoogleConfigError ? 503 : 401).json({
+      msg: isGoogleConfigError
+        ? "Google sign-in is not configured correctly"
+        : "Google sign-in failed. Please try again.",
+    });
   }
 });
 
