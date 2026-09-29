@@ -135,8 +135,15 @@
 
         <!-- Google Sign-In -->
         <div class="mb-6">
-          <div id="google_signin_button" class="w-full min-h-10 flex justify-center"></div>
-          <p v-if="googleError" class="mt-2 text-xs text-red-400">{{ googleError }}</p>
+          <div
+            class="rounded-xl border border-gray-700 bg-gray-900/70 p-2 shadow-lg shadow-black/20"
+          >
+            <div
+              id="google_signin_button"
+              class="w-full min-h-11 flex justify-center items-center overflow-hidden rounded-lg"
+            ></div>
+          </div>
+          <p v-if="googleError" class="mt-2 text-xs text-red-400 text-center">{{ googleError }}</p>
         </div>
 
         <div class="relative my-6">
@@ -237,10 +244,10 @@ const initializeGoogleSignIn = (clientId: string) => {
   if (container) {
     container.innerHTML = "";
     window.google.accounts.id.renderButton(container, {
-      theme: "outline",
+      theme: "filled_blue",
       size: "large",
       width: Math.min(400, container.clientWidth || 400),
-      text: "continue_with",
+      text: "signin_with",
       shape: "rectangular",
     });
   }
@@ -267,6 +274,28 @@ const loadGoogleClientId = async () => {
   return data.clientId;
 };
 
+const waitForGoogle = (clientId: string) => {
+  let attempts = 0;
+  const maxAttempts = 50;
+
+  const check = () => {
+    if (window.google?.accounts?.id) {
+      initializeGoogleSignIn(clientId);
+      return;
+    }
+
+    attempts += 1;
+    if (attempts >= maxAttempts) {
+      googleError.value = "Google Sign-In is unavailable. Please try again.";
+      return;
+    }
+
+    window.setTimeout(check, 100);
+  };
+
+  check();
+};
+
 onMounted(async () => {
   try {
     const clientId = await loadGoogleClientId();
@@ -274,21 +303,15 @@ onMounted(async () => {
       'script[src="https://accounts.google.com/gsi/client"]',
     ) as HTMLScriptElement | null;
 
-    if (window.google?.accounts?.id) {
-      initializeGoogleSignIn(clientId);
-      return;
-    }
-
-    const script = existing || document.createElement("script");
     if (!existing) {
+      const script = document.createElement("script");
       script.src = "https://accounts.google.com/gsi/client";
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
     }
-    script.addEventListener("load", () => initializeGoogleSignIn(clientId), {
-      once: true,
-    });
+
+    waitForGoogle(clientId);
   } catch (error: any) {
     googleError.value = error.message || "Google Sign-In is unavailable";
   }
