@@ -279,17 +279,9 @@ const handleGoogleCallback = async (response: any) => {
   }
 };
 
-// Initialize Google Sign-In once, then render the official Google button.
-const initializeGoogleSignIn = () => {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-  if (!clientId) {
-    googleError.value = "Google Client ID not configured";
-    return;
-  }
-
-  if (!window.google?.accounts?.id) {
-    googleError.value = "Google Sign-In library is unavailable";
+const initializeGoogleSignIn = (clientId: string) => {
+  if (!clientId || !window.google?.accounts?.id) {
+    googleError.value = "Google Sign-In is unavailable";
     return;
   }
 
@@ -316,23 +308,53 @@ const initializeGoogleSignIn = () => {
   }
 };
 
-onMounted(() => {
-  const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]') as HTMLScriptElement | null;
+const loadGoogleClientId = async () => {
+  const configuredClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  if (configuredClientId) return configuredClientId;
 
-  if (window.google?.accounts?.id) {
-    initializeGoogleSignIn();
-    return;
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL || "/api"}/auth/google-config`,
+    { headers: { Accept: "application/json" } },
+  );
+
+  if (!response.ok) {
+    throw new Error("Google Sign-In is not configured");
   }
 
-  const script = existing || document.createElement("script");
-  if (!existing) {
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
+  const data = await response.json();
+  if (!data.clientId) {
+    throw new Error("Google Sign-In is not configured");
   }
 
-  script.addEventListener("load", initializeGoogleSignIn, { once: true });
+  return data.clientId;
+};
+
+onMounted(async () => {
+  try {
+    const clientId = await loadGoogleClientId();
+    const existing = document.querySelector(
+      'script[src="https://accounts.google.com/gsi/client"]',
+    ) as HTMLScriptElement | null;
+
+    if (window.google?.accounts?.id) {
+      initializeGoogleSignIn(clientId);
+      return;
+    }
+
+    const script = existing || document.createElement("script");
+    if (!existing) {
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+    }
+
+    script.addEventListener("load", () => initializeGoogleSignIn(clientId), {
+      once: true,
+    });
+  } catch (error: any) {
+    googleError.value = error.message || "Google Sign-In is unavailable";
+  }
 });
 
 // Handle email/password registration
