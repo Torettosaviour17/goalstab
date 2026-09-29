@@ -289,7 +289,7 @@ onMounted(async () => {
   }
 })
 
-watch(() => [form.bankName, form.accountNumber], () => {
+watch(() => [form.bankName, form.accountNumber, banks.value.length], () => {
   if (form.accountName) form.accountName = ''
   resolveError.value = ''
 
