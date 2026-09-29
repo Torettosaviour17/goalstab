@@ -97,9 +97,7 @@ const getProductById = async (productId) => {
 const purchaseProduct = async (productId, userDetails) => {
   const product = await getProductById(productId);
   if (!product) throw new Error("Product not found");
-  console.log(
-    `[ORDER] ${userDetails.name} (${userDetails.email}) purchased ${product.name} for ₦${product.price * 1500}`,
-  );
+  console.log(`Order created for product: ${product.name}`);
   return {
     success: true,
     orderId: `ORDER-${Date.now()}`,
