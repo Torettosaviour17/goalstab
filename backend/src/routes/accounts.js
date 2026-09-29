@@ -2,8 +2,58 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Account = require('../models/Account');
+const axios = require('axios');
 
 const ownsAccount = async (id, userId) => Account.findOne({ _id: id, user: userId });
+
+router.get('/banks', auth, async (req, res) => {
+  try {
+    const response = await axios.get('https://api.paystack.co/bank', {
+      params: { country: 'nigeria', perPage: 100 },
+      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+    });
+
+    const banks = (response.data?.data || [])
+      .filter((bank) => bank.active && !bank.is_deleted && bank.code)
+      .map((bank) => ({ name: bank.name, code: bank.code }));
+
+    res.json(banks);
+  } catch (err) {
+    console.error('Paystack banks error:', err.response?.data || err.message);
+    res.status(500).json({ message: 'Unable to load banks' });
+  }
+});
+
+router.get('/resolve', auth, async (req, res) => {
+  try {
+    const accountNumber = String(req.query.accountNumber || '').replace(/\s/g, '');
+    const bankCode = String(req.query.bankCode || '');
+
+    if (!/^\d{10}$/.test(accountNumber)) {
+      return res.status(400).json({ message: 'Account number must be exactly 10 digits' });
+    }
+
+    if (!bankCode) {
+      return res.status(400).json({ message: 'Bank is required' });
+    }
+
+    const response = await axios.get('https://api.paystack.co/bank/resolve', {
+      params: { account_number: accountNumber, bank_code: bankCode },
+      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+    });
+
+    const accountName = response.data?.data?.account_name;
+    if (!accountName) {
+      return res.status(400).json({ message: 'Could not resolve account name. Check the bank and account number.' });
+    }
+
+    res.json({ accountName });
+  } catch (err) {
+    console.error('Paystack account resolve error:', err.response?.data || err.message);
+    const message = err.response?.data?.message || 'Could not resolve account details';
+    res.status(400).json({ message });
+  }
+});
 
 router.get('/', auth, async (req, res) => {
   try {
@@ -24,8 +74,8 @@ router.post('/', auth, async (req, res) => {
     }
 
     const normalizedNumber = String(accountNumber).replace(/\s/g, '');
-    if (!/^\d{11}$/.test(normalizedNumber)) {
-      return res.status(400).json({ message: 'Account number must be 11 digits' });
+    if (!/^\d{10}$/.test(normalizedNumber)) {
+      return res.status(400).json({ message: 'Account number must be 10 digits' });
     }
 
     const existingAccounts = await Account.countDocuments({ user: req.user.id });
@@ -62,7 +112,7 @@ router.put('/:id', auth, async (req, res) => {
     if (bankName !== undefined) account.bankName = String(bankName).trim();
     if (accountNumber !== undefined) {
       const normalizedNumber = String(accountNumber).replace(/\s/g, '');
-      if (!/^\d{11}$/.test(normalizedNumber)) {
+      if (!/^\d{10}$/.test(normalizedNumber)) {
         return res.status(400).json({ message: 'Account number must be 11 digits' });
       }
       account.accountNumber = normalizedNumber;
