@@ -8,16 +8,35 @@ const ownsAccount = async (id, userId) => Account.findOne({ _id: id, user: userI
 
 router.get('/banks', auth, async (req, res) => {
   try {
-    const response = await axios.get('https://api.paystack.co/bank', {
-      params: { country: 'nigeria', perPage: 100 },
-      headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
-    });
+    const banks = [];
+    let next = null;
 
-    const banks = (response.data?.data || [])
-      .filter((bank) => bank.active && !bank.is_deleted && bank.code)
-      .map((bank) => ({ name: bank.name, code: bank.code }));
+    for (let page = 0; page < 10; page += 1) {
+      const response = await axios.get('https://api.paystack.co/bank', {
+        params: {
+          country: 'nigeria',
+          perPage: 100,
+          use_cursor: true,
+          ...(next ? { next } : {}),
+        },
+        headers: { Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}` },
+      });
 
-    res.json(banks);
+      const pageBanks = (response.data?.data || [])
+        .filter((bank) => bank.active && !bank.is_deleted && bank.code)
+        .map((bank) => ({ name: bank.name, code: bank.code }));
+
+      banks.push(...pageBanks);
+
+      next = response.data?.meta?.next || null;
+      if (!next || !pageBanks.length) break;
+    }
+
+    const uniqueBanks = Array.from(
+      new Map(banks.map((bank) => [bank.code, bank])).values(),
+    ).sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json(uniqueBanks);
   } catch (err) {
     console.error('Paystack banks error:', err.response?.data || err.message);
     res.status(500).json({ message: 'Unable to load banks' });
@@ -113,7 +132,7 @@ router.put('/:id', auth, async (req, res) => {
     if (accountNumber !== undefined) {
       const normalizedNumber = String(accountNumber).replace(/\s/g, '');
       if (!/^\d{10}$/.test(normalizedNumber)) {
-        return res.status(400).json({ message: 'Account number must be 11 digits' });
+        return res.status(400).json({ message: 'Account number must be 10 digits' });
       }
       account.accountNumber = normalizedNumber;
       account.lastFour = normalizedNumber.slice(-4);
