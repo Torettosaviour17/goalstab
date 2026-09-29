@@ -188,17 +188,6 @@
           </button>
         </form>
 
-        <!-- Other options -->
-        <div class="grid grid-cols-1 gap-3 mt-6">
-          <a
-            href="https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=YOUR_LINKEDIN_CLIENT_ID&redirect_uri=YOUR_REDIRECT_URI&scope=profile%20email"
-            class="flex items-center justify-center gap-2 px-4 py-3 bg-gray-800/50 hover:bg-gray-700/50 border border-gray-700 rounded-xl transition text-gray-300 hover:text-white"
-          >
-            <span class="text-lg">💼</span>
-            LinkedIn
-          </a>
-        </div>
-
         <!-- Login link -->
         <p class="mt-4 sm:mt-8 text-center text-xs sm:text-base text-gray-400">
           Already have an account?
