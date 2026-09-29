@@ -134,12 +134,32 @@ const router = createRouter({
   },
 });
 
-// Installed PWA should open the app, not the public website.\n// Browser visits keep the normal public landing page at "/".\nconst isInstalledPWA = () => {\n  if (typeof window === "undefined") return false;\n\n  return (\n    window.matchMedia("(display-mode: standalone)").matches ||\n    ("standalone" in window.navigator &&\n      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone))\n  );\n};\n\n// Global navigation guard\nrouter.beforeEach(async (to, _from, next) => {
+// Installed PWA should open the app, not the public website.
+// Browser visits keep the normal public landing page at "/".
+const isInstalledPWA = () => {
+  if (typeof window === "undefined") return false;
+
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    ("standalone" in window.navigator &&
+      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone))
+  );
+};
+
+// Global navigation guard
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
 
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
   const adminOnly = to.matched.some((record) => record.meta.adminOnly);
-  const guestOnly = to.matched.some((record) => record.meta.guestOnly);\n\n  // The public landing page belongs to the browser website.\n  // When GoalTabs is launched as an installed PWA, go directly to the app.\n  if (to.name === "landing" && isInstalledPWA()) {\n    next({ name: authStore.isAuthenticated ? "dashboard" : "login" });\n    return;\n  }
+  const guestOnly = to.matched.some((record) => record.meta.guestOnly);
+
+  // The public landing page belongs to the browser website.
+  // When GoalTabs is launched as an installed PWA, go directly to the app.
+  if (to.name === "landing" && isInstalledPWA()) {
+    next({ name: authStore.isAuthenticated ? "dashboard" : "login" });
+    return;
+  }
 
   // Do not block public/auth pages on a network request.
   // A freshly logged-in user already has a valid session, so send them
