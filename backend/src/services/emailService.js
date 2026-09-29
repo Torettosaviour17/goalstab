@@ -31,7 +31,7 @@ const sendEmailToUser = async (userId, subject, html) => {
       subject,
       html,
     });
-    console.log(`Email sent to ${user.email}: ${subject}`);
+    console.log("GoalTabs email sent successfully");
   } catch (err) {
     console.error("Email sending failed:", err);
   }
