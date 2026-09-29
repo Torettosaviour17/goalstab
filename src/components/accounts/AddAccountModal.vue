@@ -7,13 +7,13 @@
           v-model="form.accountNumber"
           type="text"
           inputmode="numeric"
+          autocomplete="off"
           required
           maxlength="10"
           pattern="[0-9]{10}"
           placeholder="0123456789"
-          class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+          class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
-        <p class="text-xs text-gray-500 mt-1">Enter exactly 10 digits.</p>
       </div>
 
       <div>
@@ -24,26 +24,32 @@
           @click="openBankPicker"
         >
           <span :class="form.bankName ? 'text-white' : 'text-gray-500'">
-            {{ form.bankName || 'Select your bank' }}
+            {{ form.bankName || 'Select bank' }}
           </span>
-          <span class="text-gray-400">›</span>
+          <span class="text-gray-400">⌄</span>
         </button>
-        <p class="text-xs text-gray-500 mt-1">Search and select your bank. You don't need to type it.</p>
-      </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1">Account Name</label>
-        <input
-          v-model="form.accountName"
-          type="text"
-          required
-          readonly
-          placeholder="Account name will appear after verification"
-          class="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-        />
-        <p v-if="resolvingAccount" class="text-xs text-primary-400 mt-1">Verifying account...</p>
+        <p v-if="banksLoading" class="text-xs text-gray-500 mt-1">Loading banks...</p>
+        <p v-else-if="banksError" class="text-xs text-red-400 mt-1">{{ banksError }}</p>
         <p v-else-if="resolveError" class="text-xs text-red-400 mt-1">{{ resolveError }}</p>
-        <p v-else-if="form.accountName" class="text-xs text-green-400 mt-1">Account verified</p>
+
+        <div
+          v-if="form.accountName"
+          class="mt-3 flex items-center gap-3 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3"
+        >
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-500/15 text-green-400">
+            ✓
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs text-green-400">Account verified</p>
+            <p class="truncate text-sm font-medium text-white">{{ form.accountName }}</p>
+          </div>
+        </div>
+
+        <div v-else-if="resolvingAccount" class="mt-3 flex items-center gap-2 text-xs text-gray-400">
+          <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-gray-600 border-t-primary-400"></span>
+          Verifying account...
+        </div>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -88,12 +94,10 @@
         <div class="relative flex min-h-full items-end sm:items-center justify-center sm:p-6">
           <div class="w-full sm:max-w-md max-h-[85vh] flex flex-col bg-gray-900 border border-gray-700 rounded-t-2xl sm:rounded-2xl shadow-2xl">
             <div class="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-              <div>
-                <h3 class="text-base font-semibold text-white">Choose Bank</h3>
-                <p class="text-xs text-gray-400 mt-0.5">Search for your bank</p>
-              </div>
+              <h3 class="text-base font-semibold text-white">Select bank</h3>
               <button
                 type="button"
+                aria-label="Close"
                 class="rounded-lg p-2 text-gray-400 hover:text-white hover:bg-gray-800"
                 @click="closeBankPicker"
               >
@@ -105,9 +109,9 @@
               <div class="relative">
                 <input
                   v-model="bankSearch"
-                  type="text"
+                  type="search"
                   autofocus
-                  placeholder="Search for a bank"
+                  placeholder="Search banks"
                   class="w-full px-4 py-3 pl-10 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">⌕</span>
@@ -119,15 +123,15 @@
                 v-for="bank in filteredBanks"
                 :key="bank.code"
                 type="button"
-                class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left hover:bg-gray-800 transition"
+                class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-left hover:bg-gray-800 active:bg-gray-750 transition"
                 @click="selectBank(bank)"
               >
                 <span class="text-sm text-gray-200">{{ bank.name }}</span>
                 <span v-if="form.bankName === bank.name" class="text-primary-400">✓</span>
               </button>
 
-              <p v-if="!filteredBanks.length" class="px-4 py-8 text-center text-sm text-gray-500">
-                No bank found. Try another search.
+              <p v-if="!filteredBanks.length && !banksLoading" class="px-4 py-8 text-center text-sm text-gray-500">
+                No banks found
               </p>
             </div>
           </div>
@@ -180,6 +184,8 @@ const show = computed({
 const isEditing = computed(() => !!props.account)
 
 const banks = ref<Bank[]>([])
+const banksLoading = ref(false)
+const banksError = ref('')
 const bankSearch = ref('')
 const showBankPicker = ref(false)
 const resolvingAccount = ref(false)
@@ -264,24 +270,33 @@ const resolveAccount = async () => {
 
     form.accountName = data.accountName
   } catch (err: any) {
-    resolveError.value = err?.response?.data?.message || 'Could not verify this account. Check the bank and account number.'
+    resolveError.value = err?.response?.data?.message || 'Could not verify this account.'
   } finally {
     resolvingAccount.value = false
   }
 }
 
 onMounted(async () => {
+  banksLoading.value = true
+
   try {
     const { data } = await api.get<Bank[]>('/accounts/banks')
-    banks.value = data
+    banks.value = Array.isArray(data) ? data : []
   } catch {
-    resolveError.value = 'Unable to load banks. Please try again.'
+    banksError.value = 'Unable to load banks. Please try again.'
+  } finally {
+    banksLoading.value = false
   }
 })
 
 watch(() => [form.bankName, form.accountNumber], () => {
   if (form.accountName) form.accountName = ''
   resolveError.value = ''
+
+  if (/^\d{10}$/.test(form.accountNumber) && banks.value.length && !form.bankName) {
+    openBankPicker()
+  }
+
   void resolveAccount()
 })
 
