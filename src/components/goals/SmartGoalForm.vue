@@ -77,100 +77,108 @@
           </button>
         </div>
 
-        <!-- Product search -->
-        <div v-if="goalCategory === 'product'">
-          <label class="block text-xs font-medium text-gray-300 mb-1">
-            Search for a product
-            <span
-              class="ml-1 text-[10px] text-primary-400 bg-primary-500/10 px-1.5 py-0.5 rounded-full"
-              >autofills price</span
-            >
-          </label>
+        <!-- Shopping search and product cards -->
+        <div v-if="goalCategory === 'product'" class="space-y-3">
           <div class="relative">
-            <span
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
-              >🔍</span
-            >
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">⌕</span>
             <input
               v-model="searchQuery"
-              type="text"
-              placeholder="e.g. iPhone 16, MacBook Air..."
-              class="w-full pl-9 pr-4 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+              type="search"
+              placeholder="Search shoes, phones, fashion..."
+              class="w-full pl-10 pr-11 py-3.5 text-sm bg-gray-800 border border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary-500"
               @input="onSearchInput"
               @focus="showDropdown = true"
             />
-            <div
-              v-if="searching"
-              class="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              <div
-                class="animate-spin rounded-full h-4 w-4 border-t-2 border-primary-500"
-              />
+            <div v-if="searching" class="absolute right-4 top-1/2 -translate-y-1/2">
+              <div class="animate-spin rounded-full h-4 w-4 border-t-2 border-primary-500" />
             </div>
           </div>
 
-          <!-- Inline search dropdown -->
-          <div
-            v-if="
-              showDropdown && (searchResults.length || searchQuery.length > 1)
-            "
-            class="mt-1 bg-gray-800 border border-gray-700 rounded-xl overflow-hidden"
-          >
-            <div
-              v-for="product in searchResults"
-              :key="product.id"
-              class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-700/60 transition"
-              @click="applyProduct(product)"
+          <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <button
+              v-for="term in quickSearches"
+              :key="term"
+              type="button"
+              class="shrink-0 rounded-full border border-gray-700 bg-gray-800/80 px-3 py-1.5 text-xs text-gray-300 hover:border-primary-500 hover:text-white transition"
+              @click="searchFor(term)"
             >
-              <img
-                :src="product.image"
-                class="w-9 h-9 rounded-lg object-contain bg-gray-700 flex-shrink-0"
-              />
-              <div class="flex-1 min-w-0">
-                <p class="text-sm text-white font-medium truncate">
-                  {{ product.name }}
-                </p>
-                <p class="text-xs text-gray-400">{{ product.store }}</p>
-              </div>
-              <span class="text-sm text-primary-400 font-medium flex-shrink-0"
-                >₦{{ format(product.price) }}</span
+              {{ term }}
+            </button>
+          </div>
+
+          <div v-if="showDropdown" class="space-y-3">
+            <div v-if="searchResults.length" class="grid grid-cols-2 gap-3">
+              <button
+                v-for="product in searchResults"
+                :key="product.id"
+                type="button"
+                class="group min-w-0 overflow-hidden rounded-2xl border text-left transition-all"
+                :class="selectedProduct?.id === product.id ? 'border-primary-500 bg-primary-500/10 ring-1 ring-primary-500/40' : 'border-gray-700 bg-gray-800/70 hover:border-gray-500 hover:bg-gray-800'"
+                @click="applyProduct(product)"
               >
+                <div class="relative flex h-32 items-center justify-center bg-white p-3">
+                  <img
+                    :src="product.image"
+                    :alt="product.name"
+                    loading="lazy"
+                    class="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
+                  />
+                  <span v-if="selectedProduct?.id === product.id" class="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-green-500 text-xs text-white">✓</span>
+                </div>
+                <div class="space-y-1.5 p-3">
+                  <p class="line-clamp-2 min-h-9 text-xs font-medium leading-4 text-white">{{ product.name }}</p>
+                  <p class="truncate text-[10px] text-gray-400">{{ product.store || product.category || 'Online store' }}</p>
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-sm font-bold text-primary-300">₦{{ format(product.price) }}</span>
+                    <span class="text-[10px] font-medium" :class="selectedProduct?.id === product.id ? 'text-green-400' : 'text-gray-400'">{{ selectedProduct?.id === product.id ? 'Selected' : 'Choose' }}</span>
+                  </div>
+                </div>
+              </button>
             </div>
-            <div
-              v-if="
-                !searchResults.length && searchQuery.length > 1 && !searching
-              "
-              class="px-3 py-3 text-sm text-gray-400 text-center"
-            >
-              No results — enter amount manually below
+
+            <div v-else-if="searching" class="grid grid-cols-2 gap-3">
+              <div v-for="n in 4" :key="n" class="overflow-hidden rounded-2xl border border-gray-700 bg-gray-800/60">
+                <div class="h-32 animate-pulse bg-gray-700/70" />
+                <div class="space-y-2 p-3">
+                  <div class="h-3 w-4/5 animate-pulse rounded bg-gray-700" />
+                  <div class="h-3 w-2/5 animate-pulse rounded bg-gray-700" />
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="searchQuery.trim().length > 1" class="rounded-2xl border border-dashed border-gray-700 px-4 py-8 text-center">
+              <div class="mb-2 text-2xl">🛍️</div>
+              <p class="text-sm font-medium text-white">No products found</p>
+              <p class="mt-1 text-xs text-gray-400">Try another search, or enter your item below.</p>
+            </div>
+
+            <div v-else class="rounded-2xl border border-dashed border-gray-700 px-4 py-6 text-center">
+              <div class="mb-2 text-3xl">🛍️</div>
+              <p class="text-sm font-medium text-white">What’s on your wishlist?</p>
+              <p class="mt-1 text-xs text-gray-400">Search for something you’d love to save for.</p>
             </div>
           </div>
         </div>
 
-        <!-- Selected product preview -->
+        <!-- Selected item -->
         <div
           v-if="selectedProduct"
-          class="bg-gray-800/70 p-3 rounded-xl flex gap-3 items-center"
+          class="flex items-center gap-3 rounded-2xl border border-green-500/30 bg-green-500/10 p-3"
         >
-          <img
-            :src="selectedProduct.image"
-            class="w-12 h-12 rounded-lg object-contain bg-gray-700 flex-shrink-0"
-          />
-          <div class="flex-1 min-w-0">
-            <p class="text-white text-sm font-medium truncate">
-              {{ selectedProduct.name }}
-            </p>
-            <p class="text-primary-400 text-xs">
-              ₦{{ format(selectedProduct.price) }} · {{ selectedProduct.store }}
-            </p>
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white p-1.5">
+            <img :src="selectedProduct.image" :alt="selectedProduct.name" class="h-full w-full object-contain" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="text-[10px] font-medium uppercase tracking-wide text-green-400">Added to your goal</p>
+            <p class="truncate text-sm font-semibold text-white">{{ selectedProduct.name }}</p>
+            <p class="text-xs text-gray-300">₦{{ format(selectedProduct.price) }}</p>
           </div>
           <button
             type="button"
+            aria-label="Remove selected product"
             @click="clearProduct"
-            class="text-gray-400 hover:text-white text-xs px-2 py-1 rounded hover:bg-gray-700"
-          >
-            ✕
-          </button>
+            class="rounded-lg p-2 text-gray-400 hover:bg-gray-700 hover:text-white"
+          >✕</button>
         </div>
 
         <!-- Goal title -->
@@ -610,6 +618,7 @@ const serviceDate = ref(props.initialData.serviceDate ?? "");
 const location = ref(props.initialData.location ?? "");
 
 // ── Product search ─────────────────────────────────────
+const quickSearches = ["Shoes", "Phones", "Fashion", "Electronics", "Home"];
 const searchQuery = ref("");
 const searchResults = ref<any[]>([]);
 const searching = ref(false);
@@ -640,6 +649,13 @@ const debouncedSearch = debounce(performSearch, 450);
 const onSearchInput = () => {
   showDropdown.value = true;
   debouncedSearch();
+};
+
+const searchFor = (term: string) => {
+  searchQuery.value = term;
+  showDropdown.value = true;
+  debouncedSearch.cancel();
+  void performSearch();
 };
 
 const applyProduct = (p: any) => {
