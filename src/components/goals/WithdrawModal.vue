@@ -7,9 +7,17 @@
         class="flex items-center gap-4 p-4 bg-gray-800/50 rounded-xl border border-gray-700"
       >
         <div
-          class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-gray-700"
+          class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-gray-700 overflow-hidden"
+          :class="productImage ? 'bg-white p-1.5' : ''"
         >
-          {{ goal.icon }}
+          <img
+            v-if="productImage"
+            :src="productImage"
+            :alt="goal.selectedProduct?.name || goal.title"
+            loading="lazy"
+            class="h-full w-full rounded-lg bg-white object-contain"
+          />
+          <span v-else>{{ goal.icon }}</span>
         </div>
         <div class="flex-1 min-w-0">
           <p class="font-semibold text-white truncate">{{ goal.title }}</p>
@@ -211,6 +219,7 @@ const props = defineProps<{
   goal?: {
     icon?: string;
     title?: string;
+    selectedProduct?: any;
     saved?: number | null;
     withdrawn?: number | null;
   } | null;
@@ -230,6 +239,13 @@ const emit = defineEmits<{
 }>();
 
 const show = ref(props.modelValue);
+
+const productImage = computed(() => {
+  const product = props.goal?.selectedProduct;
+  if (!product || typeof product !== "object") return "";
+  const image = product.image || product.imageUrl || product.image_url || product.thumbnail;
+  return typeof image === "string" && /^https?:\/\//i.test(image) ? image : "";
+});
 const loading = ref(false);
 const submitted = ref(false);
 const submittedAmount = ref(0);
