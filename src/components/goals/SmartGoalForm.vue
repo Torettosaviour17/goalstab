@@ -59,21 +59,11 @@
           </p>
         </div>
 
-        <!-- Category pills -->
-        <div class="flex gap-2 flex-wrap">
-          <button
-            v-for="cat in categories"
-            :key="cat.value"
-            type="button"
-            @click="goalCategory = cat.value"
-            class="px-3 py-1.5 rounded-full text-xs font-medium border-2 transition-all"
-            :class="
-              goalCategory === cat.value
-                ? 'border-primary-500 bg-primary-500/10 text-white'
-                : 'border-gray-700 text-gray-400 hover:border-gray-600'
-            "
-          >
-            {{ cat.icon }} {{ cat.label }}
+        <div class="grid grid-cols-2 gap-2">
+          <button v-for="cat in categories" :key="cat.value" type="button" @click="goalCategory = cat.value" class="rounded-xl border p-3 text-left transition-all" :class="goalCategory === cat.value ? 'border-primary-500 bg-primary-500/10' : 'border-gray-700 bg-gray-800/50 hover:border-gray-600'">
+            <span class="mb-1 block text-xl">{{ cat.icon }}</span>
+            <span class="block text-sm font-semibold text-white">{{ cat.label }}</span>
+            <span class="mt-0.5 block text-[11px] text-gray-400">{{ cat.value === 'product' ? 'Shop for an item' : 'A service, bill, or anything else' }}</span>
           </button>
         </div>
 
@@ -390,28 +380,38 @@
           </div>
         </div>
 
-        <!-- Service-specific fields -->
         <template v-if="goalCategory === 'service'">
-          <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1"
-              >Service date (optional)</label
-            >
-            <input
-              v-model="serviceDate"
-              type="date"
-              class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-300 mb-1"
-              >Location (optional)</label
-            >
-            <input
-              v-model="location"
-              type="text"
-              placeholder="City, venue..."
-              class="w-full px-3 py-2.5 text-sm bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+          <div class="space-y-3 rounded-2xl border border-gray-700 bg-gray-800/40 p-3">
+            <label class="block text-xs font-medium text-gray-300">What kind of expense or service?</label>
+            <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <button v-for="service in serviceTypes" :key="service.value" type="button" @click="selectedServiceType = service.value" class="rounded-xl border p-2 text-left transition" :class="selectedServiceType === service.value ? 'border-primary-500 bg-primary-500/10 text-white' : 'border-gray-700 text-gray-400 hover:border-gray-600'">
+                <span class="mr-1">{{ service.icon }}</span><span class="text-[11px] font-medium">{{ service.label }}</span>
+              </button>
+            </div>
+            <div v-if="selectedServiceType === 'other'">
+              <label class="mb-1 block text-xs font-medium text-gray-300">Describe your goal</label>
+              <input v-model="customServiceType" type="text" placeholder="Anything at all: a service, fee, project..." class="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-gray-300">Person or business (optional)</label>
+              <input v-model="contactName" type="text" placeholder="Who is this for or who provides it?" class="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-gray-300">Invoice, booking, or reference (optional)</label>
+              <input v-model="referenceDetails" type="text" placeholder="Reference number or details" class="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-gray-300">Location (optional)</label>
+              <input v-model="location" type="text" placeholder="Address, city, school, clinic..." class="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-gray-300">Date or deadline (optional)</label>
+              <input v-model="serviceDate" type="date" class="w-full rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-gray-300">Extra details (optional)</label>
+              <textarea v-model="serviceNotes" rows="2" placeholder="Job description, term, bill period, requirements..." class="w-full resize-y rounded-xl border border-gray-700 bg-gray-800 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"></textarea>
+            </div>
           </div>
         </template>
 
@@ -768,8 +768,32 @@ const colors = [
 
 const categories = [
   { value: "product" as const, label: "Product", icon: "📦" },
-  { value: "service" as const, label: "Service", icon: "🎫" },
+  { value: "service" as const, label: "Service or expense", icon: "🛠️" },
 ];
+const serviceTypes = [
+  { value: "housing", label: "Rent & housing", icon: "🏠" },
+  { value: "home-repair", label: "Home repairs", icon: "🛠️" },
+  { value: "vehicle", label: "Car & transport", icon: "🚗" },
+  { value: "health", label: "Health & medical", icon: "🩺" },
+  { value: "education", label: "Education", icon: "🎓" },
+  { value: "travel", label: "Travel", icon: "✈️" },
+  { value: "bills", label: "Bills & utilities", icon: "💡" },
+  { value: "professional", label: "Professional services", icon: "🧑‍🔧" },
+  { value: "events", label: "Events", icon: "🎉" },
+  { value: "personal", label: "Personal care", icon: "✨" },
+  { value: "business", label: "Business costs", icon: "💼" },
+  { value: "family", label: "Family", icon: "❤️" },
+  { value: "pets", label: "Pet care", icon: "🐾" },
+  { value: "legal", label: "Legal & official fees", icon: "📄" },
+  { value: "insurance", label: "Insurance", icon: "🛡️" },
+  { value: "subscriptions", label: "Subscriptions", icon: "🔁" },
+  { value: "other", label: "Anything else", icon: "✍️" },
+];
+const selectedServiceType = ref("other");
+const customServiceType = ref("");
+const contactName = ref("");
+const referenceDetails = ref("");
+const serviceNotes = ref("");
 
 const cardGradient = computed(() => {
   const found = colors.find((c) => c.value === color.value);
@@ -814,6 +838,17 @@ const handleSubmit = async () => {
     storeName: storeName.value || undefined,
     serviceDate: serviceDate.value || undefined,
     location: location.value || undefined,
+    serviceType: goalCategory.value === "service" ? selectedServiceType.value : undefined,
+    customServiceType: goalCategory.value === "service" && selectedServiceType.value === "other" ? customServiceType.value.trim() || undefined : undefined,
+    fulfillmentDetails: goalCategory.value === "service" ? {
+      serviceType: selectedServiceType.value,
+      customServiceType: selectedServiceType.value === "other" ? customServiceType.value.trim() || undefined : undefined,
+      contactName: contactName.value.trim() || undefined,
+      referenceDetails: referenceDetails.value.trim() || undefined,
+      serviceNotes: serviceNotes.value.trim() || undefined,
+      serviceDate: serviceDate.value || undefined,
+      location: location.value.trim() || undefined,
+    } : undefined,
   });
   loading.value = false;
 };
