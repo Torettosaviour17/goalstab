@@ -344,24 +344,13 @@
           </div>
         </div>
 
-        <!-- Icon picker -->
-        <div>
-          <label class="block text-xs font-medium text-gray-300 mb-2"
-            >Goal icon</label
-          >
+        <!-- Product goals use their product photo; emojis are for services. -->
+        <div v-if="goalCategory === 'service'">
+          <label class="block text-xs font-medium text-gray-300 mb-2">Service icon</label>
           <div class="flex flex-wrap gap-2">
-            <button
-              v-for="ic in icons"
-              :key="ic"
-              type="button"
-              @click="icon = ic"
+            <button v-for="ic in icons" :key="ic" type="button" @click="icon = ic"
               class="w-9 h-9 rounded-lg flex items-center justify-center text-lg transition"
-              :class="
-                icon === ic
-                  ? 'bg-primary-500 ring-2 ring-primary-500/50'
-                  : 'bg-gray-700 hover:bg-gray-600'
-              "
-            >
+              :class="icon === ic ? 'bg-primary-500 ring-2 ring-primary-500/50' : 'bg-gray-700 hover:bg-gray-600'">
               {{ ic }}
             </button>
           </div>
@@ -463,9 +452,13 @@
         >
           <div class="flex items-center gap-3">
             <div
-              class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl"
+              class="w-10 h-10 shrink-0 overflow-hidden rounded-xl bg-white/20 flex items-center justify-center text-xl"
+              :class="goalCategory === 'product' && selectedProduct?.image ? 'bg-white p-1' : ''"
             >
-              {{ icon }}
+              <img v-if="goalCategory === 'product' && selectedProduct?.image"
+                :src="selectedProduct.image" :alt="selectedProduct.name"
+                class="h-full w-full rounded-lg bg-white object-contain" />
+              <span v-else>{{ icon }}</span>
             </div>
             <div>
               <p class="text-white font-semibold">{{ title }}</p>
