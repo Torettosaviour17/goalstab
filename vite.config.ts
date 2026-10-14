@@ -57,12 +57,17 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest,json,woff2}"],
+        // Cache larger dashboard chunks as part of the installed UI.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Cache the complete built app shell so installed GoalTabs can open offline.
         navigateFallback: "/index.html",
         navigateFallbackAllowlist: [
-          /^\/(dashboard|goals|analytics|transactions|settings|accounts|help|payment-success|admin)(?:\/|$)/,
+          /^\/$/,
+          /^\/(dashboard|login|register|forgot-password|reset-password|goals|analytics|transactions|settings|accounts|help|payment-success|admin|terms|privacy)(?:\/|$)/,
         ],
+        // API requests must never receive the SPA HTML fallback.
+        navigateFallbackDenylist: [/^\/api(?:\/|$)/],
         // Never cache authenticated API responses in the service worker.
         // They can contain user-specific financial data and should always come from the network.
       },
