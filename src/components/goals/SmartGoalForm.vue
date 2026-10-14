@@ -55,7 +55,7 @@
         <div>
           <h3 class="text-lg font-bold text-white">What are you saving for?</h3>
           <p class="text-xs text-gray-400 mt-0.5">
-            Search for a product and we'll fill in the price for you.
+            Find an item to save for. Confirm the amount in your own currency below.
           </p>
         </div>
 
@@ -119,7 +119,7 @@
                   <p class="line-clamp-2 min-h-9 text-xs font-medium leading-4 text-white">{{ product.name }}</p>
                   <p class="truncate text-[10px] text-gray-400">{{ product.store || product.category || 'Online store' }}</p>
                   <div class="flex items-center justify-between gap-1">
-                    <span class="text-sm font-bold text-primary-300">₦{{ format(product.price) }}</span>
+                    <span class="text-sm font-bold text-primary-300">$ {{ format(product.price) }}</span>
                     <span class="text-[10px] font-medium" :class="selectedProduct?.id === product.id ? 'text-green-400' : 'text-gray-400'">{{ selectedProduct?.id === product.id ? 'Selected' : 'Choose' }}</span>
                   </div>
                 </div>
@@ -161,7 +161,7 @@
           <div class="min-w-0 flex-1">
             <p class="text-[10px] font-medium uppercase tracking-wide text-green-400">Added to your goal</p>
             <p class="truncate text-sm font-semibold text-white">{{ selectedProduct.name }}</p>
-            <p class="text-xs text-gray-300">₦{{ format(selectedProduct.price) }}</p>
+            <p class="text-xs text-gray-300">$ {{ format(selectedProduct.price) }}</p>
           </div>
           <button
             type="button"
@@ -661,7 +661,9 @@ const searchFor = (term: string) => {
 const applyProduct = (p: any) => {
   selectedProduct.value = p;
   title.value = p.name;
-  target.value = p.price;
+  // Current demo catalog prices are USD and are not verified local quotes.
+  // Keep the user's target untouched instead of silently converting currencies.
+  if (!target.value) target.value = 0;
   searchQuery.value = p.name;
   showDropdown.value = false;
   searchResults.value = [];
