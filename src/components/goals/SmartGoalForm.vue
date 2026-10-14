@@ -136,6 +136,11 @@
               </div>
             </div>
 
+            <div v-else-if="searchError" class="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-6 text-center">
+              <p class="text-sm font-medium text-white">Shop search is temporarily unavailable</p>
+              <p class="mt-1 text-xs text-gray-400">You can still enter the item and amount manually.</p>
+              <button type="button" class="mt-3 rounded-lg border border-gray-600 px-3 py-2 text-xs text-white" @click="searchFor(searchQuery)">Try again</button>
+            </div>
             <div v-else-if="searchQuery.trim().length > 1" class="rounded-2xl border border-dashed border-gray-700 px-4 py-8 text-center">
               <div class="mb-2 text-2xl">🛍️</div>
               <p class="text-sm font-medium text-white">No products found</p>
@@ -622,6 +627,7 @@ const quickSearches = ["Shoes", "Phones", "Fashion", "Electronics", "Home"];
 const searchQuery = ref("");
 const searchResults = ref<any[]>([]);
 const searching = ref(false);
+const searchError = ref(false);
 const showDropdown = ref(false);
 const selectedProduct = ref<any>(null);
 
@@ -631,6 +637,7 @@ const performSearch = async () => {
     return;
   }
   searching.value = true;
+  searchError.value = false;
   try {
     const token = localStorage.getItem("token");
     const { data } = await api.get("/goals/shopping/search", {
@@ -640,6 +647,7 @@ const performSearch = async () => {
     searchResults.value = data;
   } catch {
     searchResults.value = [];
+    searchError.value = true;
   } finally {
     searching.value = false;
   }
