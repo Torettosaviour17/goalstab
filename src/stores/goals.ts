@@ -99,12 +99,13 @@ export const useGoalsStore = defineStore("goals", () => {
         autoSave: Number(goalData.autoSave) || 10,
         frequency: goalData.frequency || "monthly",
         deadline: goalData.deadline || undefined,
-        category: goalData.category || undefined,
+        category: goalData.serviceType || goalData.category || undefined,
         accountId: goalData.accountId || undefined,
         autoSaveEnabled: goalData.autoSaveEnabled ?? true,
         usePlatformFulfillment: goalData.usePlatformFulfillment ?? false,
         selectedProduct: goalData.selectedProduct || undefined,
-        goalType: goalData.goalType || "product",
+        goalType: goalData.goalCategory === "service" ? "service" : (goalData.goalType || "product"),
+        fulfillmentDetails: goalData.fulfillmentDetails || undefined,
       };
       const { data } = await api.post("/goals", payload);
       const normalized = normalizeGoal(data);
