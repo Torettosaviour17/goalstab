@@ -14,10 +14,17 @@
       >
         <div class="flex items-center gap-4">
           <div
-            class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-            :class="goal.color + ' bg-opacity-20'"
+            class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl overflow-hidden"
+            :class="productImage ? 'bg-white p-1.5' : goal.color + ' bg-opacity-20'"
           >
-            {{ goal.icon }}
+            <img
+              v-if="productImage"
+              :src="productImage"
+              :alt="goal.selectedProduct?.name || goal.title"
+              loading="lazy"
+              class="h-full w-full rounded-xl bg-white object-contain"
+            />
+            <span v-else>{{ goal.icon }}</span>
           </div>
           <div>
             <h1 class="text-2xl md:text-3xl font-bold text-white">
@@ -271,6 +278,13 @@ const goal = computed(() => {
 });
 
 const linkedAccount = computed(() => accountsStore.accounts.find((account) => account._id === goal.value?.accountId));
+
+const productImage = computed(() => {
+  const product = goal.value?.selectedProduct;
+  if (!product || typeof product !== "object") return "";
+  const image = product.image || product.imageUrl || product.image_url || product.thumbnail;
+  return typeof image === "string" && /^https?:\/\//i.test(image) ? image : "";
+});
 
 const activeDetailTab = ref("overview");
 
