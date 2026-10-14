@@ -37,9 +37,8 @@ const themeStore = useThemeStore(pinia);
 // ✅ APPLY THEME IMMEDIATELY (VERY IMPORTANT)
 themeStore.setTheme(themeStore.theme);
 
-// Mount immediately. Authentication checks must never delay the first paint.
-// Protected navigation can validate a persisted session in the router guard.
-void router.isReady();
+// Keep the branded boot screen visible while the first route and its lazy-loaded
+// page are resolving, then mount the app and fade the screen away.
 
 // GoalTabs has two faces on the same origin:
 // 1. the public website, which stays a normal responsive website;
@@ -82,7 +81,17 @@ watch(
 // ===============================
 // MOUNT APP
 // ===============================
-app.mount("#app");
+void router.isReady().then(() => {
+  app.mount("#app");
+
+  const bootLoader = document.getElementById("goal-tabs-boot-loader");
+  if (!bootLoader) return;
+
+  bootLoader.addEventListener("transitionend", () => bootLoader.remove(), { once: true });
+  requestAnimationFrame(() => bootLoader.classList.add("is-hidden"));
+  // Safety cleanup in case the browser does not dispatch transitionend.
+  window.setTimeout(() => bootLoader.remove(), 800);
+});
 
 // ===============================
 // DEV LOGS
