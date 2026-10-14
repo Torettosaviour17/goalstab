@@ -37,9 +37,6 @@ const themeStore = useThemeStore(pinia);
 // ✅ APPLY THEME IMMEDIATELY (VERY IMPORTANT)
 themeStore.setTheme(themeStore.theme);
 
-// Keep the branded boot screen visible while the first route and its lazy-loaded
-// page are resolving, then mount the app and fade the screen away.
-
 // GoalTabs has two faces on the same origin:
 // 1. the public website, which stays a normal responsive website;
 // 2. the authenticated app, which enables the PWA shell and offline assets.
@@ -82,15 +79,8 @@ watch(
 // MOUNT APP
 // ===============================
 void router.isReady().then(() => {
+  // Let the existing Vue application handle its own loading state.
   app.mount("#app");
-
-  const bootLoader = document.getElementById("goal-tabs-boot-loader");
-  if (!bootLoader) return;
-
-  bootLoader.addEventListener("transitionend", () => bootLoader.remove(), { once: true });
-  requestAnimationFrame(() => bootLoader.classList.add("is-hidden"));
-  // Safety cleanup in case the browser does not dispatch transitionend.
-  window.setTimeout(() => bootLoader.remove(), 800);
 });
 
 // ===============================
