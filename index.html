@@ -28,7 +28,161 @@
     <meta name="twitter:image" content="https://goalstab.vercel.app/face_logo.png" />
   </head>
   <body>
+    <div id="goal-tabs-boot-loader" role="status" aria-live="polite" aria-label="Loading GoalTabs">
+      <div class="boot-glow boot-glow-blue"></div>
+      <div class="boot-glow boot-glow-purple"></div>
+      <div class="boot-content">
+        <div class="boot-mark">
+          <img src="/face_logo.png" alt="" width="72" height="72" fetchpriority="high" />
+          <span class="boot-orbit" aria-hidden="true"></span>
+        </div>
+        <div class="boot-wordmark">Goal<span>Tabs</span></div>
+        <p class="boot-message">Getting your goals ready</p>
+        <div class="boot-progress" aria-hidden="true"><span></span></div>
+        <p class="boot-footnote">Small steps. Bigger goals.</p>
+      </div>
+    </div>
     <div id="app"></div>
+    <style>
+      #goal-tabs-boot-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: #080d1a;
+        color: #f8fafc;
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 420ms ease, visibility 420ms ease;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      #goal-tabs-boot-loader.is-hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      .boot-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        flex-direction: column;
+        padding: 28px;
+        animation: boot-rise 700ms cubic-bezier(.2,.8,.2,1) both;
+      }
+      .boot-mark {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 104px;
+        height: 104px;
+        margin-bottom: 22px;
+      }
+      .boot-mark img {
+        position: relative;
+        z-index: 1;
+        width: 72px;
+        height: 72px;
+        object-fit: contain;
+        border-radius: 22px;
+        filter: drop-shadow(0 0 24px rgba(59,130,246,.2));
+        animation: boot-breathe 2.2s ease-in-out infinite;
+      }
+      .boot-orbit {
+        position: absolute;
+        inset: 0;
+        border: 2px solid rgba(148,163,184,.13);
+        border-top-color: #60a5fa;
+        border-right-color: #8b5cf6;
+        border-radius: 50%;
+        animation: boot-spin 1.25s linear infinite;
+      }
+      .boot-orbit::after {
+        content: "";
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #a78bfa;
+        box-shadow: 0 0 12px rgba(167,139,250,.9);
+      }
+      .boot-wordmark {
+        font-size: 29px;
+        font-weight: 800;
+        letter-spacing: -.9px;
+      }
+      .boot-wordmark span {
+        background: linear-gradient(100deg, #60a5fa 10%, #a78bfa 95%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .boot-message {
+        margin: 9px 0 20px;
+        color: #cbd5e1;
+        font-size: 14px;
+        letter-spacing: .1px;
+        animation: boot-message 1.8s ease-in-out infinite;
+      }
+      .boot-progress {
+        width: 148px;
+        height: 3px;
+        overflow: hidden;
+        border-radius: 99px;
+        background: rgba(148,163,184,.16);
+      }
+      .boot-progress span {
+        display: block;
+        width: 42%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        box-shadow: 0 0 14px rgba(96,165,250,.6);
+        animation: boot-progress 1.45s ease-in-out infinite;
+      }
+      .boot-footnote {
+        margin-top: 17px;
+        color: #64748b;
+        font-size: 11px;
+        letter-spacing: .7px;
+      }
+      .boot-glow {
+        position: absolute;
+        width: 250px;
+        height: 250px;
+        border-radius: 50%;
+        filter: blur(85px);
+        pointer-events: none;
+        animation: boot-glow 4s ease-in-out infinite alternate;
+      }
+      .boot-glow-blue {
+        top: 12%;
+        right: -100px;
+        background: rgba(59,130,246,.13);
+      }
+      .boot-glow-purple {
+        bottom: 5%;
+        left: -110px;
+        background: rgba(139,92,246,.12);
+        animation-delay: 1s;
+      }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @keyframes boot-breathe { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
+      @keyframes boot-progress { 0% { transform: translateX(-115%); } 100% { transform: translateX(255%); } }
+      @keyframes boot-message { 0%,100% { opacity: .65; } 50% { opacity: 1; } }
+      @keyframes boot-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes boot-glow { from { transform: scale(.9); opacity: .65; } to { transform: scale(1.1); opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-content, .boot-mark img, .boot-orbit, .boot-progress span, .boot-message, .boot-glow {
+          animation: none !important;
+        }
+        .boot-progress span { width: 65%; transform: none; }
+      }
+    </style>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
