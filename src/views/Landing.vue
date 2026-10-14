@@ -28,7 +28,7 @@
               <img
                 src="/face_logo.png"
                 alt="GoalTabs"
-                class="w-8 h-8 object-contain"
+                class="w-8 h-8 object-contain animate-pulse [animation-duration:3s] drop-shadow-[0_0_10px_rgba(59,130,246,0.35)]"
               />
             </div>
           </div>
