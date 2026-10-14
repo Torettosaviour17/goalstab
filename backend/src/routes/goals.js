@@ -87,6 +87,7 @@ const createGoal = async (req, res) => {
       "autoSaveEnabled",
       "usePlatformFulfillment",
       "selectedProduct",
+      "fulfillmentDetails",
       "goalType",
     ];
     const goalFields = {};
@@ -94,6 +95,14 @@ const createGoal = async (req, res) => {
       if (Object.prototype.hasOwnProperty.call(req.body, field)) {
         goalFields[field] = req.body[field];
       }
+    }
+    if (req.body.fulfillmentDetails && typeof req.body.fulfillmentDetails === "object" && !Array.isArray(req.body.fulfillmentDetails)) {
+      const detailKeys = ["serviceType", "customServiceType", "contactName", "referenceDetails", "serviceNotes", "serviceDate", "location"];
+      goalFields.fulfillmentDetails = Object.fromEntries(
+        detailKeys
+          .filter((key) => typeof req.body.fulfillmentDetails[key] === "string")
+          .map((key) => [key, req.body.fulfillmentDetails[key].slice(0, 1000)]),
+      );
     }
 
     const newGoal = new Goal({
@@ -175,6 +184,7 @@ router.put("/:id", auth, async (req, res) => {
       "autoSaveEnabled",
       "usePlatformFulfillment",
       "selectedProduct",
+      "fulfillmentDetails",
       "goalType",
     ];
     const updates = {};
