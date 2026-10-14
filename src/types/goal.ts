@@ -48,6 +48,14 @@ export interface GoalFormData {
   goalType?: "product" | "service";
   usePlatformFulfillment?: boolean;
   selectedProduct?: any;
+  goalCategory?: "product" | "service";
+  serviceType?: string;
+  customServiceType?: string;
+  fulfillmentDetails?: Record<string, any>;
+  productLink?: string;
+  storeName?: string;
+  serviceDate?: string;
+  location?: string;
 }
 
 export interface GoalStats {
