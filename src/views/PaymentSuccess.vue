@@ -33,7 +33,18 @@
           class="bg-gray-800 rounded-2xl p-4 text-left space-y-2"
         >
           <div class="flex items-center gap-3">
-            <span class="text-2xl">{{ updatedGoal.icon }}</span>
+            <div
+              class="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-700 text-2xl"
+              :class="productImage ? 'bg-white p-1.5' : ''"
+            >
+              <img
+                v-if="productImage"
+                :src="productImage"
+                :alt="updatedGoal.selectedProduct?.name || updatedGoal.title"
+                class="h-full w-full rounded-lg bg-white object-contain"
+              />
+              <span v-else>{{ updatedGoal.icon }}</span>
+            </div>
             <div>
               <p class="text-white font-medium">{{ updatedGoal.title }}</p>
               <p class="text-sm text-gray-400">
@@ -79,7 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import { useGoalsStore } from "@/stores/goals";
@@ -93,6 +104,13 @@ const verifying = ref(true);
 const success = ref(false);
 const errorMsg = ref("");
 const updatedGoal = ref<Goal | null>(null);
+
+const productImage = computed(() => {
+  const product = updatedGoal.value?.selectedProduct;
+  if (!product || typeof product !== "object") return "";
+  const image = product.image || product.imageUrl || product.image_url || product.thumbnail;
+  return typeof image === "string" && /^https?:\/\//i.test(image) ? image : "";
+});
 
 onMounted(async () => {
   const reference = route.query.reference as string;
