@@ -193,6 +193,17 @@ router.put("/:id", auth, async (req, res) => {
         updates[field] = req.body[field];
       }
     }
+    if (req.body.fulfillmentDetails !== undefined) {
+      if (!req.body.fulfillmentDetails || typeof req.body.fulfillmentDetails !== "object" || Array.isArray(req.body.fulfillmentDetails)) {
+        return res.status(400).json({ msg: "Invalid fulfillment details" });
+      }
+      const detailKeys = ["serviceType", "customServiceType", "contactName", "referenceDetails", "serviceNotes", "serviceDate", "location"];
+      updates.fulfillmentDetails = Object.fromEntries(
+        detailKeys
+          .filter((key) => typeof req.body.fulfillmentDetails[key] === "string")
+          .map((key) => [key, req.body.fulfillmentDetails[key].slice(0, 1000)]),
+      );
+    }
 
     if (updates.accountId) {
       const account = await Account.findOne({ _id: updates.accountId, user: req.user.id });
