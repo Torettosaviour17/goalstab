@@ -133,6 +133,56 @@
       </div>
     </div>
   </header>
+
+  <Teleport to="body">
+    <Transition name="logout-modal">
+      <div
+        v-if="showLogoutConfirm"
+        class="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/75 px-4 py-6 backdrop-blur-sm"
+        role="presentation"
+        @click.self="cancelLogout"
+      >
+        <section
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="logout-dialog-title"
+          aria-describedby="logout-dialog-description"
+          class="w-full max-w-sm overflow-hidden rounded-3xl border border-gray-700/80 bg-gray-900 shadow-2xl shadow-black/40"
+        >
+          <div class="flex justify-center pt-7">
+            <div class="flex h-14 w-14 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/10 text-red-300">
+              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                <path d="M10 17l5-5-5-5M15 12H3m9-7h5a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+          </div>
+          <div class="px-6 pb-6 pt-5 text-center">
+            <h2 id="logout-dialog-title" class="text-lg font-bold text-white">Ready to sign out?</h2>
+            <p id="logout-dialog-description" class="mt-2 text-sm leading-6 text-gray-400">
+              Are you sure you want to log out of GoalTabs? Your savings progress is safe, and you can sign back in anytime.
+            </p>
+            <div class="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                autofocus
+                @click="cancelLogout"
+                class="rounded-xl border border-gray-700 bg-gray-800 px-4 py-3 text-sm font-semibold text-gray-200 transition hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              >
+                Stay signed in
+              </button>
+              <button
+                type="button"
+                @click="confirmLogout"
+                class="rounded-xl bg-gradient-to-r from-red-500 to-rose-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-950/30 transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-red-300"
+              >
+                Yes, log out
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -147,6 +197,7 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const showUserMenu = ref(false);
+const showLogoutConfirm = ref(false);
 
 const userName = computed(() => user.value?.name || "User");
 const userEmail = computed(() => user.value?.email || "user@example.com");
@@ -168,12 +219,28 @@ const closeUserMenu = () => (showUserMenu.value = false);
 
 const handleLogout = () => {
   closeUserMenu();
+  showLogoutConfirm.value = true;
+};
+
+const cancelLogout = () => {
+  showLogoutConfirm.value = false;
+};
+
+const confirmLogout = () => {
+  showLogoutConfirm.value = false;
   authStore.logout();
-  router.push("/login");
+  void router.push("/login");
 };
 
 const handleEscapeKey = (event: KeyboardEvent) => {
-  if (event.key === "Escape") closeUserMenu();
+  if (event.key !== "Escape") return;
+
+  if (showLogoutConfirm.value) {
+    cancelLogout();
+    return;
+  }
+
+  closeUserMenu();
 };
 
 onMounted(() => document.addEventListener("keydown", handleEscapeKey));
@@ -189,5 +256,34 @@ onUnmounted(() => document.removeEventListener("keydown", handleEscapeKey));
 .fade-slide-leave-to {
   opacity: 0;
   transform: translateY(-10px);
+}
+.logout-modal-enter-active,
+.logout-modal-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.logout-modal-enter-active section,
+.logout-modal-leave-active section {
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.logout-modal-enter-from,
+.logout-modal-leave-to {
+  opacity: 0;
+}
+
+.logout-modal-enter-from section,
+.logout-modal-leave-to section {
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logout-modal-enter-active,
+  .logout-modal-leave-active,
+  .logout-modal-enter-active section,
+  .logout-modal-leave-active section {
+    transition: none;
+  }
 }
 </style>
