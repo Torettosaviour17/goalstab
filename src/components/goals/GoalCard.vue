@@ -7,10 +7,17 @@
     <div class="flex items-start justify-between mb-4">
       <div class="flex items-center gap-3">
         <div
-          class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-linear-to-br shrink-0"
-          :class="goal.color"
+          class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-linear-to-br shrink-0 overflow-hidden"
+          :class="productImage ? 'bg-white p-1.5' : goal.color"
         >
-          {{ goal.icon }}
+          <img
+            v-if="productImage"
+            :src="productImage"
+            :alt="goal.selectedProduct?.name || goal.title"
+            loading="lazy"
+            class="h-full w-full rounded-lg bg-white object-contain"
+          />
+          <span v-else>{{ goal.icon }}</span>
         </div>
         <div class="min-w-0">
           <h3 class="font-bold text-white truncate">{{ goal.title }}</h3>
@@ -202,6 +209,13 @@ const formatDate = (s: string) =>
   new Date(s).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
 // ── Computed ───────────────────────────────────────────
+const productImage = computed(() => {
+  const product = props.goal.selectedProduct;
+  if (!product || typeof product !== "object") return "";
+  const image = product.image || product.imageUrl || product.image_url || product.thumbnail;
+  return typeof image === "string" && /^https?:\/\//i.test(image) ? image : "";
+});
+
 const isCompleted = computed(() => props.goal.progress >= 100);
 
 const remaining = computed(() =>
