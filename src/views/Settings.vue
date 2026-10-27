@@ -375,7 +375,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick, watch } from "vue";
+import { ref, reactive, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
@@ -473,29 +473,30 @@ const preferences = reactive({
   monthlyIncome: 500000,
 });
 
-onMounted(async () => {
-  await nextTick();
-  setTimeout(() => {
-    loading.value = false;
-  }, 300);
+onMounted(() => {
+  // Settings are hydrated from the already-restored auth store; there is no
+  // background request to wait for, so do not simulate loading with a timer.
+  try {
+    if (authStore.user) {
+      profile.name = authStore.user.name || "";
+      profile.email = authStore.user.email || "";
+      profile.phone = (authStore.user as any).phone || "";
+      profile.avatar = authStore.user.avatar || "";
+      avatarPreview.value = authStore.user.avatar || null;
 
-  if (authStore.user) {
-    profile.name = authStore.user.name || "";
-    profile.email = authStore.user.email || "";
-    profile.phone = (authStore.user as any).phone || "";
-    profile.avatar = authStore.user.avatar || "";
-    avatarPreview.value = authStore.user.avatar || null;
-
-    if (authStore.user.preferences) {
-      const prefs = authStore.user.preferences;
-      if (prefs.notifications)
-        Object.assign(notifications, prefs.notifications);
-      preferences.currency = prefs.currency || "NGN";
-      preferences.theme = prefs.theme || "dark";
-      preferences.autoSaveDefault = prefs.autoSaveDefault ?? true;
-      preferences.monthlyIncome = (prefs as any).monthlyIncome ?? 500000;
-      isDarkMode.value = prefs.theme === "dark";
+      if (authStore.user.preferences) {
+        const prefs = authStore.user.preferences;
+        if (prefs.notifications)
+          Object.assign(notifications, prefs.notifications);
+        preferences.currency = prefs.currency || "NGN";
+        preferences.theme = prefs.theme || "dark";
+        preferences.autoSaveDefault = prefs.autoSaveDefault ?? true;
+        preferences.monthlyIncome = (prefs as any).monthlyIncome ?? 500000;
+        isDarkMode.value = prefs.theme === "dark";
+      }
     }
+  } finally {
+    loading.value = false;
   }
 });
 
