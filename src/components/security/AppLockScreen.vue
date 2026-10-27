@@ -9,22 +9,26 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><path d="M12 14v3" /></svg>
           </div>
           <p class="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-300">GoalTabs Security</p>
-          <h1 id="app-lock-title" class="text-2xl font-bold text-white">{{ configured ? 'Welcome back' : 'Create your app PIN' }}</h1>
-          <p class="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-400">{{ configured ? 'Unlock your savings space to continue.' : 'Set a 6-digit PIN for quick, private access to this app on this device.' }}</p>
-          <form class="mt-7 space-y-4" @submit.prevent="submitPin">
+          <h1 id="app-lock-title" class="text-2xl font-bold text-white">{{ settingsAction === 'disable' ? 'Turn off app PIN?' : setupInvitation && !setupMode ? 'Add extra security?' : configured ? 'Welcome back' : 'Create your app PIN' }}</h1>
+          <p class="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-400">{{ setupInvitation && !setupMode ? 'You can add a 6-digit app PIN for this device now, or skip and set it up later in Settings.' : configured ? 'Unlock your savings space to continue.' : 'Set a 6-digit PIN for quick, private access to this app on this device.' }}</p>
+          <div v-if="setupInvitation && !setupMode" class="mt-7 space-y-3">
+            <button type="button" @click="beginSetup" class="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 px-4 py-3.5 font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:brightness-110">Set up app PIN</button>
+            <button type="button" @click="skipSetup" class="w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5">Not now</button>
+          </div>
+          <form v-else class="mt-7 space-y-4" @submit.prevent="submitPin">
             <label for="app-pin" class="block text-left text-sm font-medium text-slate-300">{{ configured ? 'Enter your 6-digit PIN' : 'Choose a 6-digit PIN' }}</label>
             <input id="app-pin" v-model="pin" inputmode="numeric" autocomplete="one-time-code" type="password" pattern="[0-9]{6}" minlength="6" maxlength="6" required :disabled="busy || cooldownSeconds > 0" class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-4 text-center text-2xl tracking-[0.55em] text-white outline-none transition placeholder:tracking-normal placeholder:text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60" placeholder="••••••" aria-describedby="app-lock-message" />
             <p id="app-lock-message" class="min-h-5 text-sm" :class="messageIsError ? 'text-red-300' : 'text-slate-400'">{{ cooldownSeconds > 0 ? 'Too many attempts. Try again in ' + cooldownSeconds + 's.' : message }}</p>
             <button type="submit" :disabled="busy || cooldownSeconds > 0 || pin.length !== 6" class="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 px-4 py-3.5 font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
               <span v-if="busy" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-              {{ busy ? 'Please wait…' : configured ? 'Unlock GoalTabs' : 'Set PIN and continue' }}
+              {{ busy ? 'Please wait…' : settingsAction === 'disable' ? 'Confirm and turn off PIN' : configured ? 'Unlock GoalTabs' : 'Set PIN and continue' }}
             </button>
           </form>
-          <div v-if="configured && secureContext && deviceUnlockSupported" class="mt-4">
-            <div class="flex items-center gap-3 py-2 text-xs uppercase tracking-wider text-slate-600"><span class="h-px flex-1 bg-slate-800"></span>or<span class="h-px flex-1 bg-slate-800"></span></div>
-            <button type="button" :disabled="busy || cooldownSeconds > 0" @click="unlockWithDevice" class="flex w-full items-center justify-center gap-3 rounded-2xl border border-blue-400/25 bg-blue-400/5 px-4 py-3.5 font-semibold text-blue-200 transition hover:bg-blue-400/10 disabled:opacity-50">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 11a2 2 0 0 0-2 2v2a2 2 0 0 0 4 0v-2a2 2 0 0 0-2-2Z" /><path d="M6.5 13v2a5.5 5.5 0 0 0 11 0v-3a5.5 5.5 0 0 0-11 0" /><path d="M4 12v3a8 8 0 0 0 16 0v-3a8 8 0 0 0-16 0Z" /></svg>
-              {{ biometricConfigured ? 'Unlock with fingerprint / device security' : 'Set up fingerprint / device unlock' }}
+          <button v-if="settingsAction === 'disable'" type="button" @click="cancelSettingsAction" class="mt-3 w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5">Cancel</button>
+          <div v-if="configured && biometricSupported && biometricConfigured" class="mt-4">
+            <button type="button" :disabled="busy || biometricBusy || cooldownSeconds > 0" @click="unlockWithBiometric" class="flex w-full items-center justify-center gap-3 rounded-2xl border border-blue-400/25 bg-blue-400/5 px-4 py-3.5 font-semibold text-blue-200 transition hover:bg-blue-400/10 disabled:opacity-50">
+              <span v-if="biometricBusy" class="h-4 w-4 animate-spin rounded-full border-2 border-blue-200/40 border-t-blue-200"></span>
+              {{ biometricBusy ? 'Verifying device…' : 'Unlock with fingerprint / device security' }}
             </button>
           </div>
           <div v-if="!configured" class="mt-5 rounded-xl border border-slate-700/70 bg-slate-950/50 p-3 text-left text-xs leading-5 text-slate-400">This is a convenience lock on this device. It does not replace your GoalTabs account password or server-side account security.</div>
@@ -36,17 +40,26 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  getBiometricStatus,
+  isDeviceAuthenticationSupported,
+  removeBiometricDevice,
+  verifyBiometricDevice,
+} from "@/services/deviceAuthentication";
 
 const props = defineProps<{ userId: string }>();
 const visible = ref(false);
 const configured = ref(false);
+const setupInvitation = ref(false);
+const setupMode = ref(false);
+const settingsAction = ref<"disable" | null>(null);
 const pin = ref("");
 const busy = ref(false);
 const message = ref("");
 const messageIsError = ref(false);
 const biometricConfigured = ref(false);
-const deviceUnlockSupported = ref(false);
-const secureContext = ref(false);
+const biometricSupported = ref(false);
+const biometricBusy = ref(false);
 const cooldownSeconds = ref(0);
 let cooldownTimer: number | undefined;
 let hiddenAt = 0;
@@ -56,9 +69,9 @@ const keys = () => {
   return {
     salt: "goaltabs-app-lock-salt:" + suffix,
     hash: "goaltabs-app-lock-hash:" + suffix,
-    credential: "goaltabs-app-lock-credential:" + suffix,
     attempts: "goaltabs-app-lock-attempts:" + suffix,
     blockedUntil: "goaltabs-app-lock-blocked-until:" + suffix,
+    promptDismissed: "goaltabs-security-prompt-dismissed:" + suffix,
   };
 };
 
@@ -106,14 +119,94 @@ const updateCooldown = () => {
 const loadState = () => {
   const current = keys();
   configured.value = Boolean(localStorage.getItem(current.salt) && localStorage.getItem(current.hash));
-  secureContext.value = window.isSecureContext;
-  deviceUnlockSupported.value = Boolean(window.isSecureContext && window.PublicKeyCredential && navigator.credentials);
-  biometricConfigured.value = Boolean(localStorage.getItem(current.credential));
+  // Biometric unlock is shown only after a credential has been verified and
+  // saved by the backend. A client-only credential response is never trusted.
+  void refreshBiometricStatus();
   pin.value = "";
+  setupMode.value = false;
+  setupInvitation.value = false;
   message.value = configured.value ? "Your account is still signed in. App unlock is required." : "This PIN is only for this device.";
   messageIsError.value = false;
-  visible.value = true;
+
+  const justAuthenticated = sessionStorage.getItem("goaltabs-authenticated-this-session") === "true";
+  if (justAuthenticated) sessionStorage.removeItem("goaltabs-authenticated-this-session");
+
+  if (configured.value) {
+    // Successful account login is already verification. Lock on later app resumes.
+    visible.value = !justAuthenticated;
+  } else {
+    // No PIN is mandatory. Invite once, allow skip, and never block app entry.
+    visible.value = !localStorage.getItem(current.promptDismissed);
+    setupInvitation.value = visible.value;
+  }
   updateCooldown();
+};
+
+const refreshBiometricStatus = async () => {
+  biometricSupported.value = isDeviceAuthenticationSupported();
+  biometricConfigured.value = false;
+  if (!biometricSupported.value) return;
+  try {
+    biometricConfigured.value = await getBiometricStatus();
+  } catch {
+    biometricConfigured.value = false;
+  }
+};
+
+const unlockWithBiometric = async () => {
+  if (busy.value || biometricBusy.value || cooldownSeconds.value > 0) return;
+  biometricBusy.value = true;
+  message.value = "";
+  messageIsError.value = false;
+  try {
+    await verifyBiometricDevice();
+    clearFailedAttempts();
+    unlock();
+  } catch (error) {
+    message.value =
+      (error instanceof Error ? error.message : "Device verification failed.") +
+      " You can always use your app PIN.";
+    messageIsError.value = true;
+  } finally {
+    biometricBusy.value = false;
+  }
+};
+
+const beginSetup = () => {
+  setupInvitation.value = false;
+  setupMode.value = true;
+  pin.value = "";
+  message.value = "Choose a 6-digit PIN for this device.";
+};
+
+const skipSetup = () => {
+  localStorage.setItem(keys().promptDismissed, "true");
+  setupInvitation.value = false;
+  setupMode.value = false;
+  visible.value = false;
+};
+
+const cancelSettingsAction = () => {
+  settingsAction.value = null;
+  visible.value = false;
+  pin.value = "";
+  message.value = "";
+  messageIsError.value = false;
+};
+
+const handleOpenSecuritySetup = (event: Event) => {
+  const action = (event as CustomEvent<{ action?: string }>).detail?.action;
+  settingsAction.value = action === "disable" ? "disable" : null;
+  loadState();
+  visible.value = true;
+  setupInvitation.value = false;
+  if (!configured.value) {
+    setupMode.value = true;
+    message.value = "Choose a 6-digit PIN for this device.";
+  } else if (settingsAction.value === "disable") {
+    setupMode.value = false;
+    message.value = "Enter your current app PIN to turn off this device lock.";
+  }
 };
 
 const clearFailedAttempts = () => {
@@ -138,6 +231,8 @@ const unlock = () => {
   pin.value = "";
   message.value = "";
   messageIsError.value = false;
+  settingsAction.value = null;
+  window.dispatchEvent(new Event("goaltabs:app-security-updated"));
 };
 
 const submitPin = async () => {
@@ -152,8 +247,11 @@ const submitPin = async () => {
       const hash = await derivePinHash(pin.value, salt);
       localStorage.setItem(current.salt, toBase64Url(salt));
       localStorage.setItem(current.hash, hash);
+      localStorage.setItem(current.promptDismissed, "true");
       clearFailedAttempts();
       configured.value = true;
+      setupInvitation.value = false;
+      setupMode.value = false;
       unlock();
       return;
     }
@@ -174,54 +272,17 @@ const submitPin = async () => {
       return;
     }
     clearFailedAttempts();
-    unlock();
-  } catch {
-    message.value = "Secure device storage is unavailable. Please try again.";
-    messageIsError.value = true;
-  } finally {
-    busy.value = false;
-  }
-};
-
-const setupDeviceUnlock = async () => {
-  const current = keys();
-  const credential = await navigator.credentials.create({
-    publicKey: {
-      challenge: randomBytes(32),
-      rp: { name: "GoalTabs", id: window.location.hostname },
-      user: { id: randomBytes(16), name: props.userId || "GoalTabs user", displayName: "GoalTabs user" },
-      pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-      authenticatorSelection: { authenticatorAttachment: "platform", residentKey: "preferred", userVerification: "required" },
-      timeout: 60000,
-      attestation: "none",
-    },
-  }) as PublicKeyCredential | null;
-  if (!credential) throw new Error("Device unlock setup was cancelled.");
-  localStorage.setItem(current.credential, toBase64Url(credential.rawId));
-  biometricConfigured.value = true;
-};
-
-const unlockWithDevice = async () => {
-  if (busy.value || cooldownSeconds.value > 0) return;
-  busy.value = true;
-  message.value = "";
-  messageIsError.value = false;
-  try {
-    const current = keys();
-    const savedCredential = localStorage.getItem(current.credential);
-    if (!savedCredential) {
-      await setupDeviceUnlock();
-      message.value = "Device unlock is ready. Tap the button again to unlock.";
-      return;
+    if (settingsAction.value === "disable") {
+      if (await getBiometricStatus()) await removeBiometricDevice();
+      localStorage.removeItem(current.salt);
+      localStorage.removeItem(current.hash);
+      localStorage.setItem(current.promptDismissed, "true");
+      configured.value = false;
+      biometricConfigured.value = false;
     }
-    const result = await navigator.credentials.get({
-      publicKey: { challenge: randomBytes(32), allowCredentials: [{ type: "public-key", id: fromBase64Url(savedCredential) }], userVerification: "required", timeout: 60000 },
-    });
-    if (!result) throw new Error("Device verification was cancelled.");
-    clearFailedAttempts();
     unlock();
   } catch (error) {
-    message.value = (error instanceof Error ? error.message : "Device verification failed.") + " You can always use your PIN.";
+    message.value = error instanceof Error ? error.message : "The security change could not be completed. Please try again.";
     messageIsError.value = true;
   } finally {
     busy.value = false;
@@ -246,9 +307,11 @@ watch(() => props.userId, (next, previous) => {
 onMounted(() => {
   if (props.userId) loadState();
   document.addEventListener("visibilitychange", handleVisibilityChange);
+  window.addEventListener("goaltabs:open-security-setup", handleOpenSecuritySetup);
 });
 onBeforeUnmount(() => {
   document.removeEventListener("visibilitychange", handleVisibilityChange);
+  window.removeEventListener("goaltabs:open-security-setup", handleOpenSecuritySetup);
   if (cooldownTimer) window.clearInterval(cooldownTimer);
 });
 </script>

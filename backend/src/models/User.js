@@ -36,7 +36,33 @@ const UserSchema = new mongoose.Schema({
   preferences: { type: PreferencesSchema, default: () => ({}) },
   createdAt: { type: Date, default: Date.now },
   passwordResetToken: { type: String, default: null, index: true },
-  passwordResetExpires: { type: Date, default: null },
+  passwordResetExpires: { type: Date, default: null, index: true },
+  // Passkey credentials are public-key material only; no biometric data is stored.
+  webauthnCredentials: {
+    type: [
+      new mongoose.Schema(
+        {
+          id: { type: String, required: true },
+          publicKey: { type: String, required: true },
+          counter: { type: Number, default: 0 },
+          transports: { type: [String], default: [] },
+          deviceType: { type: String, default: "singleDevice" },
+          backedUp: { type: Boolean, default: false },
+          createdAt: { type: Date, default: Date.now },
+        },
+        { _id: false },
+      ),
+    ],
+    default: [],
+  },
+  webauthnRegistrationChallenge: { type: String, default: null },
+  webauthnRegistrationExpiresAt: { type: Date, default: null },
+  webauthnRegistrationOrigin: { type: String, default: null },
+  webauthnRegistrationRpID: { type: String, default: null },
+  webauthnAuthenticationChallenge: { type: String, default: null },
+  webauthnAuthenticationExpiresAt: { type: Date, default: null },
+  webauthnAuthenticationOrigin: { type: String, default: null },
+  webauthnAuthenticationRpID: { type: String, default: null },
 });
 
 // Hash password before saving

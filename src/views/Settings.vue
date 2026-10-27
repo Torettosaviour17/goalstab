@@ -166,6 +166,36 @@
         <!-- Security -->
         <div v-else-if="activeTab === 'security'" class="space-y-6">
           <div class="glass-card p-6">
+            <h2 class="text-xl font-bold text-white mb-2">App Lock & Device Security</h2>
+            <p class="mb-5 text-sm text-gray-400">These options apply only to GoalTabs installed as a mobile PWA. The desktop website continues to use your normal account login.</p>
+            <template v-if="isInstalledMobilePwa">
+              <div class="flex flex-col gap-3 rounded-xl border border-gray-700 bg-gray-900/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p class="font-medium text-white">6-digit app PIN</p>
+                  <p class="text-sm text-gray-400">{{ appPinEnabled ? 'Enabled on this device' : 'Optional. Set it up to lock the app when you return.' }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <BaseButton v-if="!appPinEnabled" @click="openAppPinSetup">Set up PIN</BaseButton>
+                  <BaseButton v-else variant="secondary" @click="disableAppPin">Turn off PIN</BaseButton>
+                </div>
+              </div>
+              <div class="mt-4 rounded-xl border border-gray-700/70 p-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p class="font-medium text-white">Biometric unlock</p>
+                    <p class="mt-1 text-sm text-gray-400">{{ biometricEnabled ? 'Enabled for this GoalTabs account' : 'Use your phone’s supported fingerprint, face, or device verification.' }}</p>
+                    <p v-if="!biometricSupported" class="mt-1 text-xs text-amber-300">This browser does not support secure device authentication.</p>
+                  </div>
+                  <BaseButton v-if="biometricSupported && !biometricEnabled && appPinEnabled" :loading="biometricBusy" @click="enableBiometric">Enable biometrics</BaseButton>
+                  <p v-else-if="biometricSupported && !appPinEnabled && !biometricEnabled" class="text-xs text-amber-300">Set up an app PIN first so you always have a fallback.</p>
+                  <BaseButton v-else-if="biometricSupported && biometricEnabled" variant="secondary" :loading="biometricBusy" @click="disableBiometric">Remove all biometrics</BaseButton>
+                </div>
+              </div>
+            </template>
+            <p v-else class="rounded-xl border border-gray-700 bg-gray-900/40 p-4 text-sm text-gray-400">Open GoalTabs from its installed mobile PWA to manage device lock options. No biometric prompt or app PIN is required on the desktop website.</p>
+          </div>
+
+          <div class="glass-card p-6">
             <h2 class="text-xl font-bold text-white mb-4">Change Password</h2>
             <div class="space-y-4">
               <div>
@@ -202,6 +232,12 @@
                 >Update Password</BaseButton
               >
             </div>
+          </div>
+
+          <div class="glass-card p-6">
+            <h2 class="text-xl font-bold text-white mb-2">Forgot your password?</h2>
+            <p class="mb-4 text-sm text-gray-400">Send a password reset link to your account email. The link expires after 30 minutes.</p>
+            <BaseButton variant="secondary" :loading="resetRequesting" @click="requestPasswordReset">Email me a reset link</BaseButton>
           </div>
 
           <div class="glass-card p-6 border border-gray-700/50">
@@ -368,7 +404,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
@@ -376,6 +412,13 @@ import AvatarUploader from "@/components/ui/AvatarUploader.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 import { useThemeStore } from "@/stores/theme";
+import api from "@/services/api";
+import {
+  getBiometricStatus,
+  isDeviceAuthenticationSupported,
+  registerBiometricDevice,
+  removeBiometricDevice,
+} from "@/services/deviceAuthentication";
 
 interface NotificationSettings {
   email: boolean;
@@ -394,7 +437,99 @@ const uiStore = useUIStore();
 const themeStore = useThemeStore();
 
 const activeTab = ref("profile");
+const appPinEnabled = ref(false);
+const biometricEnabled = ref(false);
+const biometricSupported = ref(false);
+const biometricBusy = ref(false);
+
+const isInstalledMobilePwa = computed(() => {
+  if (typeof window === "undefined") return false;
+  const installed =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    ("standalone" in window.navigator &&
+      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
+  const mobileDevice =
+    window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
+  return installed && mobileDevice;
+});
+
+const appSecurityKey = () =>
+  "goaltabs-app-lock-hash:" +
+  encodeURIComponent(authStore.user?.id || authStore.user?.email || "account");
+
+const refreshAppPinStatus = () => {
+  appPinEnabled.value =
+    typeof window !== "undefined" && Boolean(localStorage.getItem(appSecurityKey()));
+};
+
+const openAppPinSetup = () => {
+  window.dispatchEvent(
+    new CustomEvent("goaltabs:open-security-setup", { detail: { action: "setup" } }),
+  );
+};
+
+const disableAppPin = () => {
+  window.dispatchEvent(
+    new CustomEvent("goaltabs:open-security-setup", { detail: { action: "disable" } }),
+  );
+};
+
+const refreshBiometricStatus = async () => {
+  biometricSupported.value = isInstalledMobilePwa.value && isDeviceAuthenticationSupported();
+  biometricEnabled.value = false;
+  if (!biometricSupported.value) return;
+  try {
+    biometricEnabled.value = await getBiometricStatus();
+  } catch {
+    biometricEnabled.value = false;
+  }
+};
+
+const enableBiometric = async () => {
+  biometricBusy.value = true;
+  try {
+    await registerBiometricDevice();
+    biometricEnabled.value = true;
+    uiStore.addToast({ type: "success", message: "Biometric unlock enabled on this device" });
+  } catch (error) {
+    uiStore.addToast({
+      type: "error",
+      message: error instanceof Error ? error.message : "Could not enable biometric unlock",
+    });
+  } finally {
+    biometricBusy.value = false;
+  }
+};
+
+const disableBiometric = async () => {
+  biometricBusy.value = true;
+  try {
+    await removeBiometricDevice();
+    biometricEnabled.value = false;
+    uiStore.addToast({ type: "success", message: "Biometric unlock removed" });
+  } catch (error) {
+    uiStore.addToast({
+      type: "error",
+      message: error instanceof Error ? error.message : "Could not remove biometric unlock",
+    });
+  } finally {
+    biometricBusy.value = false;
+  }
+};
+
+const handleSecurityUpdated = () => refreshAppPinStatus();
+
+onMounted(() => {
+  refreshAppPinStatus();
+  void refreshBiometricStatus();
+  window.addEventListener("goaltabs:app-security-updated", handleSecurityUpdated);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener("goaltabs:app-security-updated", handleSecurityUpdated);
+});
+
 const saving = ref(false);
+const resetRequesting = ref(false);
 const deleting = ref(false);
 const showDeleteModal = ref(false);
 const isDarkMode = ref(themeStore.theme === "dark");
@@ -546,6 +681,31 @@ const changePassword = async () => {
     uiStore.addToast({ type: "error", message: msg });
   } finally {
     saving.value = false;
+  }
+};
+
+const requestPasswordReset = async () => {
+  const email = authStore.user?.email;
+  if (!email) {
+    uiStore.addToast({ type: "error", message: "Your account email is unavailable." });
+    return;
+  }
+
+  resetRequesting.value = true;
+  try {
+    await api.post("/auth/forgot-password", { email });
+    uiStore.addToast({
+      type: "success",
+      message: "If an account exists for this email, a password reset link has been sent.",
+    });
+  } catch {
+    // Keep the same privacy-preserving response used by the API.
+    uiStore.addToast({
+      type: "info",
+      message: "If an account exists for this email, a password reset link has been sent.",
+    });
+  } finally {
+    resetRequesting.value = false;
   }
 };
 

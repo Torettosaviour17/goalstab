@@ -54,7 +54,7 @@
 
     <!-- Device-local app lock: leaves account authentication and app routes unchanged -->
     <AppLockScreen
-      v-if="isAuthenticated && lockUserId"
+      v-if="isAuthenticated && lockUserId && isMobileInstalledPwa && !['login', 'register'].includes(route.name as string)"
       :user-id="lockUserId"
     />
   </div>
@@ -86,6 +86,21 @@ const uiStore = useUIStore();
 const themeStore = useThemeStore();
 const { isAuthenticated } = storeToRefs(authStore);
 const lockUserId = computed(() => authStore.user?.id || authStore.user?.email || "account");
+
+// App-level device locking is intentionally limited to an installed mobile PWA.
+// Ordinary desktop and mobile-browser visits use the normal account login only.
+const isMobileInstalledPwa = computed(() => {
+  if (typeof window === "undefined") return false;
+
+  const installed =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    ("standalone" in window.navigator &&
+      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
+  const mobileDevice =
+    window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
+
+  return installed && mobileDevice;
+});
 
 // ── Pages where header/sidebar/nav should be hidden ──
 const publicPages = [

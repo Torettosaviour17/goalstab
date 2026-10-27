@@ -299,4 +299,258 @@ router.get("/me", auth, async (req, res) => {
   }
 });
 
+
+const getWebAuthn = () => import("@simplewebauthn/server");
+
+const normalizeOrigin = (value) => String(value || "").replace(/\/$/, "");
+
+const getWebAuthnContext = (req) => {
+  const origin = normalizeOrigin(req.get("origin"));
+  const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    "https://goalstab.vercel.app",
+    "http://localhost:5173",
+  ].filter(Boolean).map(normalizeOrigin);
+
+  if (!origin || !allowedOrigins.includes(origin)) {
+    const error = new Error("This origin is not allowed to configure device authentication");
+    error.status = 403;
+    throw error;
+  }
+
+  const rpID = process.env.WEBAUTHN_RP_ID || new URL(origin).hostname;
+  return { origin, rpID };
+};
+
+const clearWebAuthnChallenge = (user, flow) => {
+  user[`webauthn${flow}Challenge`] = null;
+  user[`webauthn${flow}ExpiresAt`] = null;
+  user[`webauthn${flow}Origin`] = null;
+  user[`webauthn${flow}RpID`] = null;
+};
+
+// Device biometrics are represented by a platform passkey. The server stores
+// only the public key and verifies every signed assertion; no fingerprint or
+// face data ever leaves the device.
+router.get("/webauthn/status", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("webauthnCredentials");
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    return res.json({ enabled: user.webauthnCredentials.length > 0 });
+  } catch (err) {
+    console.error("WebAuthn status error:", err);
+    return res.status(500).json({ msg: "Unable to read device security status" });
+  }
+});
+
+router.post("/webauthn/register/options", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    const { origin, rpID } = getWebAuthnContext(req);
+    const { generateRegistrationOptions } = await getWebAuthn();
+    const options = await generateRegistrationOptions({
+      rpName: "GoalTabs",
+      rpID,
+      userID: Buffer.from(String(user._id)),
+      userName: user.email,
+      userDisplayName: user.name || user.email,
+      attestationType: "none",
+      supportedAlgorithmIDs: [-7, -257],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",
+        residentKey: "preferred",
+        userVerification: "required",
+      },
+      excludeCredentials: (user.webauthnCredentials || []).map((credential) => ({
+        id: credential.id,
+        transports: credential.transports,
+      })),
+    });
+
+    user.webauthnRegistrationChallenge = options.challenge;
+    user.webauthnRegistrationExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    user.webauthnRegistrationOrigin = origin;
+    user.webauthnRegistrationRpID = rpID;
+    await user.save();
+    return res.json(options);
+  } catch (err) {
+    console.error("WebAuthn registration options error:", err);
+    return res.status(err.status || 500).json({
+      msg: err.status ? err.message : "Unable to start device authentication setup",
+    });
+  }
+});
+
+router.post("/webauthn/register/verify", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    if (
+      !user.webauthnRegistrationChallenge ||
+      !user.webauthnRegistrationExpiresAt ||
+      user.webauthnRegistrationExpiresAt.getTime() < Date.now()
+    ) {
+      clearWebAuthnChallenge(user, "Registration");
+      await user.save();
+      return res.status(400).json({ msg: "Device setup expired. Please try again." });
+    }
+
+    const { verifyRegistrationResponse } = await getWebAuthn();
+    const verification = await verifyRegistrationResponse({
+      response: req.body,
+      expectedChallenge: user.webauthnRegistrationChallenge,
+      expectedOrigin: user.webauthnRegistrationOrigin,
+      expectedRPID: user.webauthnRegistrationRpID,
+      requireUserVerification: true,
+      supportedAlgorithmIDs: [-7, -257],
+    });
+
+    if (!verification.verified || !verification.registrationInfo?.credential) {
+      clearWebAuthnChallenge(user, "Registration");
+      await user.save();
+      return res.status(400).json({ msg: "Device authentication could not be verified" });
+    }
+
+    const credential = verification.registrationInfo.credential;
+    const existing = (user.webauthnCredentials || []).some((item) => item.id === credential.id);
+    if (!existing) {
+      user.webauthnCredentials.push({
+        id: credential.id,
+        publicKey: Buffer.from(credential.publicKey).toString("base64url"),
+        counter: credential.counter,
+        transports: credential.transports || req.body.response?.transports || [],
+        deviceType: verification.registrationInfo.credentialDeviceType || "singleDevice",
+        backedUp: Boolean(verification.registrationInfo.credentialBackedUp),
+      });
+    }
+    clearWebAuthnChallenge(user, "Registration");
+    await user.save();
+    return res.json({ verified: true, enabled: true });
+  } catch (err) {
+    console.error("WebAuthn registration verification error:", err);
+    try {
+      const failedUser = await User.findById(req.user.id);
+      if (failedUser) {
+        clearWebAuthnChallenge(failedUser, "Registration");
+        await failedUser.save();
+      }
+    } catch (cleanupError) {
+      console.error("WebAuthn registration challenge cleanup error:", cleanupError);
+    }
+    return res.status(400).json({ msg: "Device authentication setup failed. Please try again." });
+  }
+});
+
+router.post("/webauthn/auth/options", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    if (!user.webauthnCredentials?.length) {
+      return res.status(404).json({ msg: "No device authentication is registered" });
+    }
+    const { origin, rpID } = getWebAuthnContext(req);
+    const { generateAuthenticationOptions } = await getWebAuthn();
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials: user.webauthnCredentials.map((credential) => ({
+        id: credential.id,
+        transports: credential.transports,
+      })),
+      userVerification: "required",
+    });
+
+    user.webauthnAuthenticationChallenge = options.challenge;
+    user.webauthnAuthenticationExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    user.webauthnAuthenticationOrigin = origin;
+    user.webauthnAuthenticationRpID = rpID;
+    await user.save();
+    return res.json(options);
+  } catch (err) {
+    console.error("WebAuthn authentication options error:", err);
+    return res.status(err.status || 500).json({
+      msg: err.status ? err.message : "Unable to start device authentication",
+    });
+  }
+});
+
+router.post("/webauthn/auth/verify", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    if (
+      !user.webauthnAuthenticationChallenge ||
+      !user.webauthnAuthenticationExpiresAt ||
+      user.webauthnAuthenticationExpiresAt.getTime() < Date.now()
+    ) {
+      clearWebAuthnChallenge(user, "Authentication");
+      await user.save();
+      return res.status(400).json({ msg: "Device verification expired. Please try again." });
+    }
+
+    const credentialId = req.body.id || req.body.rawId;
+    const savedCredential = (user.webauthnCredentials || []).find(
+      (credential) => credential.id === credentialId,
+    );
+    if (!savedCredential) {
+      clearWebAuthnChallenge(user, "Authentication");
+      await user.save();
+      return res.status(400).json({ msg: "This device is not registered for GoalTabs" });
+    }
+
+    const { verifyAuthenticationResponse } = await getWebAuthn();
+    const verification = await verifyAuthenticationResponse({
+      response: req.body,
+      expectedChallenge: user.webauthnAuthenticationChallenge,
+      expectedOrigin: user.webauthnAuthenticationOrigin,
+      expectedRPID: user.webauthnAuthenticationRpID,
+      requireUserVerification: true,
+      credential: {
+        id: savedCredential.id,
+        publicKey: Buffer.from(savedCredential.publicKey, "base64url"),
+        counter: savedCredential.counter,
+        transports: savedCredential.transports,
+      },
+    });
+
+    if (!verification.verified) {
+      clearWebAuthnChallenge(user, "Authentication");
+      await user.save();
+      return res.status(401).json({ msg: "Device verification failed" });
+    }
+
+    savedCredential.counter = verification.authenticationInfo.newCounter;
+    clearWebAuthnChallenge(user, "Authentication");
+    await user.save();
+    return res.json({ verified: true });
+  } catch (err) {
+    console.error("WebAuthn authentication verification error:", err);
+    try {
+      const failedUser = await User.findById(req.user.id);
+      if (failedUser) {
+        clearWebAuthnChallenge(failedUser, "Authentication");
+        await failedUser.save();
+      }
+    } catch (cleanupError) {
+      console.error("WebAuthn authentication challenge cleanup error:", cleanupError);
+    }
+    return res.status(401).json({ msg: "Device verification failed. Use your app PIN instead." });
+  }
+});
+
+router.delete("/webauthn/credentials", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+    user.webauthnCredentials = [];
+    clearWebAuthnChallenge(user, "Registration");
+    clearWebAuthnChallenge(user, "Authentication");
+    await user.save();
+    return res.json({ enabled: false });
+  } catch (err) {
+    console.error("WebAuthn credential removal error:", err);
+    return res.status(500).json({ msg: "Unable to remove device authentication" });
+  }
+});
+
 module.exports = router;

@@ -73,6 +73,7 @@ export const useAuthStore = defineStore("auth", {
       try {
         const response = await api.post("/auth/login", { email, password });
         const { token, user } = response.data;
+        sessionStorage.setItem("goaltabs-authenticated-this-session", "true");
         this.token = token;
         this.user = user;
         localStorage.setItem("token", token);
@@ -105,6 +106,7 @@ export const useAuthStore = defineStore("auth", {
           password,
         });
         const { token, user } = response.data;
+        sessionStorage.setItem("goaltabs-authenticated-this-session", "true");
         this.token = token;
         this.user = user;
         localStorage.setItem("token", token);
@@ -130,6 +132,7 @@ export const useAuthStore = defineStore("auth", {
           token: googleToken,
         });
         const { token, user } = response.data;
+        sessionStorage.setItem("goaltabs-authenticated-this-session", "true");
         this.token = token;
         this.user = user;
         localStorage.setItem("token", token);
