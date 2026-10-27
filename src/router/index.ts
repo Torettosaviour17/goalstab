@@ -128,9 +128,10 @@ const router = createRouter({
   scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
       return savedPosition;
-    } else {
-      return { top: 0, behavior: "smooth" };
     }
+    // Route changes inside the mobile PWA should not animate the whole page
+    // vertically; instant reset avoids the up/down "shaking" on navigation.
+    return { top: 0 };
   },
 });
 
