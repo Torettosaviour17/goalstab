@@ -271,7 +271,6 @@ const { shouldShowTour, startTour } = useOnboardingTour();
 // ── Loading / error ────────────────────────────────────
 const isLoading = ref(true);
 const hasError = ref(false);
-const minimumLoadingTime = 600;
 
 // ── Store refs ─────────────────────────────────────────
 const {
@@ -346,25 +345,24 @@ let lastCompletedGoalId: string | null = null;
 const fetchDashboardData = async () => {
   isLoading.value = true;
   hasError.value = false;
-  const startTime = Date.now();
 
   try {
-    await Promise.all([
+    // Wait for every dashboard request to settle. The preloader follows real
+    // readiness and never waits for an artificial minimum display duration.
+    const results = await Promise.allSettled([
       goalsStore.fetchGoals(),
       accountsStore.fetchAccounts(),
       transactionsStore.fetchRecentTransactions(),
       analyticsStore.fetchLifetimeStats(),
       analyticsStore.fetchOverview(),
     ]);
+
+    hasError.value = results.some((result) => result.status === "rejected");
   } catch (err) {
     console.error(err);
     hasError.value = true;
   } finally {
-    const elapsed = Date.now() - startTime;
-    const remaining = Math.max(minimumLoadingTime - elapsed, 0);
-    setTimeout(() => {
-      isLoading.value = false;
-    }, remaining);
+    isLoading.value = false;
   }
 };
 
