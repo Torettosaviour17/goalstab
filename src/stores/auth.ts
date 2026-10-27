@@ -50,7 +50,7 @@ export const useAuthStore = defineStore("auth", {
       // Sync token to localStorage for axios interceptor
       localStorage.setItem("token", this.token);
       try {
-        const response = await api.get("/auth/me");
+        const response = await api.get("/auth/me", { timeout: 8000 });
         this.user = response.data;
         this.error = null;
       } catch (error: any) {

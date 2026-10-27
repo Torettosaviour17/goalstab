@@ -34,15 +34,29 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response interceptor to handle errors
+// Response interceptor: do not hard-reload the app for every 401.
+// Login/form errors belong to the form; expired authenticated sessions are
+// handled centrally so Pinia state and the current route stay in sync.
+const publicAuthEndpoints = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/google-signin",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/me",
+];
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.assign("/login");
+    const status = error.response?.status;
+    const requestUrl = String(error.config?.url || "");
+    const isPublicAuthRequest =
+      publicAuthEndpoints.some((endpoint) => requestUrl.includes(endpoint)) ||
+      requestUrl.includes("/auth/webauthn/");
+
+    if (status === 401 && !isPublicAuthRequest && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("goaltabs:session-expired"));
     }
     return Promise.reject(error);
   },

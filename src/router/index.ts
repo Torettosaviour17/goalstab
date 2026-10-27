@@ -128,9 +128,10 @@ const router = createRouter({
   scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
       return savedPosition;
-    } else {
-      return { top: 0, behavior: "smooth" };
     }
+    // Route changes inside the mobile PWA should not animate the whole page
+    // vertically; instant reset avoids the up/down "shaking" on navigation.
+    return { top: 0 };
   },
 });
 
@@ -146,7 +147,10 @@ const isInstalledPWA = () => {
   );
 };
 
-// Global navigation guard
+// Validate a persisted account session once before the first protected screen.
+// Internal SPA navigation must not re-run this network check.
+let protectedSessionValidated = false;
+
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
 
@@ -164,7 +168,8 @@ router.beforeEach(async (to, _from, next) => {
   // Do not block public/auth pages on a network request.
   // A freshly logged-in user already has a valid session, so send them
   // straight to the destination without an unnecessary /auth/me round-trip.
-  if (requiresAuth && !authStore.isAuthenticated && authStore.token) {
+  if (requiresAuth && authStore.token && !protectedSessionValidated) {
+    protectedSessionValidated = true;
     await authStore.checkAuth();
   }
 
