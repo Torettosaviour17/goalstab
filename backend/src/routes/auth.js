@@ -302,7 +302,7 @@ router.get("/me", auth, async (req, res) => {
 
 const getWebAuthn = () => import("@simplewebauthn/server");
 
-const normalizeOrigin = (value) => String(value || "").replace(/\\/$/, "");
+const normalizeOrigin = (value) => String(value || "").replace(/\/$/, "");
 
 const getWebAuthnContext = (req) => {
   const origin = normalizeOrigin(req.get("origin"));
