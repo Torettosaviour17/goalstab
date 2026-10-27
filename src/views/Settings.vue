@@ -166,6 +166,28 @@
         <!-- Security -->
         <div v-else-if="activeTab === 'security'" class="space-y-6">
           <div class="glass-card p-6">
+            <h2 class="text-xl font-bold text-white mb-2">App Lock & Device Security</h2>
+            <p class="mb-5 text-sm text-gray-400">These options apply only to GoalTabs installed as a mobile PWA. The desktop website continues to use your normal account login.</p>
+            <template v-if="isInstalledMobilePwa">
+              <div class="flex flex-col gap-3 rounded-xl border border-gray-700 bg-gray-900/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p class="font-medium text-white">6-digit app PIN</p>
+                  <p class="text-sm text-gray-400">{{ appPinEnabled ? 'Enabled on this device' : 'Optional. Set it up to lock the app when you return.' }}</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <BaseButton v-if="!appPinEnabled" @click="openAppPinSetup">Set up PIN</BaseButton>
+                  <BaseButton v-else variant="secondary" @click="disableAppPin">Turn off PIN</BaseButton>
+                </div>
+              </div>
+              <div class="mt-4 rounded-xl border border-gray-700/70 p-4">
+                <p class="font-medium text-white">Biometric unlock</p>
+                <p class="mt-1 text-sm text-gray-400">Fingerprint and face authentication need a verified device-authentication flow. The current PWA does not yet have that server verification, so it is not enabled here. Your app PIN remains available as the device lock.</p>
+              </div>
+            </template>
+            <p v-else class="rounded-xl border border-gray-700 bg-gray-900/40 p-4 text-sm text-gray-400">Open GoalTabs from its installed mobile PWA to manage device lock options. No biometric prompt or app PIN is required on the desktop website.</p>
+          </div>
+
+          <div class="glass-card p-6">
             <h2 class="text-xl font-bold text-white mb-4">Change Password</h2>
             <div class="space-y-4">
               <div>
@@ -368,7 +390,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch } from "vue";
+import { ref, reactive, watch, computed, onMounted, onBeforeUnmount } from "vue";
 import { useRouter } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
@@ -394,6 +416,50 @@ const uiStore = useUIStore();
 const themeStore = useThemeStore();
 
 const activeTab = ref("profile");
+const appPinEnabled = ref(false);
+
+const isInstalledMobilePwa = computed(() => {
+  if (typeof window === "undefined") return false;
+  const installed =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    ("standalone" in window.navigator &&
+      Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone));
+  const mobileDevice =
+    window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
+  return installed && mobileDevice;
+});
+
+const appSecurityKey = () =>
+  "goaltabs-app-lock-hash:" +
+  encodeURIComponent(authStore.user?.id || authStore.user?.email || "account");
+
+const refreshAppPinStatus = () => {
+  appPinEnabled.value =
+    typeof window !== "undefined" && Boolean(localStorage.getItem(appSecurityKey()));
+};
+
+const openAppPinSetup = () => {
+  window.dispatchEvent(
+    new CustomEvent("goaltabs:open-security-setup", { detail: { action: "setup" } }),
+  );
+};
+
+const disableAppPin = () => {
+  window.dispatchEvent(
+    new CustomEvent("goaltabs:open-security-setup", { detail: { action: "disable" } }),
+  );
+};
+
+const handleSecurityUpdated = () => refreshAppPinStatus();
+
+onMounted(() => {
+  refreshAppPinStatus();
+  window.addEventListener("goaltabs:app-security-updated", handleSecurityUpdated);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener("goaltabs:app-security-updated", handleSecurityUpdated);
+});
+
 const saving = ref(false);
 const deleting = ref(false);
 const showDeleteModal = ref(false);
