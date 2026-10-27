@@ -84,7 +84,7 @@ const fromBase64Url = (value: string) => {
 
 const derivePinHash = async (value: string, salt: Uint8Array) => {
   const material = await window.crypto.subtle.importKey("raw", new TextEncoder().encode(value), "PBKDF2", false, ["deriveBits"]);
-  const bits = await window.crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 210000, hash: "SHA-256" }, material, 256);
+  const bits = await window.crypto.subtle.deriveBits({ name: "PBKDF2", salt: salt.slice().buffer as ArrayBuffer, iterations: 210000, hash: "SHA-256" }, material, 256);
   return toBase64Url(bits);
 };
 
