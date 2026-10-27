@@ -24,6 +24,12 @@
               {{ busy ? 'Please wait…' : settingsAction === 'disable' ? 'Confirm and turn off PIN' : configured ? 'Unlock GoalTabs' : 'Set PIN and continue' }}
             </button>
           </form>
+          <div v-if="configured && biometricSupported && biometricConfigured" class="mt-4">
+            <button type="button" :disabled="busy || biometricBusy || cooldownSeconds > 0" @click="unlockWithBiometric" class="flex w-full items-center justify-center gap-3 rounded-2xl border border-blue-400/25 bg-blue-400/5 px-4 py-3.5 font-semibold text-blue-200 transition hover:bg-blue-400/10 disabled:opacity-50">
+              <span v-if="biometricBusy" class="h-4 w-4 animate-spin rounded-full border-2 border-blue-200/40 border-t-blue-200"></span>
+              {{ biometricBusy ? 'Verifying device…' : 'Unlock with fingerprint / device security' }}
+            </button>
+          </div>
           <div v-if="!configured" class="mt-5 rounded-xl border border-slate-700/70 bg-slate-950/50 p-3 text-left text-xs leading-5 text-slate-400">This is a convenience lock on this device. It does not replace your GoalTabs account password or server-side account security.</div>
         </section>
       </div>
@@ -33,6 +39,11 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  getBiometricStatus,
+  isDeviceAuthenticationSupported,
+  verifyBiometricDevice,
+} from "@/services/deviceAuthentication";
 
 const props = defineProps<{ userId: string }>();
 const visible = ref(false);
@@ -44,6 +55,9 @@ const pin = ref("");
 const busy = ref(false);
 const message = ref("");
 const messageIsError = ref(false);
+const biometricConfigured = ref(false);
+const biometricSupported = ref(false);
+const biometricBusy = ref(false);
 const cooldownSeconds = ref(0);
 let cooldownTimer: number | undefined;
 let hiddenAt = 0;
@@ -103,8 +117,9 @@ const updateCooldown = () => {
 const loadState = () => {
   const current = keys();
   configured.value = Boolean(localStorage.getItem(current.salt) && localStorage.getItem(current.hash));
-  // WebAuthn must be verified by a trusted server challenge before it can be
-  // treated as authentication. Do not offer the previous client-only shortcut.
+  // Biometric unlock is shown only after a credential has been verified and
+  // saved by the backend. A client-only credential response is never trusted.
+  void refreshBiometricStatus();
   pin.value = "";
   setupMode.value = false;
   setupInvitation.value = false;
@@ -123,6 +138,36 @@ const loadState = () => {
     setupInvitation.value = visible.value;
   }
   updateCooldown();
+};
+
+const refreshBiometricStatus = async () => {
+  biometricSupported.value = isDeviceAuthenticationSupported();
+  biometricConfigured.value = false;
+  if (!biometricSupported.value) return;
+  try {
+    biometricConfigured.value = await getBiometricStatus();
+  } catch {
+    biometricConfigured.value = false;
+  }
+};
+
+const unlockWithBiometric = async () => {
+  if (busy.value || biometricBusy.value || cooldownSeconds.value > 0) return;
+  biometricBusy.value = true;
+  message.value = "";
+  messageIsError.value = false;
+  try {
+    await verifyBiometricDevice();
+    clearFailedAttempts();
+    unlock();
+  } catch (error) {
+    message.value =
+      (error instanceof Error ? error.message : "Device verification failed.") +
+      " You can always use your app PIN.";
+    messageIsError.value = true;
+  } finally {
+    biometricBusy.value = false;
+  }
 };
 
 const beginSetup = () => {
