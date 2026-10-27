@@ -9,7 +9,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><path d="M12 14v3" /></svg>
           </div>
           <p class="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-blue-300">GoalTabs Security</p>
-          <h1 id="app-lock-title" class="text-2xl font-bold text-white">{{ setupInvitation && !setupMode ? 'Add extra security?' : configured ? 'Welcome back' : 'Create your app PIN' }}</h1>
+          <h1 id="app-lock-title" class="text-2xl font-bold text-white">{{ settingsAction === 'disable' ? 'Turn off app PIN?' : setupInvitation && !setupMode ? 'Add extra security?' : configured ? 'Welcome back' : 'Create your app PIN' }}</h1>
           <p class="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-400">{{ setupInvitation && !setupMode ? 'You can add a 6-digit app PIN for this device now, or skip and set it up later in Settings.' : configured ? 'Unlock your savings space to continue.' : 'Set a 6-digit PIN for quick, private access to this app on this device.' }}</p>
           <div v-if="setupInvitation && !setupMode" class="mt-7 space-y-3">
             <button type="button" @click="beginSetup" class="flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 px-4 py-3.5 font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:brightness-110">Set up app PIN</button>
@@ -39,6 +39,7 @@ const visible = ref(false);
 const configured = ref(false);
 const setupInvitation = ref(false);
 const setupMode = ref(false);
+const settingsAction = ref<"disable" | null>(null);
 const pin = ref("");
 const busy = ref(false);
 const message = ref("");
@@ -131,13 +132,18 @@ const skipSetup = () => {
   visible.value = false;
 };
 
-const handleOpenSecuritySetup = () => {
+const handleOpenSecuritySetup = (event: Event) => {
+  const action = (event as CustomEvent<{ action?: string }>).detail?.action;
+  settingsAction.value = action === "disable" ? "disable" : null;
   loadState();
+  visible.value = true;
+  setupInvitation.value = false;
   if (!configured.value) {
-    visible.value = true;
-    setupInvitation.value = false;
     setupMode.value = true;
     message.value = "Choose a 6-digit PIN for this device.";
+  } else if (settingsAction.value === "disable") {
+    setupMode.value = false;
+    message.value = "Enter your current app PIN to turn off this device lock.";
   }
 };
 
@@ -163,6 +169,8 @@ const unlock = () => {
   pin.value = "";
   message.value = "";
   messageIsError.value = false;
+  settingsAction.value = null;
+  window.dispatchEvent(new Event("goaltabs:app-security-updated"));
 };
 
 const submitPin = async () => {
@@ -202,6 +210,12 @@ const submitPin = async () => {
       return;
     }
     clearFailedAttempts();
+    if (settingsAction.value === "disable") {
+      localStorage.removeItem(current.salt);
+      localStorage.removeItem(current.hash);
+      localStorage.setItem(current.promptDismissed, "true");
+      configured.value = false;
+    }
     unlock();
   } catch {
     message.value = "Secure device storage is unavailable. Please try again.";
