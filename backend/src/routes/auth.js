@@ -429,6 +429,15 @@ router.post("/webauthn/register/verify", auth, async (req, res) => {
     return res.json({ verified: true, enabled: true });
   } catch (err) {
     console.error("WebAuthn registration verification error:", err);
+    try {
+      const failedUser = await User.findById(req.user.id);
+      if (failedUser) {
+        clearWebAuthnChallenge(failedUser, "Registration");
+        await failedUser.save();
+      }
+    } catch (cleanupError) {
+      console.error("WebAuthn registration challenge cleanup error:", cleanupError);
+    }
     return res.status(400).json({ msg: "Device authentication setup failed. Please try again." });
   }
 });
@@ -516,6 +525,15 @@ router.post("/webauthn/auth/verify", auth, async (req, res) => {
     return res.json({ verified: true });
   } catch (err) {
     console.error("WebAuthn authentication verification error:", err);
+    try {
+      const failedUser = await User.findById(req.user.id);
+      if (failedUser) {
+        clearWebAuthnChallenge(failedUser, "Authentication");
+        await failedUser.save();
+      }
+    } catch (cleanupError) {
+      console.error("WebAuthn authentication challenge cleanup error:", cleanupError);
+    }
     return res.status(401).json({ msg: "Device verification failed. Use your app PIN instead." });
   }
 });
