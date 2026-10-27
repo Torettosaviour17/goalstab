@@ -24,6 +24,7 @@
               {{ busy ? 'Please wait…' : settingsAction === 'disable' ? 'Confirm and turn off PIN' : configured ? 'Unlock GoalTabs' : 'Set PIN and continue' }}
             </button>
           </form>
+          <button v-if="settingsAction === 'disable'" type="button" @click="cancelSettingsAction" class="mt-3 w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5">Cancel</button>
           <div v-if="configured && biometricSupported && biometricConfigured" class="mt-4">
             <button type="button" :disabled="busy || biometricBusy || cooldownSeconds > 0" @click="unlockWithBiometric" class="flex w-full items-center justify-center gap-3 rounded-2xl border border-blue-400/25 bg-blue-400/5 px-4 py-3.5 font-semibold text-blue-200 transition hover:bg-blue-400/10 disabled:opacity-50">
               <span v-if="biometricBusy" class="h-4 w-4 animate-spin rounded-full border-2 border-blue-200/40 border-t-blue-200"></span>
@@ -42,6 +43,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   getBiometricStatus,
   isDeviceAuthenticationSupported,
+  removeBiometricDevice,
   verifyBiometricDevice,
 } from "@/services/deviceAuthentication";
 
@@ -184,6 +186,14 @@ const skipSetup = () => {
   visible.value = false;
 };
 
+const cancelSettingsAction = () => {
+  settingsAction.value = null;
+  visible.value = false;
+  pin.value = "";
+  message.value = "";
+  messageIsError.value = false;
+};
+
 const handleOpenSecuritySetup = (event: Event) => {
   const action = (event as CustomEvent<{ action?: string }>).detail?.action;
   settingsAction.value = action === "disable" ? "disable" : null;
@@ -263,14 +273,16 @@ const submitPin = async () => {
     }
     clearFailedAttempts();
     if (settingsAction.value === "disable") {
+      if (await getBiometricStatus()) await removeBiometricDevice();
       localStorage.removeItem(current.salt);
       localStorage.removeItem(current.hash);
       localStorage.setItem(current.promptDismissed, "true");
       configured.value = false;
+      biometricConfigured.value = false;
     }
     unlock();
-  } catch {
-    message.value = "Secure device storage is unavailable. Please try again.";
+  } catch (error) {
+    message.value = error instanceof Error ? error.message : "The security change could not be completed. Please try again.";
     messageIsError.value = true;
   } finally {
     busy.value = false;
