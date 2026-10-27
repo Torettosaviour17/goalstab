@@ -279,7 +279,10 @@ const formatNumber = (n: number) => new Intl.NumberFormat().format(n);
 
 onMounted(async () => {
   startLoading();
-  await goalsStore.fetchGoals();
-  finishLoading();
+  try {
+    await goalsStore.fetchGoals();
+  } finally {
+    finishLoading();
+  }
 });
 </script>
