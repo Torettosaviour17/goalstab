@@ -180,8 +180,15 @@
                 </div>
               </div>
               <div class="mt-4 rounded-xl border border-gray-700/70 p-4">
-                <p class="font-medium text-white">Biometric unlock</p>
-                <p class="mt-1 text-sm text-gray-400">Fingerprint and face authentication need a verified device-authentication flow. The current PWA does not yet have that server verification, so it is not enabled here. Your app PIN remains available as the device lock.</p>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p class="font-medium text-white">Biometric unlock</p>
+                    <p class="mt-1 text-sm text-gray-400">{{ biometricEnabled ? 'Enabled for this GoalTabs account on this device' : 'Use your phone’s supported fingerprint, face, or device verification.' }}</p>
+                    <p v-if="!biometricSupported" class="mt-1 text-xs text-amber-300">This browser does not support secure device authentication.</p>
+                  </div>
+                  <BaseButton v-if="biometricSupported && !biometricEnabled" :loading="biometricBusy" @click="enableBiometric">Enable biometrics</BaseButton>
+                  <BaseButton v-else-if="biometricSupported && biometricEnabled" variant="secondary" :loading="biometricBusy" @click="disableBiometric">Remove biometrics</BaseButton>
+                </div>
               </div>
             </template>
             <p v-else class="rounded-xl border border-gray-700 bg-gray-900/40 p-4 text-sm text-gray-400">Open GoalTabs from its installed mobile PWA to manage device lock options. No biometric prompt or app PIN is required on the desktop website.</p>
@@ -398,6 +405,12 @@ import AvatarUploader from "@/components/ui/AvatarUploader.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 import { useThemeStore } from "@/stores/theme";
+import {
+  getBiometricStatus,
+  isDeviceAuthenticationSupported,
+  registerBiometricDevice,
+  removeBiometricDevice,
+} from "@/services/deviceAuthentication";
 
 interface NotificationSettings {
   email: boolean;
@@ -417,6 +430,9 @@ const themeStore = useThemeStore();
 
 const activeTab = ref("profile");
 const appPinEnabled = ref(false);
+const biometricEnabled = ref(false);
+const biometricSupported = ref(false);
+const biometricBusy = ref(false);
 
 const isInstalledMobilePwa = computed(() => {
   if (typeof window === "undefined") return false;
@@ -450,10 +466,54 @@ const disableAppPin = () => {
   );
 };
 
+const refreshBiometricStatus = async () => {
+  biometricSupported.value = isInstalledMobilePwa.value && isDeviceAuthenticationSupported();
+  biometricEnabled.value = false;
+  if (!biometricSupported.value) return;
+  try {
+    biometricEnabled.value = await getBiometricStatus();
+  } catch {
+    biometricEnabled.value = false;
+  }
+};
+
+const enableBiometric = async () => {
+  biometricBusy.value = true;
+  try {
+    await registerBiometricDevice();
+    biometricEnabled.value = true;
+    uiStore.addToast({ type: "success", message: "Biometric unlock enabled on this device" });
+  } catch (error) {
+    uiStore.addToast({
+      type: "error",
+      message: error instanceof Error ? error.message : "Could not enable biometric unlock",
+    });
+  } finally {
+    biometricBusy.value = false;
+  }
+};
+
+const disableBiometric = async () => {
+  biometricBusy.value = true;
+  try {
+    await removeBiometricDevice();
+    biometricEnabled.value = false;
+    uiStore.addToast({ type: "success", message: "Biometric unlock removed" });
+  } catch (error) {
+    uiStore.addToast({
+      type: "error",
+      message: error instanceof Error ? error.message : "Could not remove biometric unlock",
+    });
+  } finally {
+    biometricBusy.value = false;
+  }
+};
+
 const handleSecurityUpdated = () => refreshAppPinStatus();
 
 onMounted(() => {
   refreshAppPinStatus();
+  void refreshBiometricStatus();
   window.addEventListener("goaltabs:app-security-updated", handleSecurityUpdated);
 });
 onBeforeUnmount(() => {
