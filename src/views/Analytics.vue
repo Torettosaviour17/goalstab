@@ -37,7 +37,7 @@
     </div>
 
     <!-- Loading -->
-    <SkeletonAnalytics v-if="loading" />
+    <SkeletonAnalytics v-if="pageLoading" />
 
     <div v-else class="space-y-6">
       <!-- Overview cards (using only data from backend) -->
@@ -226,8 +226,9 @@ import SkeletonAnalytics from "@/components/skeleton/SkeletonAnalytics.vue";
 
 const analyticsStore = useAnalyticsStore();
 const goalsStore = useGoalsStore();
-const { overview, trendData, distribution, transactions, lifetime, loading } =
+const { overview, trendData, distribution, transactions, lifetime } =
   storeToRefs(analyticsStore);
+const pageLoading = ref(true);
 const { goals } = storeToRefs(goalsStore);
 const uiStore = useUIStore();
 const authStore = useAuthStore();
@@ -399,9 +400,15 @@ const formatDate = (date: string) =>
   });
 
 onMounted(async () => {
-  await Promise.all([
-    analyticsStore.fetchAll(selectedPeriod.value),
-    goalsStore.fetchGoals(),
-  ]);
+  pageLoading.value = true;
+  try {
+    // Keep the existing skeleton visible until the initial page requests settle.
+    await Promise.allSettled([
+      analyticsStore.fetchAll(selectedPeriod.value),
+      goalsStore.fetchGoals(),
+    ]);
+  } finally {
+    pageLoading.value = false;
+  }
 });
 </script>
