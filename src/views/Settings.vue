@@ -183,12 +183,12 @@
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p class="font-medium text-white">Biometric unlock</p>
-                    <p class="mt-1 text-sm text-gray-400">{{ biometricEnabled ? 'Enabled for this GoalTabs account on this device' : 'Use your phone’s supported fingerprint, face, or device verification.' }}</p>
+                    <p class="mt-1 text-sm text-gray-400">{{ biometricEnabled ? 'Enabled for this GoalTabs account' : 'Use your phone’s supported fingerprint, face, or device verification.' }}</p>
                     <p v-if="!biometricSupported" class="mt-1 text-xs text-amber-300">This browser does not support secure device authentication.</p>
                   </div>
                   <BaseButton v-if="biometricSupported && !biometricEnabled && appPinEnabled" :loading="biometricBusy" @click="enableBiometric">Enable biometrics</BaseButton>
                   <p v-else-if="biometricSupported && !appPinEnabled && !biometricEnabled" class="text-xs text-amber-300">Set up an app PIN first so you always have a fallback.</p>
-                  <BaseButton v-else-if="biometricSupported && biometricEnabled" variant="secondary" :loading="biometricBusy" @click="disableBiometric">Remove biometrics</BaseButton>
+                  <BaseButton v-else-if="biometricSupported && biometricEnabled" variant="secondary" :loading="biometricBusy" @click="disableBiometric">Remove all biometrics</BaseButton>
                 </div>
               </div>
             </template>
