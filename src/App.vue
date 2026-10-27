@@ -54,7 +54,7 @@
 
     <!-- Device-local app lock: leaves account authentication and app routes unchanged -->
     <AppLockScreen
-      v-if="isAuthenticated && lockUserId && isMobileInstalledPwa"
+      v-if="isAuthenticated && lockUserId && isMobileInstalledPwa && !['login', 'register'].includes(route.name as string)"
       :user-id="lockUserId"
     />
   </div>
