@@ -2,6 +2,9 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "https://goalstab.onrender.com/api",
+  // Bound stalled network requests so page loading can fail gracefully instead of spinning forever.
+  // This is a request deadline, not a timer that hides the preloader before data is ready.
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
