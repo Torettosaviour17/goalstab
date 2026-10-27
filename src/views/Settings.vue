@@ -234,6 +234,12 @@
             </div>
           </div>
 
+          <div class="glass-card p-6">
+            <h2 class="text-xl font-bold text-white mb-2">Forgot your password?</h2>
+            <p class="mb-4 text-sm text-gray-400">Send a password reset link to your account email. The link expires after 30 minutes.</p>
+            <BaseButton variant="secondary" :loading="resetRequesting" @click="requestPasswordReset">Email me a reset link</BaseButton>
+          </div>
+
           <div class="glass-card p-6 border border-gray-700/50">
             <h2 class="text-xl font-bold text-white mb-4">Session</h2>
             <p class="text-gray-400 mb-4">Sign out of your account</p>
@@ -406,6 +412,7 @@ import AvatarUploader from "@/components/ui/AvatarUploader.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 import { useThemeStore } from "@/stores/theme";
+import api from "@/services/api";
 import {
   getBiometricStatus,
   isDeviceAuthenticationSupported,
@@ -522,6 +529,7 @@ onBeforeUnmount(() => {
 });
 
 const saving = ref(false);
+const resetRequesting = ref(false);
 const deleting = ref(false);
 const showDeleteModal = ref(false);
 const isDarkMode = ref(themeStore.theme === "dark");
@@ -673,6 +681,31 @@ const changePassword = async () => {
     uiStore.addToast({ type: "error", message: msg });
   } finally {
     saving.value = false;
+  }
+};
+
+const requestPasswordReset = async () => {
+  const email = authStore.user?.email;
+  if (!email) {
+    uiStore.addToast({ type: "error", message: "Your account email is unavailable." });
+    return;
+  }
+
+  resetRequesting.value = true;
+  try {
+    await api.post("/auth/forgot-password", { email });
+    uiStore.addToast({
+      type: "success",
+      message: "If an account exists for this email, a password reset link has been sent.",
+    });
+  } catch {
+    // Keep the same privacy-preserving response used by the API.
+    uiStore.addToast({
+      type: "info",
+      message: "If an account exists for this email, a password reset link has been sent.",
+    });
+  } finally {
+    resetRequesting.value = false;
   }
 };
 
