@@ -1,10 +1,5 @@
 <template>
   <div class="container mx-auto px-4 py-6 md:px-6 md:py-8 max-w-4xl">
-    <!-- Loading skeleton -->
-    <SkeletonSettings v-if="loading" />
-
-    <!-- Settings content -->
-    <template v-else>
       <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
       <p class="text-gray-400 mb-8">Manage your account preferences</p>
 
@@ -320,8 +315,6 @@
           </div>
         </div>
       </transition>
-    </template>
-
     <!-- Delete Account Confirmation Modal -->
     <BaseModal
       v-model="showDeleteModal"
@@ -375,12 +368,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick, watch } from "vue";
+import { ref, reactive, watch } from "vue";
 import { useRouter } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import AvatarUploader from "@/components/ui/AvatarUploader.vue";
-import SkeletonSettings from "@/components/skeleton/SkeletonSettings.vue";
 import { useAuthStore } from "@/stores/auth";
 import { useUIStore } from "@/stores/ui";
 import { useThemeStore } from "@/stores/theme";
@@ -406,7 +398,6 @@ const saving = ref(false);
 const deleting = ref(false);
 const showDeleteModal = ref(false);
 const isDarkMode = ref(themeStore.theme === "dark");
-const loading = ref(true);
 
 const tabs = [
   { id: "profile", name: "Profile" },
@@ -473,31 +464,26 @@ const preferences = reactive({
   monthlyIncome: 500000,
 });
 
-onMounted(async () => {
-  await nextTick();
-  setTimeout(() => {
-    loading.value = false;
-  }, 300);
+// Hydrate from the persisted auth store before the first render. Settings
+// has no initial network request, so it should not display a fake preloader.
+if (authStore.user) {
+  profile.name = authStore.user.name || "";
+  profile.email = authStore.user.email || "";
+  profile.phone = (authStore.user as any).phone || "";
+  profile.avatar = authStore.user.avatar || "";
+  avatarPreview.value = authStore.user.avatar || null;
 
-  if (authStore.user) {
-    profile.name = authStore.user.name || "";
-    profile.email = authStore.user.email || "";
-    profile.phone = (authStore.user as any).phone || "";
-    profile.avatar = authStore.user.avatar || "";
-    avatarPreview.value = authStore.user.avatar || null;
-
-    if (authStore.user.preferences) {
-      const prefs = authStore.user.preferences;
-      if (prefs.notifications)
-        Object.assign(notifications, prefs.notifications);
-      preferences.currency = prefs.currency || "NGN";
-      preferences.theme = prefs.theme || "dark";
-      preferences.autoSaveDefault = prefs.autoSaveDefault ?? true;
-      preferences.monthlyIncome = (prefs as any).monthlyIncome ?? 500000;
-      isDarkMode.value = prefs.theme === "dark";
-    }
+  if (authStore.user.preferences) {
+    const prefs = authStore.user.preferences;
+    if (prefs.notifications)
+      Object.assign(notifications, prefs.notifications);
+    preferences.currency = prefs.currency || "NGN";
+    preferences.theme = prefs.theme || "dark";
+    preferences.autoSaveDefault = prefs.autoSaveDefault ?? true;
+    preferences.monthlyIncome = (prefs as any).monthlyIncome ?? 500000;
+    isDarkMode.value = prefs.theme === "dark";
   }
-});
+}
 
 // Watch toggle changes
 watch(isDarkMode, (val) => {
