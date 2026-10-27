@@ -51,6 +51,12 @@
 
     <!-- Global confetti effect -->
     <Confetti v-if="uiStore.showConfetti" />
+
+    <!-- Device-local app lock: leaves account authentication and app routes unchanged -->
+    <AppLockScreen
+      v-if="isAuthenticated && lockUserId"
+      :user-id="lockUserId"
+    />
   </div>
 </template>
 
@@ -71,6 +77,7 @@ import MobileBottomNav from "@/components/layout/MobileBottomNav.vue";
 import FloatingButton from "@/components/shared/FloatingButton.vue";
 import ToastNotification from "@/components/shared/ToastNotification.vue";
 import Confetti from "@/components/shared/Confetti.vue";
+import AppLockScreen from "@/components/security/AppLockScreen.vue";
 
 // ── Stores ────────────────────────────────────────────
 const route = useRoute();
@@ -78,6 +85,7 @@ const authStore = useAuthStore();
 const uiStore = useUIStore();
 const themeStore = useThemeStore();
 const { isAuthenticated } = storeToRefs(authStore);
+const lockUserId = computed(() => authStore.user?.id || authStore.user?.email || "account");
 
 // ── Pages where header/sidebar/nav should be hidden ──
 const publicPages = [
