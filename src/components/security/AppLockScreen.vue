@@ -20,11 +20,11 @@
               {{ busy ? 'Please wait…' : configured ? 'Unlock GoalTabs' : 'Set PIN and continue' }}
             </button>
           </form>
-          <div v-if="configured && secureContext && deviceUnlockSupported" class="mt-4">
+          <div v-if="configured && deviceUnlockSupported" class="mt-4">
             <div class="flex items-center gap-3 py-2 text-xs uppercase tracking-wider text-slate-600"><span class="h-px flex-1 bg-slate-800"></span>or<span class="h-px flex-1 bg-slate-800"></span></div>
             <button type="button" :disabled="busy || cooldownSeconds > 0" @click="unlockWithDevice" class="flex w-full items-center justify-center gap-3 rounded-2xl border border-blue-400/25 bg-blue-400/5 px-4 py-3.5 font-semibold text-blue-200 transition hover:bg-blue-400/10 disabled:opacity-50">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 11a2 2 0 0 0-2 2v2a2 2 0 0 0 4 0v-2a2 2 0 0 0-2-2Z" /><path d="M6.5 13v2a5.5 5.5 0 0 0 11 0v-3a5.5 5.5 0 0 0-11 0" /><path d="M4 12v3a8 8 0 0 0 16 0v-3a8 8 0 0 0-16 0Z" /></svg>
-              {{ biometricConfigured ? 'Unlock with fingerprint / device security' : 'Set up fingerprint / device unlock' }}
+              {{ biometricConfigured ? 'Unlock with fingerprint / biometrics' : 'Enable fingerprint / biometric unlock' }}
             </button>
           </div>
           <div v-if="!configured" class="mt-5 rounded-xl border border-slate-700/70 bg-slate-950/50 p-3 text-left text-xs leading-5 text-slate-400">This is a convenience lock on this device. It does not replace your GoalTabs account password or server-side account security.</div>
@@ -36,6 +36,8 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { Capacitor } from "@capacitor/core";
+import { NativeBiometric } from "@capgo/capacitor-native-biometric";
 
 const props = defineProps<{ userId: string }>();
 const visible = ref(false);
@@ -46,7 +48,6 @@ const message = ref("");
 const messageIsError = ref(false);
 const biometricConfigured = ref(false);
 const deviceUnlockSupported = ref(false);
-const secureContext = ref(false);
 const cooldownSeconds = ref(0);
 let cooldownTimer: number | undefined;
 let hiddenAt = 0;
@@ -66,20 +67,6 @@ const randomBytes = (length: number) => {
   const bytes = new Uint8Array(length);
   window.crypto.getRandomValues(bytes);
   return bytes;
-};
-
-const toBase64Url = (bytes: ArrayBuffer | Uint8Array) => {
-  const array = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
-  let binary = "";
-  array.forEach((byte) => (binary += String.fromCharCode(byte)));
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-};
-
-const fromBase64Url = (value: string) => {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
-  const binary = atob(padded);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 };
 
 const derivePinHash = async (value: string, salt: Uint8Array) => {
@@ -103,12 +90,24 @@ const updateCooldown = () => {
   }
 };
 
-const loadState = () => {
+const loadState = async () => {
   const current = keys();
   configured.value = Boolean(localStorage.getItem(current.salt) && localStorage.getItem(current.hash));
-  secureContext.value = window.isSecureContext;
-  deviceUnlockSupported.value = Boolean(window.isSecureContext && window.PublicKeyCredential && navigator.credentials);
-  biometricConfigured.value = Boolean(localStorage.getItem(current.credential));
+  biometricConfigured.value = localStorage.getItem(current.credential) === "enabled";
+  deviceUnlockSupported.value = false;
+
+  // Native biometric prompts are available only inside the installed Capacitor app.
+  // The browser implementation is deliberately not used because it cannot securely
+  // verify a WebAuthn assertion without a server-side challenge/signature verifier.
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const availability = await NativeBiometric.isAvailable();
+      deviceUnlockSupported.value = availability.isAvailable;
+    } catch {
+      deviceUnlockSupported.value = false;
+    }
+  }
+
   pin.value = "";
   message.value = configured.value ? "Your account is still signed in. App unlock is required." : "This PIN is only for this device.";
   messageIsError.value = false;
@@ -183,45 +182,34 @@ const submitPin = async () => {
   }
 };
 
-const setupDeviceUnlock = async () => {
-  const current = keys();
-  const credential = await navigator.credentials.create({
-    publicKey: {
-      challenge: randomBytes(32),
-      rp: { name: "GoalTabs", id: window.location.hostname },
-      user: { id: randomBytes(16), name: props.userId || "GoalTabs user", displayName: "GoalTabs user" },
-      pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
-      authenticatorSelection: { authenticatorAttachment: "platform", residentKey: "preferred", userVerification: "required" },
-      timeout: 60000,
-      attestation: "none",
-    },
-  }) as PublicKeyCredential | null;
-  if (!credential) throw new Error("Device unlock setup was cancelled.");
-  localStorage.setItem(current.credential, toBase64Url(credential.rawId));
-  biometricConfigured.value = true;
-};
-
 const unlockWithDevice = async () => {
-  if (busy.value || cooldownSeconds.value > 0) return;
+  if (busy.value || cooldownSeconds.value > 0 || !Capacitor.isNativePlatform()) return;
   busy.value = true;
   message.value = "";
   messageIsError.value = false;
+
   try {
     const current = keys();
-    const savedCredential = localStorage.getItem(current.credential);
-    if (!savedCredential) {
-      await setupDeviceUnlock();
-      message.value = "Device unlock is ready. Tap the button again to unlock.";
+    // A native OS biometric prompt must succeed before this device is trusted.
+    await NativeBiometric.verifyIdentity({
+      reason: "Unlock GoalTabs to view your savings",
+      title: "Unlock GoalTabs",
+      subtitle: "Confirm it's you",
+      description: "Use your enrolled fingerprint or device biometrics.",
+      maxAttempts: 3,
+    });
+
+    if (!biometricConfigured.value) {
+      localStorage.setItem(current.credential, "enabled");
+      biometricConfigured.value = true;
+      message.value = "Biometric unlock is enabled on this device. Tap again to unlock.";
       return;
     }
-    const result = await navigator.credentials.get({
-      publicKey: { challenge: randomBytes(32), allowCredentials: [{ type: "public-key", id: fromBase64Url(savedCredential) }], userVerification: "required", timeout: 60000 },
-    });
-    if (!result) throw new Error("Device verification was cancelled.");
+
     clearFailedAttempts();
     unlock();
-  } catch (error) {
-    message.value = (error instanceof Error ? error.message : "Device verification failed.") + " You can always use your PIN.";
+  } catch {
+    message.value = "Biometric verification was cancelled or unsuccessful. You can still unlock with your 6-digit PIN.";
     messageIsError.value = true;
   } finally {
     busy.value = false;
