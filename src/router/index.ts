@@ -147,7 +147,10 @@ const isInstalledPWA = () => {
   );
 };
 
-// Global navigation guard
+// Validate a persisted account session once before the first protected screen.
+// Internal SPA navigation must not re-run this network check.
+let protectedSessionValidated = false;
+
 router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
 
@@ -165,7 +168,8 @@ router.beforeEach(async (to, _from, next) => {
   // Do not block public/auth pages on a network request.
   // A freshly logged-in user already has a valid session, so send them
   // straight to the destination without an unnecessary /auth/me round-trip.
-  if (requiresAuth && !authStore.isAuthenticated && authStore.token) {
+  if (requiresAuth && authStore.token && !protectedSessionValidated) {
+    protectedSessionValidated = true;
     await authStore.checkAuth();
   }
 
