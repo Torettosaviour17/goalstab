@@ -23,15 +23,7 @@
 
       <!-- Main content – add bottom padding on mobile for bottom nav -->
       <main class="flex-1 min-h-screen" :class="{ 'pb-[calc(4rem+env(safe-area-inset-bottom))]': showMobileNav }">
-        <div
-          v-motion
-          :initial="{ opacity: 0, y: 20 }"
-          :enter="{ opacity: 1, y: 0 }"
-          :leave="{ opacity: 0, y: -20 }"
-          :duration="300"
-        >
-          <router-view />
-        </div>
+        <router-view />
       </main>
     </div>
 
