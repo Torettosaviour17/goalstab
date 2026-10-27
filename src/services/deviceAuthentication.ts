@@ -9,7 +9,7 @@ const encodeBase64Url = (value: ArrayBuffer | ArrayBufferView) => {
       : new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
   let binary = "";
   bytes.forEach((byte) => (binary += String.fromCharCode(byte)));
-  return btoa(binary).replace(/\\+/g, "-").replace(/\\//g, "_").replace(/=+$/g, "");
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 };
 
 const decodeBase64Url = (value: string): ArrayBuffer => {
