@@ -53,8 +53,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { computed, onMounted, onBeforeUnmount } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 
 // Stores
@@ -73,11 +73,28 @@ import AppLockScreen from "@/components/security/AppLockScreen.vue";
 
 // ── Stores ────────────────────────────────────────────
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
 const themeStore = useThemeStore();
 const { isAuthenticated } = storeToRefs(authStore);
 const lockUserId = computed(() => authStore.user?.id || authStore.user?.email || "account");
+
+const handleSessionExpired = () => {
+  if (!authStore.isAuthenticated) return;
+  authStore.logout();
+  if (route.name !== "login") {
+    void router.replace({ name: "login", query: { reason: "session-expired" } });
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("goaltabs:session-expired", handleSessionExpired);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("goaltabs:session-expired", handleSessionExpired);
+});
 
 // App-level device locking is intentionally limited to an installed mobile PWA.
 // Ordinary desktop and mobile-browser visits use the normal account login only.
