@@ -51,9 +51,9 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const requestUrl = String(error.config?.url || "");
-    const isPublicAuthRequest = publicAuthEndpoints.some((endpoint) =>
-      requestUrl.includes(endpoint),
-    );
+    const isPublicAuthRequest =
+      publicAuthEndpoints.some((endpoint) => requestUrl.includes(endpoint)) ||
+      requestUrl.includes("/auth/webauthn/");
 
     if (status === 401 && !isPublicAuthRequest && typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("goaltabs:session-expired"));
