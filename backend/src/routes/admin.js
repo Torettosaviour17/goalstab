@@ -349,13 +349,29 @@ router.put("/withdrawals/:id/reject", [auth, admin], async (req, res) => {
 router.get("/fulfillment/pending", [auth, admin], async (req, res) => {
   try {
     const goals = await Goal.find({
-      progress: 100,
+      usePlatformFulfillment: true,
       fulfillmentStatus: { $in: ["pending", "processing"] },
     }).populate("user", "name email");
     res.json(goals);
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server error");
+  }
+});
+
+// @route GET api/admin/fulfillment/queue
+// Show requests from the moment a customer opts into fulfillment,
+// allowing procurement planning before their goal is fully funded.
+router.get("/fulfillment/queue", [auth, admin], async (req, res) => {
+  try {
+    const goals = await Goal.find({
+      usePlatformFulfillment: true,
+      fulfillmentStatus: { $in: ["pending", "processing"] },
+    }).populate("user", "name email").sort({ createdAt: 1 });
+    res.json(goals);
+  } catch (err) {
+    console.error("Fulfillment queue error:", err);
+    res.status(500).json({ msg: "Unable to load fulfillment queue" });
   }
 });
 
@@ -367,8 +383,25 @@ router.put("/fulfillment/:id", [auth, admin], async (req, res) => {
     const goal = await Goal.findById(req.params.id);
     if (!goal) return res.status(404).json({ msg: "Goal not found" });
 
+    const allowedStatuses = ["pending", "processing", "delivered", "booked"];
+    if (!goal.usePlatformFulfillment) {
+      return res.status(400).json({ msg: "Customer did not opt into platform fulfillment" });
+    }
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ msg: "Invalid fulfillment status" });
+    }
+    if ((status === "delivered" || status === "booked") && goal.progress < 100) {
+      return res.status(400).json({ msg: "Goal must be fully funded before fulfillment can be completed" });
+    }
     goal.fulfillmentStatus = status;
-    if (details) goal.fulfillmentDetails = details;
+    if (details && typeof details === "object" && !Array.isArray(details)) {
+      const allowed = ["trackingNumber", "courier", "deliveryNotes", "reservationReference"];
+      goal.fulfillmentDetails = {
+        ...goal.fulfillmentDetails,
+        ...Object.fromEntries(allowed.filter((key) => typeof details[key] === "string")
+          .map((key) => [key, details[key].slice(0, 300)])),
+      };
+    }
     await goal.save();
 
     await logAdminAction(req.user.id, "update_fulfillment", "goal", goal._id, {
