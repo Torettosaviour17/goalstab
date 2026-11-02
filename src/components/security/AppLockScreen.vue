@@ -1,10 +1,10 @@
 <template>
   <Teleport to="body">
     <Transition name="app-lock">
-      <div v-if="visible" class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[#080D1A]/[0.98] p-4 backdrop-blur-xl" role="dialog" aria-modal="true" aria-labelledby="app-lock-title" @keydown.esc.prevent>
+      <div v-if="visible" class="fixed inset-0 z-[100] flex h-[100dvh] w-[100vw] items-center justify-center overflow-hidden bg-[#080D1A] p-0" role="dialog" aria-modal="true" aria-labelledby="app-lock-title" @keydown.esc.prevent>
         <div class="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl"></div>
         <div class="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-purple-500/10 blur-3xl"></div>
-        <section class="relative flex max-h-full w-full max-w-xl flex-col justify-center overflow-hidden rounded-3xl border border-white/10 bg-slate-900/95 p-7 text-center shadow-2xl shadow-black/40 sm:p-10">
+        <section class="relative flex h-[100dvh] w-full flex-col justify-center overflow-y-auto bg-slate-900 p-6 text-center sm:p-12">
           <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-500/10 text-blue-300">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><path d="M12 14v3" /></svg>
           </div>
@@ -29,10 +29,10 @@
             </button>
           </form>
           <button v-if="settingsAction === 'disable'" type="button" @click="cancelSettingsAction" class="mt-3 w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5">Cancel</button>
-          <div v-if="configured && biometricSupported && biometricConfigured" class="mt-2">
+          <div v-if="configured && biometricSupported && (biometricConfigured || biometricUnavailable)" class="mt-2">
             <button type="button" :disabled="busy || biometricBusy || cooldownSeconds > 0" @click="unlockWithBiometric" class="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-400/25 bg-blue-400/5 px-4 py-3 font-semibold text-blue-200 transition hover:bg-blue-400/10 disabled:opacity-50"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a7 7 0 0 0-7 7v2m14-2a7 7 0 0 0-7-7"/><path d="M8 13v-3a4 4 0 0 1 8 0v3m-9 1c.2 2.5-.2 4.4-1 6m11-6c0 2 .3 3.8 1 5m-7-5v1a18 18 0 0 1-1 6m4-7v2c0 1.7.2 3.2.6 4.5"/></svg>
               <span v-if="biometricBusy" class="h-4 w-4 animate-spin rounded-full border-2 border-blue-200/40 border-t-blue-200"></span>
-              {{ biometricBusy ? 'Checking…' : 'Use passkey' }}
+              {{ biometricBusy ? 'Checking…' : biometricUnavailable ? 'Retry biometric unlock' : 'Unlock with fingerprint / face' }}
             </button>
           </div>
           <p v-if="!configured && !setupInvitation" class="mt-3 text-xs text-slate-500">Device-only lock</p>
@@ -63,6 +63,7 @@ const busy = ref(false);
 const message = ref("");
 const messageIsError = ref(false);
 const biometricConfigured = ref(false);
+const biometricUnavailable = ref(false);
 const biometricSupported = ref(false);
 const biometricBusy = ref(false);
 const cooldownSeconds = ref(0);
@@ -151,6 +152,7 @@ const loadState = () => {
 const refreshBiometricStatus = async () => {
   if (biometricStatusRequest) return biometricStatusRequest;
   biometricSupported.value = isDeviceAuthenticationSupported();
+  biometricUnavailable.value = false;
   if (!biometricSupported.value) {
     biometricConfigured.value = false;
     biometricStatusLoaded = true;
@@ -159,7 +161,10 @@ const refreshBiometricStatus = async () => {
   biometricStatusRequest = (async () => {
     try {
       biometricConfigured.value = await getBiometricStatus();
-    } catch {
+    } catch (error) {
+      biometricUnavailable.value = true;
+      message.value = error instanceof Error ? error.message : "Biometric service unavailable. Use your PIN.";
+      messageIsError.value = true;
       // Keep the last known status while offline; PIN remains available.
       if (!biometricStatusLoaded) biometricConfigured.value = false;
     } finally {
@@ -177,6 +182,7 @@ const unlockWithBiometric = async () => {
   messageIsError.value = false;
   try {
     await verifyBiometricDevice();
+    biometricUnavailable.value = false;
     clearFailedAttempts();
     await unlock();
   } catch (error) {
