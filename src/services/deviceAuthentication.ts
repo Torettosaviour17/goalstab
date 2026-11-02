@@ -2,6 +2,20 @@ import api from "@/services/api";
 
 type JsonOptions = Record<string, any>;
 
+const explainDeviceError = (error: any, action: string): Error => {
+  const status = error?.response?.status;
+  const message = error?.response?.data?.msg || error?.response?.data?.message;
+  if (status === 404 && message === "API route not found") {
+    return new Error("Biometric setup is not available on the connected server yet (404). The backend needs to be redeployed with the latest WebAuthn routes.");
+  }
+  if (status === 404) {
+    return new Error(message || `Biometric ${action} endpoint was not found (404). Check the backend deployment and API URL.`);
+  }
+  if (status === 401) return new Error("Your session expired. Please sign in again before setting up biometrics.");
+  if (status === 403) return new Error(message || "This app address is not allowed for device authentication.");
+  return new Error(message || (error instanceof Error && !error?.response ? error.message : `Unable to ${action} biometrics. Please try again.`));
+};
+
 const encodeBase64Url = (value: ArrayBuffer | ArrayBufferView) => {
   const bytes =
     value instanceof ArrayBuffer
@@ -91,7 +105,12 @@ export const registerBiometricDevice = async () => {
     throw new Error("This installed browser does not support secure device authentication.");
   }
 
-  const { data: options } = await api.post("/auth/webauthn/register/options");
+  let options: JsonOptions;
+  try {
+    ({ data: options } = await api.post("/auth/webauthn/register/options"));
+  } catch (error) {
+    throw explainDeviceError(error, "set up");
+  }
   const credential = (await navigator.credentials.create({
     publicKey: toCreationOptions(options),
   })) as PublicKeyCredential | null;
@@ -110,7 +129,12 @@ export const verifyBiometricDevice = async () => {
     throw new Error("Secure device authentication is not available on this device.");
   }
 
-  const { data: options } = await api.post("/auth/webauthn/auth/options");
+  let options: JsonOptions;
+  try {
+    ({ data: options } = await api.post("/auth/webauthn/auth/options"));
+  } catch (error) {
+    throw explainDeviceError(error, "verify");
+  }
   const credential = (await navigator.credentials.get({
     publicKey: toRequestOptions(options),
   })) as PublicKeyCredential | null;
