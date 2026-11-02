@@ -6,9 +6,12 @@ const crypto = require("crypto");
 const { OAuth2Client } = require("google-auth-library");
 const User = require("../models/User");
 const auth = require("../middleware/auth");
+const { createRateLimiter } = require("../middleware/rateLimit");
 const { sendEmailToUser } = require("../services/emailService");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const authLimiter = createRateLimiter({ max: 20 });
+const resetLimiter = createRateLimiter({ max: 5 });
 
 // Escape user-provided display names before rendering them in HTML email.
 const escapeHtml = (value) =>
@@ -31,7 +34,7 @@ const googleUserResponse = (user) => ({
 
 // @route   POST api/auth/register
 // @desc    Register a new user
-router.post("/register", async (req, res) => {
+router.post("/register", authLimiter, async (req, res) => {
   const { name, email, password } = req.body;
 
   // Validation
@@ -99,7 +102,7 @@ router.post("/register", async (req, res) => {
 });
 
 // @route   POST api/auth/login
-router.post("/login", async (req, res) => {
+router.post("/login", authLimiter, async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ msg: "Please provide email and password" });
@@ -137,7 +140,7 @@ router.post("/login", async (req, res) => {
 });
 
 // @route   POST api/auth/google-signin
-router.post("/google-signin", async (req, res) => {
+router.post("/google-signin", authLimiter, async (req, res) => {
   const credential = req.body.credential || req.body.token;
 
   if (!credential) {
@@ -223,7 +226,7 @@ router.post("/google-signin", async (req, res) => {
 
 // @route   POST api/auth/forgot-password
 // @desc    Create a short-lived password reset token and email the reset link
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", resetLimiter, async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
 
   // Always return the same response so account existence is not disclosed.
@@ -264,7 +267,7 @@ router.post("/forgot-password", async (req, res) => {
 
 // @route   POST api/auth/reset-password
 // @desc    Reset password using a single-use token
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", resetLimiter, async (req, res) => {
   const { token, password } = req.body;
   if (!token || !password) {
     return res.status(400).json({ msg: "Reset token and new password are required" });
