@@ -7,7 +7,7 @@
         <div class="flex items-center gap-3">
           <router-link to="/dashboard" class="flex items-center group">
             <img
-              src="@/assets/goaltab-logo.png"
+              src="/mainlogo.png"
               alt="GoalTabs"
               class="w-9 h-9 rounded-lg object-contain group-hover:scale-110 transition-transform duration-300 shadow-lg"
             />
