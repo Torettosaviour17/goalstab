@@ -4,6 +4,16 @@ const cors = require("cors");
 // ⚠️ IMPORTANT: Create the app instance FIRST
 const app = express();
 
+// Baseline API security headers without altering existing API behavior.
+app.disable("x-powered-by");
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+});
+
 // Middleware
 const allowedOrigins = new Set(
   [
