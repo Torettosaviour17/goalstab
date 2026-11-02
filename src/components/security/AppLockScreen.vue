@@ -4,7 +4,7 @@
       <div v-if="visible" class="fixed inset-0 z-[100] flex h-[100dvh] w-screen items-center justify-center overflow-hidden bg-[#080D1A]/[0.98] p-4 backdrop-blur-xl" role="dialog" aria-modal="true" aria-labelledby="app-lock-title" @keydown.esc.prevent>
         <div class="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl"></div>
         <div class="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-purple-500/10 blur-3xl"></div>
-        <section class="relative flex max-h-full w-full max-w-sm flex-col justify-center overflow-hidden rounded-3xl border border-white/10 bg-slate-900/95 p-5 text-center shadow-2xl shadow-black/40 sm:p-7">
+        <section class="relative flex max-h-full w-full max-w-xl flex-col justify-center overflow-hidden rounded-3xl border border-white/10 bg-slate-900/95 p-7 text-center shadow-2xl shadow-black/40 sm:p-10">
           <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-500/10 text-blue-300">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><path d="M12 14v3" /></svg>
           </div>
@@ -16,7 +16,12 @@
           </div>
           <form v-else class="mt-5 space-y-3" @submit.prevent="submitPin">
             <label for="app-pin" class="sr-only">{{ configured ? 'Enter your 6-digit PIN' : 'Choose a 6-digit PIN' }}</label>
-            <input id="app-pin" v-model="pin" inputmode="numeric" autocomplete="one-time-code" type="password" pattern="[0-9]{6}" minlength="6" maxlength="6" required :disabled="busy || cooldownSeconds > 0" class="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3.5 text-center text-2xl tracking-[0.55em] text-white outline-none transition placeholder:tracking-normal placeholder:text-slate-600 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60" placeholder="••••••" aria-describedby="app-lock-message" />
+            <div class="relative mx-auto w-full max-w-md">
+              <div class="grid grid-cols-6 gap-2 sm:gap-3" aria-hidden="true">
+                <div v-for="index in 6" :key="index" class="flex h-14 items-center justify-center rounded-xl border-2 text-2xl transition-colors duration-200 sm:h-20" :class="unlockSuccess ? 'border-green-400 bg-green-500/20 text-green-300' : index <= pin.length ? 'border-blue-400 bg-blue-500/15 text-white' : 'border-slate-600 bg-slate-950 text-slate-500'">{{ index <= pin.length ? '●' : '·' }}</div>
+              </div>
+              <input id="app-pin" v-model="pin" inputmode="numeric" autocomplete="off" type="password" pattern="[0-9]{6}" minlength="6" maxlength="6" required :disabled="busy || cooldownSeconds > 0" class="absolute inset-0 h-full w-full cursor-text opacity-0" aria-describedby="app-lock-message" aria-label="Enter six digit app PIN" />
+            </div>
             <p id="app-lock-message" class="min-h-5 text-sm" :class="messageIsError ? 'text-red-300' : 'text-slate-400'">{{ cooldownSeconds > 0 ? 'Too many attempts. Try again in ' + cooldownSeconds + 's.' : message }}</p>
             <button type="submit" :disabled="busy || cooldownSeconds > 0 || pin.length !== 6" class="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">
               <span v-if="busy" class="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
@@ -53,6 +58,7 @@ const setupInvitation = ref(false);
 const setupMode = ref(false);
 const settingsAction = ref<"disable" | null>(null);
 const pin = ref("");
+const unlockSuccess = ref(false);
 const busy = ref(false);
 const message = ref("");
 const messageIsError = ref(false);
@@ -122,6 +128,7 @@ const loadState = () => {
   const current = keys();
   configured.value = Boolean(localStorage.getItem(current.salt) && localStorage.getItem(current.hash));
   pin.value = "";
+  unlockSuccess.value = false;
   setupMode.value = false;
   setupInvitation.value = false;
   message.value = configured.value ? "Your account is still signed in. App unlock is required." : "This PIN is only for this device.";
@@ -171,7 +178,7 @@ const unlockWithBiometric = async () => {
   try {
     await verifyBiometricDevice();
     clearFailedAttempts();
-    unlock();
+    await unlock();
   } catch (error) {
     message.value =
       (error instanceof Error ? error.message : "Device verification failed.") +
@@ -236,8 +243,11 @@ const noteFailedAttempt = () => {
   }
 };
 
-const unlock = () => {
+const unlock = async () => {
+  unlockSuccess.value = true;
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 260));
   visible.value = false;
+  unlockSuccess.value = false;
   pin.value = "";
   message.value = "";
   messageIsError.value = false;
@@ -262,7 +272,7 @@ const submitPin = async () => {
       configured.value = true;
       setupInvitation.value = false;
       setupMode.value = false;
-      unlock();
+      await unlock();
       return;
     }
     const saltValue = localStorage.getItem(current.salt);

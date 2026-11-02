@@ -98,7 +98,11 @@ export const registerBiometricDevice = async () => {
 
   if (!credential) throw new Error("Device authentication setup was cancelled.");
 
-  await api.post("/auth/webauthn/register/verify", serializeRegistration(credential));
+  try {
+    await api.post("/auth/webauthn/register/verify", serializeRegistration(credential));
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.msg || error?.response?.data?.message || "Could not verify this device passkey. Check that your phone has a screen lock and try again.");
+  }
 };
 
 export const verifyBiometricDevice = async () => {
@@ -113,7 +117,11 @@ export const verifyBiometricDevice = async () => {
 
   if (!credential) throw new Error("Device verification was cancelled.");
 
-  await api.post("/auth/webauthn/auth/verify", serializeAuthentication(credential));
+  try {
+    await api.post("/auth/webauthn/auth/verify", serializeAuthentication(credential));
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.msg || error?.response?.data?.message || "Device verification failed. Use your PIN to unlock.");
+  }
 };
 
 export const removeBiometricDevice = async () => {
