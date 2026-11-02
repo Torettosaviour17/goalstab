@@ -21,7 +21,7 @@
       <!-- Logo and welcome -->
       <div class="text-center mb-5 sm:mb-8 animate-fade-in">
         <img
-          src="@/assets/goaltab-logo.png"
+          src="/mainlogo.png"
           alt="GoalTabs"
           class="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-2xl shadow-2xl object-contain"
         />
