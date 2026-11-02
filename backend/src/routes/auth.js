@@ -80,7 +80,7 @@ router.post("/register", authLimiter, async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "14d" },
       (err, token) => {
         if (err) throw err;
         res.status(201).json({
@@ -118,7 +118,7 @@ router.post("/login", authLimiter, async (req, res) => {
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: "7d" },
+      { expiresIn: "14d" },
       (err, token) => {
         if (err) throw err;
         res.json({
@@ -202,7 +202,7 @@ router.post("/google-signin", authLimiter, async (req, res) => {
 
     const jwtPayload = { user: { id: user.id } };
     const sessionToken = jwt.sign(jwtPayload, process.env.JWT_SECRET, {
-      expiresIn: "7d",
+      expiresIn: "14d",
     });
 
     return res.json({
