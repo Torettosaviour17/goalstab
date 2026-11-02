@@ -188,13 +188,13 @@
         </button>
       </div>
       <div class="glass-card overflow-x-auto">
-        <table class="w-full mobile-card-table">
+        <table class="w-full table-fixed min-w-[900px] mobile-card-table">
           <thead>
             <tr
               class="text-left text-sm text-gray-400 border-b border-gray-800"
             >
               <th class="p-4">User</th>
-              <th class="p-4">Goal</th>
+              <th class="p-4 w-[220px]">Goal</th>
               <th class="p-4">Amount</th>
               <th class="p-4">Account</th>
               <th class="p-4">Requested</th>
@@ -293,8 +293,8 @@
               :key="goal._id"
               class="border-b border-gray-800"
             >
-              <td class="p-4 text-white" data-label="User">{{ goal.user?.name || "Unknown" }}</td>
-              <td class="p-4 text-gray-300" data-label="Goal">{{ goal.title }}</td>
+              <td class="p-4 text-white max-w-[160px]" data-label="User"><span class="block truncate" :title="goal.user?.name || 'Unknown'">{{ goal.user?.name || "Unknown" }}</span></td>
+              <td class="p-4 text-gray-300 max-w-[220px] min-w-0" data-label="Goal"><span class="block truncate" :title="goal.title">{{ goal.title }}</span></td>
               <td class="p-4 capitalize" data-label="Type">{{ goal.goalType }}</td>
               <td class="p-4 text-white" data-label="Target">₦{{ formatNumber(goal.target) }}</td>
               <td class="p-4 text-white" data-label="Saved">₦{{ formatNumber(goal.saved) }}</td>
@@ -316,16 +316,16 @@
                 </span>
               </td>
               <td class="p-4" data-label="Actions">
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-wrap">
                   <button
-                    v-if="goal.goalType === 'product'"
+                    v-if="goal.goalType === 'product' && goal.progress >= 100"
                     @click="markDelivered(goal)"
                     class="text-sm px-3 py-1 rounded-lg bg-success/20 hover:bg-success/30 text-success transition"
                   >
                     Mark Delivered
                   </button>
                   <button
-                    v-if="goal.goalType === 'service'"
+                    v-if="goal.goalType === 'service' && goal.progress >= 100"
                     @click="openServiceModal(goal)"
                     class="text-sm px-3 py-1 rounded-lg bg-primary-500/20 hover:bg-primary-500/30 text-primary-300 transition"
                   >
