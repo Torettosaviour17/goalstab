@@ -347,17 +347,19 @@ const fetchDashboardData = async () => {
   hasError.value = false;
 
   try {
-    // Wait for every dashboard request to settle. The preloader follows real
-    // readiness and never waits for an artificial minimum display duration.
-    const results = await Promise.allSettled([
+    // Do not hold the dashboard skeleton for secondary analytics requests.
+    const primaryResults = await Promise.allSettled([
       goalsStore.fetchGoals(),
       accountsStore.fetchAccounts(),
+    ]);
+    hasError.value = primaryResults.every((result) => result.status === "rejected");
+
+    // Reporting and recent activity update reactively after first render.
+    void Promise.allSettled([
       transactionsStore.fetchRecentTransactions(),
       analyticsStore.fetchLifetimeStats(),
       analyticsStore.fetchOverview(),
     ]);
-
-    hasError.value = results.some((result) => result.status === "rejected");
   } catch (err) {
     console.error(err);
     hasError.value = true;
