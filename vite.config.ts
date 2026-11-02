@@ -12,13 +12,13 @@ export default defineConfig({
       registerType: "autoUpdate",
       // Register the service worker from the authenticated app only. The public website remains a normal website.
       injectRegister: false,
-      includeAssets: ["icons/*.png", "vite.svg"],
+      includeAssets: ["icons/*.png", "mainlogo.png", "GoalTabsSplash.png"],
       manifest: {
         name: "GoalTabs",
         short_name: "GoalTabs",
         description: "Smart savings & goal-tracking platform",
-        theme_color: "#3b82f6",
-        background_color: "#0f172a",
+        theme_color: "#080d2c",
+        background_color: "#080d2c",
         display: "standalone",
         start_url: "/login",
         icons: [
