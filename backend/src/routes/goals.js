@@ -105,6 +105,10 @@ const createGoal = async (req, res) => {
       );
     }
 
+    if (req.body.usePlatformFulfillment !== undefined && typeof req.body.usePlatformFulfillment !== "boolean") {
+      return res.status(400).json({ msg: "Fulfillment preference must be true or false" });
+    }
+
     const newGoal = new Goal({
       ...goalFields,
       user: req.user.id,
