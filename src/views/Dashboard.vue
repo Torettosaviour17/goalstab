@@ -1,11 +1,11 @@
 <template>
   <div class="container mx-auto px-4 py-6 md:px-8 md:py-10">
     <!-- Skeleton Loader -->
-    <SkeletonDashboard v-if="isLoading" />
+    <SkeletonDashboard v-if="isLoading && showSkeleton" />
 
     <!-- Error State -->
     <div
-      v-else-if="hasError"
+      v-else-if="!isLoading && hasError"
       class="flex flex-col items-center justify-center text-center py-20"
     >
       <div class="text-5xl mb-4">⚠️</div>
@@ -20,7 +20,7 @@
 
     <!-- Real Content -->
     <div
-      v-else
+      v-else-if="!isLoading"
       v-motion
       :initial="{ opacity: 0, y: 20 }"
       :enter="{ opacity: 1, y: 0 }"
@@ -224,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { storeToRefs } from "pinia";
 
 // Stores
@@ -270,7 +270,16 @@ const { shouldShowTour, startTour } = useOnboardingTour();
 
 // ── Loading / error ────────────────────────────────────
 const isLoading = ref(true);
+const showSkeleton = ref(false);
 const hasError = ref(false);
+let skeletonTimer: ReturnType<typeof setTimeout> | undefined;
+
+const stopSkeletonTimer = () => {
+  if (skeletonTimer !== undefined) clearTimeout(skeletonTimer);
+  skeletonTimer = undefined;
+};
+
+onBeforeUnmount(stopSkeletonTimer);
 
 // ── Store refs ─────────────────────────────────────────
 const {
@@ -343,8 +352,14 @@ let lastCompletedGoalId: string | null = null;
 
 // ── Data fetching ──────────────────────────────────────
 const fetchDashboardData = async () => {
+  stopSkeletonTimer();
   isLoading.value = true;
+  showSkeleton.value = false;
   hasError.value = false;
+  // Fast responses should not flash a loader. Show it only if loading persists.
+  skeletonTimer = setTimeout(() => {
+    if (isLoading.value) showSkeleton.value = true;
+  }, 180);
 
   try {
     // Do not hold the dashboard skeleton for secondary analytics requests.
@@ -364,7 +379,9 @@ const fetchDashboardData = async () => {
     console.error(err);
     hasError.value = true;
   } finally {
+    stopSkeletonTimer();
     isLoading.value = false;
+    showSkeleton.value = false;
   }
 };
 
