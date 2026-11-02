@@ -10,6 +10,13 @@ const { sendEmailToUser } = require("../services/emailService");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Escape user-provided display names before rendering them in HTML email.
+const escapeHtml = (value) =>
+  String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;",
+    '"': "&quot;", "'": "&#39;",
+  })[char]);
+
 const googleUserResponse = (user) => ({
   id: user.id,
   name: user.name,
@@ -53,17 +60,17 @@ router.post("/register", async (req, res) => {
     user = new User({ name, email, password });
     await user.save();
 
-    // Send welcome email
-    await sendEmailToUser(
+    // Email delivery is not required to complete registration.
+    void sendEmailToUser(
       user.id,
       "Welcome to GoalTabs! 🎉",
-      `<h1>Welcome, ${user.name}!</h1>
+      `<h1>Welcome, ${escapeHtml(user.name)}!</h1>
        <p>We're excited to have you on board. Start by creating your first goal and begin your savings journey.</p>
-       <p>If you have any questions, feel free to reply to this email.</p>
-       <br/>
        <p>Happy saving!</p>
        <p>– The GoalTabs Team</p>`,
-    );
+    ).catch((emailError) => {
+      console.error("Welcome email delivery failed:", emailError);
+    });
 
     // Generate JWT token
     const payload = { user: { id: user.id } };
