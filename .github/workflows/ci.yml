@@ -38,5 +38,7 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package.json
       - run: npm install
+      - name: Backend regression tests
+        run: node --test test/*.test.js
       - name: Syntax-check backend JavaScript
         run: find . -type f -name "*.js" -not -path "./node_modules/*" -print0 | xargs -0 -n1 node --check
