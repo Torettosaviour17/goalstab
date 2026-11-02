@@ -4,8 +4,8 @@
     @click="$emit('click')"
   >
     <!-- Header -->
-    <div class="flex items-start justify-between mb-4">
-      <div class="flex items-center gap-3">
+    <div class="flex min-w-0 items-start justify-between gap-2 mb-4">
+      <div class="flex min-w-0 flex-1 items-center gap-3">
         <div
           class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-linear-to-br shrink-0 overflow-hidden"
           :class="productImage ? 'bg-white p-1.5' : goal.color"
@@ -19,9 +19,9 @@
           />
           <span v-else>{{ goal.icon }}</span>
         </div>
-        <div class="min-w-0">
-          <h3 class="font-bold text-white truncate">{{ goal.title }}</h3>
-          <p class="text-xs text-gray-400">{{ goal.category || "General" }}</p>
+        <div class="min-w-0 flex-1">
+          <h3 class="font-bold text-white truncate" :title="goal.title">{{ goal.title }}</h3>
+          <p class="text-xs text-gray-400 truncate">{{ goal.category || "General" }}</p>
         </div>
       </div>
       <span

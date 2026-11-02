@@ -73,7 +73,7 @@ export const useAdminStore = defineStore("admin", () => {
 
   const fetchPendingFulfillment = async () => {
     try {
-      const { data } = await api.get("/admin/fulfillment/pending");
+      const { data } = await api.get("/admin/fulfillment/queue");
       pendingFulfillment.value = data;
     } catch (err) {
       uiStore.addToast({
