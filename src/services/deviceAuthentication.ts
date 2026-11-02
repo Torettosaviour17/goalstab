@@ -13,7 +13,7 @@ const explainDeviceError = (error: any, action: string): Error => {
   }
   if (status === 401) return new Error("Your session expired. Please sign in again before setting up biometrics.");
   if (status === 403) return new Error(message || "This app address is not allowed for device authentication.");
-  return new Error(message || (error instanceof Error && !error?.response ? error.message : `Unable to ${action} biometrics. Please try again.`));
+  return new Error(message || (error instanceof Error && !status ? error.message : `Unable to ${action} biometrics. Please try again.`));
 };
 
 const encodeBase64Url = (value: ArrayBuffer | ArrayBufferView) => {
