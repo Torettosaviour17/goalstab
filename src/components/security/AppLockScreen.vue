@@ -70,6 +70,7 @@ const cooldownSeconds = ref(0);
 let cooldownTimer: number | undefined;
 let hiddenAt = 0;
 const BACKGROUND_LOCK_THRESHOLD_MS = 1500;
+const unlockedReloadKey = () => "goaltabs-unlocked-reload:" + encodeURIComponent(props.userId);
 let biometricStatusLoaded = false;
 let autoBiometricAttempted = false;
 let biometricStatusRequest: Promise<void> | null = null;
@@ -140,8 +141,13 @@ const loadState = () => {
   if (justAuthenticated) sessionStorage.removeItem("goaltabs-authenticated-this-session");
 
   if (configured.value) {
-    // Successful account login is already verification. Lock on later app resumes.
-    visible.value = !justAuthenticated;
+    // A page refresh is not leaving the app. Preserve the unlocked state only
+    // across a real browser reload, never a new launch or a background resume.
+    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    const isReload = navigation?.type === "reload";
+    const recentlyUnlocked = Number(sessionStorage.getItem(unlockedReloadKey()) || 0);
+    const resumeReload = isReload && recentlyUnlocked > 0 && Date.now() - recentlyUnlocked < 10 * 60 * 1000;
+    visible.value = !justAuthenticated && !resumeReload;
   } else {
     // No PIN is mandatory. Invite once, allow skip, and never block app entry.
     visible.value = !localStorage.getItem(current.promptDismissed);
@@ -259,6 +265,7 @@ const unlock = async () => {
   unlockSuccess.value = true;
   await new Promise<void>((resolve) => window.setTimeout(resolve, 90));
   visible.value = false;
+  sessionStorage.setItem(unlockedReloadKey(), String(Date.now()));
   unlockSuccess.value = false;
   pin.value = "";
   message.value = "";
@@ -335,6 +342,7 @@ const handleVisibilityChange = () => {
   // a delayed lock on a later navigation or visibility event.
   hiddenAt = 0;
   if (awayFor >= BACKGROUND_LOCK_THRESHOLD_MS && props.userId) {
+    sessionStorage.removeItem(unlockedReloadKey());
     loadState();
     void refreshBiometricStatus();
   }
