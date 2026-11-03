@@ -29,6 +29,11 @@
       <!-- Welcome Banner -->
       <WelcomeBanner :user-name="userName" />
 
+      <router-link to="/wallet" class="mb-7 flex items-center justify-between gap-4 rounded-2xl border border-blue-400/20 bg-gradient-to-r from-blue-950/80 to-slate-900 p-5 text-white transition hover:border-blue-400/50">
+        <div class="min-w-0"><p class="text-xs font-semibold uppercase tracking-widest text-blue-300">GoalTabs Wallet</p><h2 class="mt-1 text-xl font-bold">Your wallet</h2><p class="mt-1 text-sm text-slate-400">Add money, transfer and withdraw when wallet services launch.</p></div>
+        <span class="shrink-0 rounded-xl bg-blue-500/20 px-3 py-2 text-sm font-semibold text-blue-200">Open →</span>
+      </router-link>
+
       <!-- Stats Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
         <div
