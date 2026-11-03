@@ -1,11 +1,11 @@
 <template>
   <Teleport to="body">
-    <Transition name="app-lock">
-      <div v-if="visible" class="fixed inset-0 z-[100] flex h-[100dvh] w-[100vw] items-center justify-center overflow-hidden bg-[#080D1A] p-0" role="dialog" aria-modal="true" aria-labelledby="app-lock-title" @keydown.esc.prevent>
+    <Transition name="app-lock" appear>
+      <div v-if="visible" class="fixed inset-0 z-[99999] flex h-[100dvh] w-full items-center justify-center overflow-hidden bg-[#080D1A] p-0" role="dialog" aria-modal="true" aria-labelledby="app-lock-title" @keydown.esc.prevent>
         <div class="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl"></div>
         <div class="pointer-events-none absolute -bottom-24 -right-24 h-72 w-72 rounded-full bg-purple-500/10 blur-3xl"></div>
-        <section class="relative flex h-[100dvh] w-full flex-col justify-center overflow-y-auto bg-slate-900 p-6 text-center sm:p-12">
-          <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-500/10 text-blue-300">
+        <section class="relative flex h-[100dvh] w-full flex-col items-center justify-center overflow-y-auto bg-gradient-to-b from-[#0c1431] via-[#0b1128] to-[#080d1a] px-5 py-8 text-center sm:px-12">
+          <img src="/mainlogo.png" alt="GoalTabs" class="mx-auto mb-7 h-20 w-20 rounded-[1.4rem] object-contain shadow-2xl shadow-blue-900/30" /><div class="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-400/20 bg-blue-500/10 text-blue-300">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><path d="M12 14v3" /></svg>
           </div>
           <h1 id="app-lock-title" class="text-xl font-bold text-white">{{ settingsAction === 'disable' ? 'Turn off app lock' : setupInvitation && !setupMode ? 'Secure this device?' : configured ? 'Unlock GoalTabs' : 'Create app PIN' }}</h1>
@@ -14,7 +14,7 @@
             <button type="button" @click="beginSetup" class="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-950/40 transition hover:brightness-110"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Set PIN</button>
             <button type="button" @click="skipSetup" class="w-full rounded-2xl border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5">Skip</button>
           </div>
-          <form v-else class="mt-5 space-y-3" @submit.prevent="submitPin">
+          <form v-else class="mt-7 w-full max-w-sm space-y-4" @submit.prevent="submitPin">
             <label for="app-pin" class="sr-only">{{ configured ? 'Enter your 6-digit PIN' : 'Choose a 6-digit PIN' }}</label>
             <div class="relative mx-auto w-full max-w-md">
               <div class="grid grid-cols-6 gap-2 sm:gap-3" aria-hidden="true">
@@ -29,10 +29,10 @@
             </button>
           </form>
           <button v-if="settingsAction === 'disable'" type="button" @click="cancelSettingsAction" class="mt-3 w-full rounded-2xl border border-slate-700 px-4 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/5">Cancel</button>
-          <div v-if="configured && biometricSupported && (biometricConfigured || biometricUnavailable)" class="mt-2">
+          <div v-if="configured && biometricSupported && (biometricConfigured || biometricUnavailable)" class="mt-4 w-full max-w-sm">
             <button type="button" :disabled="busy || biometricBusy || cooldownSeconds > 0" @click="unlockWithBiometric" class="flex w-full items-center justify-center gap-2 rounded-2xl border border-blue-400/25 bg-blue-400/5 px-4 py-3 font-semibold text-blue-200 transition hover:bg-blue-400/10 disabled:opacity-50"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3a7 7 0 0 0-7 7v2m14-2a7 7 0 0 0-7-7"/><path d="M8 13v-3a4 4 0 0 1 8 0v3m-9 1c.2 2.5-.2 4.4-1 6m11-6c0 2 .3 3.8 1 5m-7-5v1a18 18 0 0 1-1 6m4-7v2c0 1.7.2 3.2.6 4.5"/></svg>
               <span v-if="biometricBusy" class="h-4 w-4 animate-spin rounded-full border-2 border-blue-200/40 border-t-blue-200"></span>
-              {{ biometricBusy ? 'Checking…' : biometricUnavailable ? 'Retry biometric unlock' : 'Unlock with fingerprint / face' }}
+              {{ biometricBusy ? 'Checking…' : biometricUnavailable ? 'Retry biometric unlock' : 'Unlock with fingerprint' }}
             </button>
           </div>
           <p v-if="!configured && !setupInvitation" class="mt-3 text-xs text-slate-500">Device-only lock</p>
@@ -71,6 +71,7 @@ let cooldownTimer: number | undefined;
 let hiddenAt = 0;
 const BACKGROUND_LOCK_THRESHOLD_MS = 1500;
 let biometricStatusLoaded = false;
+let autoBiometricAttempted = false;
 let biometricStatusRequest: Promise<void> | null = null;
 
 const keys = () => {
@@ -147,6 +148,7 @@ const loadState = () => {
     setupInvitation.value = visible.value;
   }
   updateCooldown();
+  if (visible.value && configured.value && !justAuthenticated) autoBiometricAttempted = false;
 };
 
 const refreshBiometricStatus = async () => {
@@ -161,6 +163,10 @@ const refreshBiometricStatus = async () => {
   biometricStatusRequest = (async () => {
     try {
       biometricConfigured.value = await getBiometricStatus();
+      if (visible.value && configured.value && biometricConfigured.value && !autoBiometricAttempted && !biometricBusy.value) {
+        autoBiometricAttempted = true;
+        void unlockWithBiometric();
+      }
     } catch (error) {
       biometricUnavailable.value = true;
       message.value = error instanceof Error ? error.message : "Biometric service unavailable. Use your PIN.";
@@ -251,7 +257,7 @@ const noteFailedAttempt = () => {
 
 const unlock = async () => {
   unlockSuccess.value = true;
-  await new Promise<void>((resolve) => window.setTimeout(resolve, 260));
+  await new Promise<void>((resolve) => window.setTimeout(resolve, 90));
   visible.value = false;
   unlockSuccess.value = false;
   pin.value = "";
