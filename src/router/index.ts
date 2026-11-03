@@ -51,6 +51,12 @@ const routes = [
 
   // ── PROTECTED ROUTES (authenticated users only) ──
   {
+    path: "/wallet",
+    name: "wallet",
+    component: () => import("@/views/Wallet.vue"),
+    meta: { requiresAuth: true, title: "Wallet" },
+  },
+  {
     path: "/dashboard",
     name: "dashboard",
     component: () => import("@/views/Dashboard.vue"),
