@@ -22,7 +22,9 @@ export default defineConfig({
         theme_color: "#080d2c",
         background_color: "#080d2c",
         display: "standalone",
-        start_url: "/login",
+        id: "/",
+        start_url: "/",
+        scope: "/",
         icons: [
           { src: "/mainlogo.png", sizes: "any", type: "image/png", purpose: "any" },
         ],
