@@ -45,11 +45,12 @@ const isActive = (path: string) => route.path === path || (path === "/goals" && 
 const navItems = [
   { name: "Dashboard", path: "/dashboard", icon: "📊" },
   { name: "Goals", path: "/goals", icon: "🎯" },
-  { name: "Transactions", path: "/transactions", icon: "💳" },
+  { name: "Wallet", path: "/wallet", icon: "💳" },
   { name: "Accounts", path: "/accounts", icon: "🏦" },
 ];
 
 const moreItems = [
+  { name: "Transactions", path: "/transactions", icon: "↗" },
   { name: "Analytics", path: "/analytics", icon: "📈" },
   { name: "Settings", path: "/settings", icon: "⚙️" },
   { name: "Help & Support", path: "/help", icon: "❓" },
