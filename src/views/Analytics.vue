@@ -9,6 +9,8 @@
         <p class="text-gray-400">Track your savings performance</p>
       </div>
 
+      <router-link to="/transactions" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-primary-500/40 bg-primary-500/10 px-4 py-2.5 text-sm font-semibold text-primary-300 hover:bg-primary-500/20">View transactions →</router-link>
+
       <!-- Period selector -->
       <div class="flex gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
         <button
