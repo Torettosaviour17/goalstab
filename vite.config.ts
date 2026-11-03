@@ -16,8 +16,8 @@ export default defineConfig({
       // hundreds of legacy Windows tile images on every PWA installation.
       includeAssets: ["mainlogo.png", "GoalTabsSplash.png"],
       manifest: {
-        name: "GoTabs",
-        short_name: "GoTabs",
+        name: "GoalTabs",
+        short_name: "GoalTabs",
         description: "Smart savings & goal-tracking platform",
         theme_color: "#080d2c",
         background_color: "#080d2c",
