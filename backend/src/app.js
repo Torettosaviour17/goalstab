@@ -48,6 +48,7 @@ const adminRoutes = require("./routes/admin");
 const analyticsRoutes = require("./routes/analytics");
 const productRoutes = require("./routes/products");
 const paystackRoutes = require("./routes/paystack");
+const walletRoutes = require("./routes/wallet");
 
 // Public Google OAuth configuration. The client ID is not a secret and
 // is safe for the browser to receive at runtime.
@@ -69,6 +70,7 @@ app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/admin", adminRoutes); // ✅ admin routes used here
 app.use("/api/products", productRoutes);
 app.use("/api/paystack", paystackRoutes);
+app.use("/api/wallet", walletRoutes);
 
 // Test route
 app.get("/api/test", (req, res) => {
