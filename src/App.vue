@@ -1,8 +1,7 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"
+    class="min-h-screen overflow-x-clip bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"
   >
-    <div v-if="showStartupSplash" class="fixed inset-0 z-[9999] bg-[#080d2c] flex items-center justify-center" role="status" aria-label="Opening GoalTabs"><img src="/GoalTabsSplash.png" alt="GoalTabs" class="w-full h-full object-cover object-center" /></div>
 
     <!-- Animated background elements (always visible) -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
@@ -55,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from "vue";
+import { computed, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
 
@@ -74,8 +73,6 @@ import Confetti from "@/components/shared/Confetti.vue";
 import AppLockScreen from "@/components/security/AppLockScreen.vue";
 
 // ── Stores ────────────────────────────────────────────
-const showStartupSplash = ref(false);
-let splashTimer: ReturnType<typeof setTimeout> | undefined;
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
