@@ -80,6 +80,7 @@ const navItems = computed(() => {
   const baseItems = [
     { name: "Dashboard", path: "/dashboard", icon: "📊" },
     { name: "Goals", path: "/goals", icon: "🎯" },
+    { name: "Wallet", path: "/wallet", icon: "💳" },
     { name: "Analytics", path: "/analytics", icon: "📈" },
     { name: "Transactions", path: "/transactions", icon: "💳" },
     { name: "Accounts", path: "/accounts", icon: "🏦" },
