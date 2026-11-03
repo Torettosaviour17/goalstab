@@ -63,7 +63,21 @@ const enableAppPWA = () => {
   }
 
   if ("serviceWorker" in navigator) {
-    void navigator.serviceWorker.register("/sw.js", { scope: "/" });
+    void navigator.serviceWorker.register("/sw.js", { scope: "/" }).then((registration) => {
+      // Installed PWA checks for the latest release whenever it becomes active.
+      const checkForUpdate = () => { if (navigator.onLine) void registration.update().catch(() => {}); };
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") checkForUpdate();
+      });
+      window.addEventListener("focus", checkForUpdate);
+      checkForUpdate();
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+    }).catch((error) => { if (import.meta.env.DEV) console.warn("PWA registration failed", error); });
   }
   pwaRegistered = true;
 };
