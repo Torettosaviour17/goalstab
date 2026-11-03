@@ -93,6 +93,12 @@ const routes = [
     meta: { requiresAuth: true, title: "Settings" },
   },
   {
+    path: "/settings/:section(profile|notifications|security|preferences)",
+    name: "settings-section",
+    component: () => import("@/views/Settings.vue"),
+    meta: { requiresAuth: true, title: "Settings" },
+  },
+  {
     path: "/accounts",
     name: "accounts",
     component: () => import("@/views/Accounts.vue"),
