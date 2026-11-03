@@ -8,13 +8,16 @@ const { validateMoney } = require("./money");
 // Internal service only. Caller MUST supply a result obtained through a
 // provider adapter's authenticated server-side verification, not a browser
 // callback or an unverified webhook body. This is not an API endpoint.
-async function settleVerifiedWalletFunding({ intentId, verified }) {
+async function settleVerifiedWalletFunding({ intentId, providerRegistry }) {
   if (!mongoose.isValidObjectId(intentId)) throw new TypeError("Invalid intent");
-  if (!verified || verified.authenticated !== true || verified.status !== "success" ||
-      typeof verified.reference !== "string" || !verified.reference ||
-      typeof verified.provider !== "string" || !verified.provider) {
-    throw new Error("Authenticated successful provider verification required");
-  }
+  if (!providerRegistry || typeof providerRegistry.get !== "function") throw new TypeError("Provider registry required");
+  // Resolve the intent first; the adapter verifies against the provider API.
+  // No caller-supplied success flag can authorize a wallet credit.
+  const initialIntent = await PaymentIntent.findById(intentId).lean();
+  if (!initialIntent) throw new Error("Payment intent not found");
+  const verified = await providerRegistry.get(initialIntent.provider).verify({ reference: initialIntent.reference });
+  if (!verified || verified.status !== "success" || verified.reference !== initialIntent.reference ||
+      verified.provider !== initialIntent.provider) throw new Error("Provider did not verify payment");
   const money = validateMoney({ amountMinor: verified.amountMinor, currency: verified.currency });
   const session = await mongoose.startSession();
   try {
