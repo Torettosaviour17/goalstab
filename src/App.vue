@@ -2,7 +2,9 @@
   <div
     class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950"
   >
-    <div v-if="showStartupSplash" class="fixed inset-0 z-[9999] bg-[#080d2c] flex items-center justify-center" role="status" aria-label="Opening GoalTabs"><img src="/GoalTabsSplash.png" alt="GoalTabs" class="w-full h-full object-cover object-center" /></div>\n\n    <!-- Animated background elements (always visible) -->
+    <div v-if="showStartupSplash" class="fixed inset-0 z-[9999] bg-[#080d2c] flex items-center justify-center" role="status" aria-label="Opening GoalTabs"><img src="/GoalTabsSplash.png" alt="GoalTabs" class="w-full h-full object-cover object-center" /></div>
+
+    <!-- Animated background elements (always visible) -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
       <div
         class="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse"
@@ -72,7 +74,9 @@ import Confetti from "@/components/shared/Confetti.vue";
 import AppLockScreen from "@/components/security/AppLockScreen.vue";
 
 // ── Stores ────────────────────────────────────────────
-const showStartupSplash = ref(false);\nlet splashTimer: ReturnType<typeof setTimeout> | undefined;\nconst route = useRoute();
+const showStartupSplash = ref(false);
+let splashTimer: ReturnType<typeof setTimeout> | undefined;
+const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
