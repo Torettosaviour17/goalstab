@@ -1,33 +1,44 @@
 <template>
   <div class="container mx-auto px-4 py-6 md:px-6 md:py-8 max-w-5xl">
-      <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
-      <p class="text-gray-400 mb-8">Manage your account preferences</p>
-
-      <!-- Calm, native-style settings navigation: no tile grid or carousel. -->
-      <div class="mb-8 flex items-center gap-4 border-b border-white/10 pb-6">
-        <img v-if="avatarPreview" :src="avatarPreview" alt="Profile" class="h-16 w-16 shrink-0 rounded-full object-cover" />
-        <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-700 text-xl font-semibold text-white">{{ profile.name?.trim().charAt(0).toUpperCase() || 'G' }}</div>
-        <div class="min-w-0 flex-1">
-          <h2 class="truncate text-lg font-semibold text-white">{{ profile.name || 'GoalTabs member' }}</h2>
-          <p class="truncate text-sm text-slate-400">{{ profile.email }}</p>
-          <button type="button" @click="activeTab = 'profile'" class="mt-1 text-sm font-medium text-blue-400 hover:text-blue-300">Manage profile</button>
-        </div>
-      </div>
-
-      <nav aria-label="Settings sections" class="mb-8 overflow-hidden rounded-xl border border-white/10 bg-[#10182c]">
-        <button v-for="(tab, index) in tabs" :key="tab.id" type="button" @click="activeTab = tab.id"
-          :aria-current="activeTab === tab.id ? 'page' : undefined"
-          class="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-white/5"
-          :class="[index ? 'border-t border-white/10' : '', activeTab === tab.id ? 'bg-white/5' : '']">
-          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-700/60 text-lg">{{ tab.icon }}</span>
+      <template v-if="!activeTab">
+        <header class="mb-8">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">ACCOUNT</p>
+          <h1 class="mt-2 text-3xl font-bold text-white">Settings</h1>
+          <p class="mt-2 text-sm text-slate-400">Your account, privacy and preferences.</p>
+        </header>
+        <button type="button" @click="openSection('profile')" class="mb-9 flex w-full items-center gap-4 border-b border-white/10 pb-6 text-left">
+          <img v-if="avatarPreview" :src="avatarPreview" alt="" class="h-16 w-16 shrink-0 rounded-full object-cover" />
+          <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-700 text-xl font-semibold text-white">{{ profile.name?.trim().charAt(0).toUpperCase() || 'G' }}</div>
           <span class="min-w-0 flex-1">
-            <span class="block text-sm font-semibold text-white">{{ tab.name }}</span>
-            <span class="block text-xs text-slate-400">{{ tab.description }}</span>
+            <span class="block truncate text-lg font-semibold text-white">{{ profile.name || 'GoalTabs member' }}</span>
+            <span class="block truncate text-sm text-slate-400">{{ profile.email }}</span>
+            <span class="mt-1 block text-xs text-blue-400">Personal information</span>
           </span>
-          <span class="text-xl text-slate-500" aria-hidden="true">›</span>
+          <span class="text-xl text-slate-400" aria-hidden="true">›</span>
         </button>
-      </nav>
-      <h2 class="mb-5 text-lg font-semibold text-white">{{ tabs.find(t => t.id === activeTab)?.name }}</h2>
+        <div class="mb-3 px-1 text-xs font-semibold uppercase tracking-widest text-slate-400">Account & privacy</div>
+        <nav aria-label="Account settings" class="mb-8 divide-y divide-white/10 border-y border-white/10">
+          <button v-for="tab in tabs.filter(t => t.id === 'security' || t.id === 'notifications')" :key="tab.id" type="button" @click="openSection(tab.id)" class="flex w-full items-center gap-4 py-5 text-left hover:bg-white/5">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-700/40 text-lg text-white">{{ tab.icon }}</span>
+            <span class="min-w-0 flex-1"><span class="block font-medium text-white">{{ tab.name }}</span><span class="block text-xs text-slate-400">{{ tab.description }}</span></span>
+            <span class="text-xl text-slate-500">›</span>
+          </button>
+        </nav>
+        <div class="mb-3 px-1 text-xs font-semibold uppercase tracking-widest text-slate-400">App experience</div>
+        <nav aria-label="App settings" class="divide-y divide-white/10 border-y border-white/10">
+          <button type="button" @click="openSection('preferences')" class="flex w-full items-center gap-4 py-5 text-left hover:bg-white/5">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-700/40 text-lg text-white">⚙</span>
+            <span class="min-w-0 flex-1"><span class="block font-medium text-white">Preferences & appearance</span><span class="block text-xs text-slate-400">Theme, currency and saving defaults</span></span>
+            <span class="text-xl text-slate-500">›</span>
+          </button>
+        </nav>
+        <p class="mt-10 text-center text-xs text-slate-500">GoalTabs · Account settings</p>
+      </template>
+      <template v-else>
+        <button type="button" @click="router.push('/settings')" class="mb-7 inline-flex items-center gap-2 rounded-lg py-2 pr-4 text-sm font-medium text-slate-300 hover:text-white" aria-label="Back to settings"><span class="text-xl">‹</span> Settings</button>
+        <h1 class="mb-2 text-2xl font-bold text-white">{{ tabs.find(t => t.id === activeTab)?.name }}</h1>
+        <p class="mb-8 text-sm text-slate-400">{{ tabs.find(t => t.id === activeTab)?.description }}</p>
+      </template>
 
       <transition name="fade" mode="out-in">
         <!-- Profile -->
@@ -396,7 +407,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, computed, onMounted, onBeforeUnmount } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import BaseButton from "@/components/shared/BaseButton.vue";
 import BaseModal from "@/components/shared/BaseModal.vue";
 import AvatarUploader from "@/components/ui/AvatarUploader.vue";
@@ -423,11 +434,13 @@ import { useLevelStore } from "@/stores/level";
 const levelStore = useLevelStore();
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
 const uiStore = useUIStore();
 const themeStore = useThemeStore();
 
-const activeTab = ref("profile");
+const activeTab = computed(() => typeof route.params.section === "string" ? route.params.section : "");
+const openSection = (section: string) => { void router.push(`/settings/${section}`); };
 const appPinEnabled = ref(false);
 const biometricEnabled = ref(false);
 const biometricSupported = ref(false);
