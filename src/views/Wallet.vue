@@ -24,6 +24,35 @@
         <span v-if="!wallet?.capabilities?.[action.key]" class="text-[11px] text-slate-400">Coming soon</span>
       </button>
     </section>
+    <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div><h2 class="text-lg font-semibold">Smart saving preferences</h2>
+          <p class="mt-1 text-sm text-slate-400">Plan gentle saving rules. No automatic deductions will occur yet.</p></div>
+        <span class="rounded-full bg-blue-500/10 px-3 py-1 text-xs text-blue-200">Planning mode</span>
+      </div>
+      <form class="mt-5 grid gap-4 sm:grid-cols-2" @submit.prevent="savePreferences">
+        <label class="text-sm text-slate-300">Frequency
+          <select v-model="preferences.frequency" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option></select>
+        </label>
+        <label class="text-sm text-slate-300">Percentage (1–20%)
+          <input v-model.number="preferences.percentage" type="number" min="1" max="20" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white" />
+        </label>
+        <label class="text-sm text-slate-300">Monthly saving cap (₦)
+          <input v-model.number="monthlyCapNaira" type="number" min="0" max="1000000" step="1" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white" />
+        </label>
+        <label class="text-sm text-slate-300">Minimum money to leave untouched (₦)
+          <input v-model.number="minimumRemainingNaira" type="number" min="0" max="1000000" step="1" required class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white" />
+        </label>
+        <label class="text-sm text-slate-300">Future funding source
+          <select v-model="preferences.fundingSource" class="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-white"><option value="wallet">GoalTabs wallet</option><option value="connected_account">Connected bank account</option></select>
+        </label>
+        <label class="flex items-center gap-3 text-sm text-slate-300"><input v-model="preferences.smartSaveEnabled" type="checkbox" class="h-4 w-4 accent-blue-500" /> Save my preferences for future activation</label>
+        <div class="sm:col-span-2 flex flex-wrap items-center gap-3">
+          <button type="submit" :disabled="saving" class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">{{ saving ? 'Saving…' : 'Save preferences' }}</button>
+          <p v-if="preferenceMessage" role="status" class="text-sm text-blue-200">{{ preferenceMessage }}</p>
+        </div>
+      </form>
+    </section>
     <div class="grid gap-5 lg:grid-cols-2">
       <section class="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
         <h2 class="text-lg font-semibold">Wallet activity</h2>
@@ -39,12 +68,27 @@
   </div>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import api from "@/services/api";
 type Capability = "fund" | "transfer" | "withdraw" | "saveFromWallet";
 type Wallet = { availableBalance: number | null; status: string; capabilities: Record<Capability, boolean> };
 const wallet = ref<Wallet | null>(null);
 const error = ref("");
+const saving = ref(false);
+const preferenceMessage = ref("");
+const preferences = ref({ smartSaveEnabled: false, frequency: "monthly", percentage: 5, monthlyCapMinor: 0, minimumRemainingMinor: 0, fundingSource: "wallet" });
+const monthlyCapNaira = computed({ get: () => preferences.value.monthlyCapMinor / 100, set: (value: number) => { preferences.value.monthlyCapMinor = Math.round(Number(value) * 100); } });
+const minimumRemainingNaira = computed({ get: () => preferences.value.minimumRemainingMinor / 100, set: (value: number) => { preferences.value.minimumRemainingMinor = Math.round(Number(value) * 100); } });
+const savePreferences = async () => {
+  saving.value = true;
+  preferenceMessage.value = "";
+  try {
+    await api.put("/wallet/preferences", preferences.value);
+    preferenceMessage.value = "Preferences saved. No deductions are active.";
+  } catch (err: any) {
+    preferenceMessage.value = err?.response?.data?.msg || "Could not save preferences.";
+  } finally { saving.value = false; }
+};
 const actions: { key: Capability; label: string; icon: string }[] = [
   { key: "fund", label: "Add money", icon: "＋" },
   { key: "transfer", label: "Transfer", icon: "↗" },
@@ -54,7 +98,7 @@ const actions: { key: Capability; label: string; icon: string }[] = [
 const formatMoney = (amount: number) => new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" }).format(amount);
 const showUnavailable = (label: string) => { error.value = label + " is not yet available."; };
 onMounted(async () => {
-  try { const response = await api.get<Wallet>("/wallet"); wallet.value = response.data; }
+  try { const response = await api.get<Wallet>("/wallet"); wallet.value = response.data; if ((response.data as any).preferences) preferences.value = (response.data as any).preferences; }
   catch { error.value = "Wallet status is unavailable. Please try again later."; }
 });
 </script>
