@@ -36,7 +36,8 @@ const authStore = useAuthStore(pinia);
 const themeStore = useThemeStore(pinia);
 
 // ✅ APPLY THEME IMMEDIATELY (VERY IMPORTANT)
-themeStore.setTheme(themeStore.theme);
+// Theme store applies the saved choice or the browser default during initialization.
+void themeStore.theme;
 
 // GoalTabs has two faces on the same origin:
 // 1. the public website, which stays a normal responsive website;
