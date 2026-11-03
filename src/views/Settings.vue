@@ -280,27 +280,19 @@
                 <option value="GBP">GBP (£)</option>
               </select>
             </div>
-            <div
-              class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-            >
+            <div class="space-y-3 border-b border-white/10 pb-5">
               <div>
-                <p class="font-medium text-white">Theme</p>
-                <p class="text-sm text-gray-400">Choose light or dark mode</p>
+                <p class="font-semibold text-white">Appearance</p>
+                <p class="text-sm text-gray-400">Follow your device or choose your preferred look.</p>
               </div>
-              <div class="flex items-center gap-2">
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    v-model="isDarkMode"
-                    class="sr-only peer"
-                  />
-                  <div
-                    class="w-14 h-7 bg-gray-700 rounded-full peer peer-checked:bg-primary-500 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-full"
-                  ></div>
-                </label>
-                <span class="text-gray-300">{{
-                  isDarkMode ? "Dark" : "Light"
-                }}</span>
+              <div class="grid grid-cols-3 gap-2" role="group" aria-label="Appearance">
+                <button v-for="choice in appearanceChoices" :key="choice.value" type="button"
+                  :aria-pressed="themeStore.preference === choice.value"
+                  @click="themeStore.setPreference(choice.value)"
+                  class="rounded-xl border px-3 py-3 text-sm font-medium transition"
+                  :class="themeStore.preference === choice.value ? 'border-blue-500 bg-blue-500/15 text-blue-300' : 'border-white/15 bg-white/5 text-gray-300 hover:bg-white/10'">
+                  {{ choice.label }}
+                </button>
               </div>
             </div>
             <div
@@ -531,7 +523,7 @@ const saving = ref(false);
 const resetRequesting = ref(false);
 const deleting = ref(false);
 const showDeleteModal = ref(false);
-const isDarkMode = ref(themeStore.theme === "dark");
+const appearanceChoices = [{ value: "system", label: "System" }, { value: "light", label: "Light" }, { value: "dark", label: "Dark" }] as const;
 
 const tabs = [
   { id: "profile", name: "Profile", icon: "◉", description: "Your personal details and profile photo" },
@@ -615,18 +607,9 @@ if (authStore.user) {
     preferences.theme = prefs.theme || "dark";
     preferences.autoSaveDefault = prefs.autoSaveDefault ?? true;
     preferences.monthlyIncome = (prefs as any).monthlyIncome ?? 500000;
-    isDarkMode.value = prefs.theme === "dark";
+
   }
 }
-
-// Watch toggle changes
-watch(isDarkMode, (val) => {
-  const newTheme = val ? "dark" : "light";
-  themeStore.setTheme(newTheme);
-  preferences.theme = newTheme;
-  // Optional: save preference to backend
-  authStore.updatePreferences({ theme: newTheme });
-});
 
 const saveProfile = async () => {
   saving.value = true;
@@ -736,7 +719,7 @@ const savePreferences = async () => {
   try {
     await authStore.updatePreferences({
     currency: preferences.currency,
-    theme: preferences.theme,
+    theme: themeStore.theme,
     autoSaveDefault: preferences.autoSaveDefault,
     monthlyIncome: preferences.monthlyIncome,
   });
