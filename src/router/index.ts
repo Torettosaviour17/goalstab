@@ -8,7 +8,7 @@ const routes = [
     path: "/",
     name: "landing",
     component: () => import("@/views/Landing.vue"),
-    meta: { title: "GoalTabs - Command Your Wealth" },
+    meta: { title: "GoTabs" },
   },
 
   // ── AUTH ROUTES ──
@@ -193,7 +193,7 @@ router.beforeEach(async (to, _from, next) => {
   }
 
   // Keep document titles useful for users and search/social previews.
-  document.title = to.meta.title ? `${String(to.meta.title)} | GoalTabs` : "GoalTabs | Smart Savings Platform";
+  document.title = "GoTabs";
 });
 
 export default router;
