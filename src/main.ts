@@ -1,4 +1,4 @@
-import { createApp, watch } from "vue";
+import { createApp, defineAsyncComponent, watch } from "vue";
 import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { MotionPlugin } from "@vueuse/motion";
@@ -7,7 +7,6 @@ import router from "./router";
 import { useAuthStore } from "./stores/auth";
 import { useThemeStore } from "./stores/theme";
 import "./style.css";
-import VueApexCharts from "vue3-apexcharts";
 import clickOutside from "./directives/clickOutside";
 
 const app = createApp(App);
@@ -23,7 +22,9 @@ app.directive("click-outside", clickOutside);
 app.use(pinia);
 app.use(router);
 app.use(MotionPlugin);
-app.use(VueApexCharts);
+// Charts are large and are only needed on analytics/dashboard screens.
+// Load the chart renderer on demand instead of on every app launch.
+app.component("apexchart", defineAsyncComponent(() => import("vue3-apexcharts")));
 
 // Global error handler
 app.config.errorHandler = (err, instance, info) => {
