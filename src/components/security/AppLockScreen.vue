@@ -70,6 +70,7 @@ const cooldownSeconds = ref(0);
 let cooldownTimer: number | undefined;
 let hiddenAt = 0;
 const BACKGROUND_LOCK_THRESHOLD_MS = 1500;
+const reloadMarkerKey = "goaltabs-navigation-reload";
 const unlockedReloadKey = () => "goaltabs-unlocked-reload:" + encodeURIComponent(props.userId);
 let biometricStatusLoaded = false;
 let autoBiometricAttempted = false;
@@ -147,9 +148,11 @@ const loadState = () => {
     // Use the per-tab unlocked session, cleared when the app actually resumes
     // from the background, instead of relying on navigation.type.
     const recentlyUnlocked = Number(sessionStorage.getItem(unlockedReloadKey()) || 0);
-    const resumeReload = recentlyUnlocked > 0 && Date.now() - recentlyUnlocked < 10 * 60 * 1000;
+    const isRefresh = sessionStorage.getItem(reloadMarkerKey) === "true";
+    const resumeReload = isRefresh || (recentlyUnlocked > 0 && Date.now() - recentlyUnlocked < 10 * 60 * 1000);
     if (justAuthenticated) sessionStorage.setItem(unlockedReloadKey(), String(Date.now()));
     visible.value = !justAuthenticated && !resumeReload;
+    sessionStorage.removeItem(reloadMarkerKey);
   } else {
     // No PIN is mandatory. Invite once, allow skip, and never block app entry.
     visible.value = !localStorage.getItem(current.promptDismissed);
@@ -200,10 +203,15 @@ const unlockWithBiometric = async () => {
     clearFailedAttempts();
     await unlock();
   } catch (error) {
-    message.value =
-      (error instanceof Error ? error.message : "Device verification failed.") +
-      " You can always use your app PIN.";
-    messageIsError.value = true;
+    // Cancelling the device prompt is normal, not an application error.
+    const code = (error as { name?: string })?.name;
+    if (code === "NotAllowedError" || code === "AbortError") {
+      message.value = "Fingerprint cancelled. You can unlock with your PIN.";
+      messageIsError.value = false;
+    } else {
+      message.value = "Fingerprint unlock was unavailable. Please use your PIN or try again.";
+      messageIsError.value = false;
+    }
   } finally {
     biometricBusy.value = false;
   }
@@ -330,6 +338,10 @@ const submitPin = async () => {
   }
 };
 
+const markPageReload = () => {
+  if (!visible.value && props.userId) sessionStorage.setItem(reloadMarkerKey, "true");
+};
+
 const handleVisibilityChange = () => {
   if (document.visibilityState === "hidden") {
     // Mark background time across document reloads too.
@@ -348,6 +360,7 @@ const handleVisibilityChange = () => {
   hiddenAt = 0;
   if (awayFor >= BACKGROUND_LOCK_THRESHOLD_MS && props.userId) {
     sessionStorage.removeItem(unlockedReloadKey());
+    sessionStorage.removeItem(reloadMarkerKey);
     loadState();
     void refreshBiometricStatus();
   }
@@ -366,10 +379,12 @@ onMounted(() => {
   if (props.userId) loadState();
   void refreshBiometricStatus();
   document.addEventListener("visibilitychange", handleVisibilityChange);
+  window.addEventListener("beforeunload", markPageReload);
   window.addEventListener("goaltabs:open-security-setup", handleOpenSecuritySetup);
 });
 onBeforeUnmount(() => {
   document.removeEventListener("visibilitychange", handleVisibilityChange);
+  window.removeEventListener("beforeunload", markPageReload);
   window.removeEventListener("goaltabs:open-security-setup", handleOpenSecuritySetup);
   if (cooldownTimer) window.clearInterval(cooldownTimer);
 });
