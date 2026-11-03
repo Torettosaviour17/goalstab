@@ -680,3 +680,19 @@ code {
     justify-content: flex-end;
   }
 }
+
+/* GoalTabs appearance: Tailwind v4 class-based dark mode and a legible light palette. */
+@custom-variant dark (&:where(.dark, .dark *));
+:root.light { color-scheme: light; }
+:root.light body { background: #f8fafc; color: #0f172a; }
+:root.light .glass-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 8px 28px rgba(15,23,42,.06); }
+:root.light .glass-card:hover { background: #f8fafc; border-color: #cbd5e1; }
+:root.light .bg-gray-950, :root.light .bg-gray-900, :root.light .bg-gray-800, :root.light .bg-\\[\\#10182c\\], :root.light .bg-\\[\\#111b34\\] { background-color: #ffffff !important; }
+:root.light .bg-gray-800\\/50, :root.light .bg-gray-900\\/40 { background-color: #f1f5f9 !important; }
+:root.light .text-white:not(button):not([role="button"]), :root.light .text-gray-100, :root.light .text-gray-200, :root.light .text-gray-300 { color: #0f172a; }
+:root.light .text-gray-400, :root.light .text-slate-400 { color: #475569; }
+:root.light .border-gray-700, :root.light .border-gray-800 { border-color: #cbd5e1; }
+:root.light input, :root.light select, :root.light textarea { color: #0f172a; background-color: #ffffff; border-color: #cbd5e1; }
+:root.light input::placeholder, :root.light textarea::placeholder { color: #64748b; }
+:root.light .bg-gradient-to-br.from-gray-950 { background-image: linear-gradient(135deg,#f8fafc,#eef2ff) !important; }
+:root.light .text-gradient-white { background-image: linear-gradient(90deg,#0f172a,#334155); }
