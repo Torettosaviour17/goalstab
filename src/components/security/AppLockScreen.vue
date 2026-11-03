@@ -143,10 +143,12 @@ const loadState = () => {
   if (configured.value) {
     // A page refresh is not leaving the app. Preserve the unlocked state only
     // across a real browser reload, never a new launch or a background resume.
-    const navigation = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
-    const isReload = navigation?.type === "reload";
+    // Android installed PWAs sometimes report a refresh as a new navigation.
+    // Use the per-tab unlocked session, cleared when the app actually resumes
+    // from the background, instead of relying on navigation.type.
     const recentlyUnlocked = Number(sessionStorage.getItem(unlockedReloadKey()) || 0);
-    const resumeReload = isReload && recentlyUnlocked > 0 && Date.now() - recentlyUnlocked < 10 * 60 * 1000;
+    const resumeReload = recentlyUnlocked > 0 && Date.now() - recentlyUnlocked < 10 * 60 * 1000;
+    if (justAuthenticated) sessionStorage.setItem(unlockedReloadKey(), String(Date.now()));
     visible.value = !justAuthenticated && !resumeReload;
   } else {
     // No PIN is mandatory. Invite once, allow skip, and never block app entry.
@@ -330,14 +332,17 @@ const submitPin = async () => {
 
 const handleVisibilityChange = () => {
   if (document.visibilityState === "hidden") {
-    // Only the actual document lifecycle locks the app. Vue route changes do not.
+    // Mark background time across document reloads too.
     if (!hiddenAt) hiddenAt = Date.now();
+    sessionStorage.setItem("goaltabs-hidden-at", String(hiddenAt));
     return;
   }
 
-  if (document.visibilityState !== "visible" || !hiddenAt) return;
-
-  const awayFor = Date.now() - hiddenAt;
+  if (document.visibilityState !== "visible") return;
+  const previousHiddenAt = hiddenAt || Number(sessionStorage.getItem("goaltabs-hidden-at") || 0);
+  if (!previousHiddenAt) return;
+  const awayFor = Date.now() - previousHiddenAt;
+  sessionStorage.removeItem("goaltabs-hidden-at");
   // Always clear the old timestamp. A short interruption must never trigger
   // a delayed lock on a later navigation or visibility event.
   hiddenAt = 0;
@@ -353,6 +358,11 @@ watch(() => props.userId, (next, previous) => {
 });
 
 onMounted(() => {
+  const previousHiddenAt = Number(sessionStorage.getItem("goaltabs-hidden-at") || 0);
+  if (previousHiddenAt && Date.now() - previousHiddenAt >= BACKGROUND_LOCK_THRESHOLD_MS) {
+    sessionStorage.removeItem(unlockedReloadKey());
+  }
+  sessionStorage.removeItem("goaltabs-hidden-at");
   if (props.userId) loadState();
   void refreshBiometricStatus();
   document.addEventListener("visibilitychange", handleVisibilityChange);
