@@ -3,41 +3,36 @@
       <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Settings</h1>
       <p class="text-gray-400 mb-8">Manage your account preferences</p>
 
-      <!-- Account identity and grouped settings navigation, shared by mobile PWA and desktop. -->
-      <div class="mb-7 rounded-3xl border border-white/10 bg-gradient-to-br from-[#1b326e] via-[#13234b] to-[#0c142e] p-5 sm:p-7 shadow-xl shadow-black/20">
-        <div class="flex items-center gap-4">
-          <img v-if="avatarPreview" :src="avatarPreview" alt="Profile" class="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/15" />
-          <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-blue-400/20 text-2xl font-bold text-white">{{ profile.name?.trim().charAt(0).toUpperCase() || 'G' }}</div>
-          <div class="min-w-0 flex-1">
-            <p class="text-xs font-semibold uppercase tracking-widest text-blue-200">Your account</p>
-            <h2 class="truncate text-xl font-bold text-white sm:text-2xl">{{ profile.name || 'GoalTabs member' }}</h2>
-            <p class="truncate text-sm text-blue-100/70">{{ profile.email }}</p>
-          </div>
-          <button type="button" @click="activeTab = 'profile'" class="rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20">Edit</button>
+      <!-- Calm, native-style settings navigation: no tile grid or carousel. -->
+      <div class="mb-8 flex items-center gap-4 border-b border-white/10 pb-6">
+        <img v-if="avatarPreview" :src="avatarPreview" alt="Profile" class="h-16 w-16 shrink-0 rounded-full object-cover" />
+        <div v-else class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-slate-700 text-xl font-semibold text-white">{{ profile.name?.trim().charAt(0).toUpperCase() || 'G' }}</div>
+        <div class="min-w-0 flex-1">
+          <h2 class="truncate text-lg font-semibold text-white">{{ profile.name || 'GoalTabs member' }}</h2>
+          <p class="truncate text-sm text-slate-400">{{ profile.email }}</p>
+          <button type="button" @click="activeTab = 'profile'" class="mt-1 text-sm font-medium text-blue-400 hover:text-blue-300">Manage profile</button>
         </div>
       </div>
 
-      <div class="mb-7 grid grid-cols-2 gap-3 sm:grid-cols-4" aria-label="Settings sections">
-        <button v-for="tab in tabs" :key="tab.id" type="button" @click="activeTab = tab.id"
-          :aria-pressed="activeTab === tab.id"
-          class="group flex min-h-28 flex-col items-start justify-between rounded-2xl border p-4 text-left transition-all duration-200"
-          :class="activeTab === tab.id ? 'border-blue-400/60 bg-blue-500/15 shadow-lg shadow-blue-950/20' : 'border-white/10 bg-[#111b34]/80 hover:border-white/25 hover:bg-[#192541]'">
-          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-xl">{{ tab.icon }}</span>
-          <span class="mt-3 flex w-full items-center justify-between gap-1 text-sm font-semibold" :class="activeTab === tab.id ? 'text-blue-200' : 'text-white'">{{ tab.name }} <span class="text-slate-400">›</span></span>
+      <nav aria-label="Settings sections" class="mb-8 overflow-hidden rounded-xl border border-white/10 bg-[#10182c]">
+        <button v-for="(tab, index) in tabs" :key="tab.id" type="button" @click="activeTab = tab.id"
+          :aria-current="activeTab === tab.id ? 'page' : undefined"
+          class="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-white/5"
+          :class="[index ? 'border-t border-white/10' : '', activeTab === tab.id ? 'bg-white/5' : '']">
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-700/60 text-lg">{{ tab.icon }}</span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-semibold text-white">{{ tab.name }}</span>
+            <span class="block text-xs text-slate-400">{{ tab.description }}</span>
+          </span>
+          <span class="text-xl text-slate-500" aria-hidden="true">›</span>
         </button>
-      </div>
-      <div class="mb-4 flex items-center gap-3">
-        <div class="h-9 w-1 rounded-full bg-blue-400"></div>
-        <div>
-          <h2 class="text-lg font-bold text-white">{{ tabs.find(t => t.id === activeTab)?.name }}</h2>
-          <p class="text-xs text-slate-400">{{ tabs.find(t => t.id === activeTab)?.description }}</p>
-        </div>
-      </div>
+      </nav>
+      <h2 class="mb-5 text-lg font-semibold text-white">{{ tabs.find(t => t.id === activeTab)?.name }}</h2>
 
       <transition name="fade" mode="out-in">
         <!-- Profile -->
         <div v-if="activeTab === 'profile'" class="space-y-6">
-          <div class="glass-card p-6">
+          <div class="border-b border-white/10 py-6">
             <h2 class="text-xl font-bold text-white mb-4">Avatar</h2>
             <AvatarUploader
               :current-avatar="avatarPreview"
@@ -539,10 +534,10 @@ const showDeleteModal = ref(false);
 const isDarkMode = ref(themeStore.theme === "dark");
 
 const tabs = [
-  { id: "profile", name: "Profile", icon: "👤", description: "Your personal details and profile photo" },
-  { id: "notifications", name: "Notifications", icon: "🔔", description: "Choose which updates you receive" },
-  { id: "security", name: "Security", icon: "🔐", description: "Password, device lock and account access" },
-  { id: "preferences", name: "Preferences", icon: "⚙️", description: "Appearance, currency and saving defaults" },
+  { id: "profile", name: "Profile", icon: "◉", description: "Your personal details and profile photo" },
+  { id: "notifications", name: "Notifications", icon: "♧", description: "Choose which updates you receive" },
+  { id: "security", name: "Security", icon: "⌑", description: "Password, device lock and account access" },
+  { id: "preferences", name: "Preferences", icon: "⚙", description: "Appearance, currency and saving defaults" },
 ];
 
 const profile = reactive({
