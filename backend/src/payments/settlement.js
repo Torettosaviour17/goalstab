@@ -5,9 +5,8 @@ const WalletLedgerAccount = require("../models/WalletLedgerAccount");
 const WalletJournal = require("../models/WalletJournal");
 const { validateMoney } = require("./money");
 
-// Internal service only. Caller MUST supply a result obtained through a
-// provider adapter's authenticated server-side verification, not a browser
-// callback or an unverified webhook body. This is not an API endpoint.
+// Internal service only. Always verify directly with the configured gateway.
+// Browser callbacks and webhook payloads cannot authorize a wallet credit.
 async function settleVerifiedWalletFunding({ intentId, providerRegistry }) {
   if (!mongoose.isValidObjectId(intentId)) throw new TypeError("Invalid intent");
   if (!providerRegistry || typeof providerRegistry.get !== "function") throw new TypeError("Provider registry required");
@@ -19,6 +18,8 @@ async function settleVerifiedWalletFunding({ intentId, providerRegistry }) {
   if (!verified || verified.status !== "success" || verified.reference !== initialIntent.reference ||
       verified.provider !== initialIntent.provider) throw new Error("Provider did not verify payment");
   const money = validateMoney({ amountMinor: verified.amountMinor, currency: verified.currency });
+  if (initialIntent.currency !== money.currency || initialIntent.amountMinor !== money.amountMinor ||
+      initialIntent.purpose !== "wallet_funding") throw new Error("Provider verification does not match intent");
   const session = await mongoose.startSession();
   try {
     return await session.withTransaction(async () => {
@@ -49,8 +50,9 @@ async function settleVerifiedWalletFunding({ intentId, providerRegistry }) {
       }
       const journalReference = "fund_" + intent.reference;
       if (journalReference.length > 128) throw new Error("Ledger reference too long");
-      await WalletLedgerAccount.updateOne({ _id: accounts[0]._id }, { $inc: { balanceMinor: money.amountMinor } }, { session });
-      await WalletLedgerAccount.updateOne({ _id: accounts[1]._id }, { $inc: { balanceMinor: -money.amountMinor } }, { session });
+      const credit = await WalletLedgerAccount.updateOne({ _id: accounts[0]._id }, { $inc: { balanceMinor: money.amountMinor } }, { session });
+      const clearing = await WalletLedgerAccount.updateOne({ _id: accounts[1]._id }, { $inc: { balanceMinor: -money.amountMinor } }, { session });
+      if (credit.modifiedCount !== 1 || clearing.modifiedCount !== 1) throw new Error("Ledger account update failed");
       await WalletJournal.create([{
         reference: journalReference,
         currency: intent.currency,
