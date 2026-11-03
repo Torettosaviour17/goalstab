@@ -50,7 +50,7 @@ export default defineConfig({
         navigateFallback: "/index.html",
         navigateFallbackAllowlist: [
           /^\/$/,
-          /^\/(dashboard|login|register|forgot-password|reset-password|goals|analytics|transactions|settings|accounts|help|payment-success|admin|terms|privacy)(?:\/|$)/,
+          /^\/(dashboard|wallet|login|register|forgot-password|reset-password|goals|analytics|transactions|settings|accounts|help|payment-success|admin|terms|privacy)(?:\/|$)/,
         ],
         // API requests must never receive the SPA HTML fallback.
         navigateFallbackDenylist: [/^\/api(?:\/|$)/],
